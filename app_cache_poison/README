@@ -1,0 +1,44 @@
+I've modified sslstrip to be able to tamper with server responses.
+
+One prepared example of tampering attack is HTML5 AppCache poisoning attack that places the 
+modified responses in browsers long-lasting HTML5 AppCache so that the spoofing continues
+even after the victim is no longer MITMed. 
+
+Exemplary response tampering with HTML AppCachePoison:
+
+	1) python sslstrip.py -t app_cache_poison/config.ini
+
+	2) While under MITM, visit http://example.com to display tampered content
+
+	3) Visit http://www.facebook.com in AppCache supporting browser (Chrome, Firefox, Opera, Safari).
+		In Firefox you have to agree to store offline content, Chrome does not display any confirmations.
+
+	4) Stop MITM, restart browser, go for coffee or holidays
+
+	5) Visit http://www.facebook.com again - the spoofed content is still there!
+	
+	As a bonus, once google analytics HTTP version will be requested, the spoofed content of it will be cached for 10 years.
+
+
+EASY LOCAL TESTING MITM (for Ubuntu systems):
+
+# create sslstrip admin user
+
+# forward local traffic
+$ sudo ./testmitm.sh start `id -u sslstrip`
+
+# run sslstrip to hijack traffic
+$ chown -R sslstrip /path/to/sslstrip/
+$ su sslstrip
+$ python sslstrip.py -t app_cache_poison/config.ini -p
+
+# stop
+$ sudo ./testmitm.sh stop
+
+
+More info:
+	http://blog.kotowicz.net/2010/12/squid-imposter-phishing-websites.html
+
+This functionality has been added by Krzysztof Kotowicz
+<kkotowicz at gmail dot com>
+

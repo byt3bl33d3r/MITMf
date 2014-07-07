@@ -1,0 +1,38 @@
+<style type="text/css" media="screen">
+  .aribbon {
+    background-color: #a00;
+    overflow: hidden;
+    z-index: 1000;
+    /* top left corner */
+    position: absolute;
+    left: -3em;
+    top: 2.5em;
+    /* 45 deg ccw rotation */
+    -moz-transform: rotate(-45deg);
+    -webkit-transform: rotate(-45deg);
+    /* shadow */
+    -moz-box-shadow: 0 0 1em #888;
+    -webkit-box-shadow: 0 0 1em #888;
+  }
+  .aribbon a {
+    border: 1px solid #faa;
+    color: #fff;
+    display: block;
+    font: bold 81.25% 'Helvetiva Neue', Helvetica, Arial, sans-serif;
+    margin: 0.05em 0 0.075em 0;
+    padding: 0.5em 3.5em;
+    text-align: center;
+    text-decoration: none;
+    /* shadow */
+    text-shadow: 0 0 0.5em #444;
+  }
+</style>
+<div class="aribbon">
+<a href="https://github.com/koto/sslstrip">
+  AppCache poisoned
+</a>
+</div>
+<div style="padding: 1em;border:1px solid red;margin:1em">
+<h1>AppCache Poison works!</h1>
+<p><code>%%tamper_url%%</code> page is spoofed with <a href="https://github.com/koto/sslstrip">AppCache Poison</a> by <a href="http://blog.kotowicz.net">Krzysztof Kotowicz</a>, but this is just a default content. To replace it, create appropriate files in your templates directory and add your content there.</p>
+</div>

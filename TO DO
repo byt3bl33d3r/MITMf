@@ -1,0 +1,12 @@
+TO DO:
+-Revamp arp spoofing
+-CLEAN CODE where possible
+-MSFrpc integration?
+-FilePwn Revamp
+-javascript keylogger
+
+
+Priority:
+-bdfproxy
+-app cache poisoning
+-client profiler
