@@ -7,7 +7,7 @@ This tool is completely based on sergio-proxy https://code.google.com/p/sergio-p
 
 So far the most significant changes have been:
 
-- Arpspoof plugin has been completly re-written to use scapy instead of third-party tools (e.g. ettercao)
+- Arpspoof plugin has been completly re-written to use scapy instead of third-party tools (e.g. ettercap)
 
 - Addition of the BrowserProfiler plugin
 
