@@ -3,7 +3,7 @@ MITMf
 
 Framework for Man-In-The-Middle attacks
 
-This tool is completly based on sergio-proxy https://code.google.com/p/sergio-proxy/ and is an attempt to revive and update the project.
+This tool is completely based on sergio-proxy https://code.google.com/p/sergio-proxy/ and is an attempt to revive and update the project.
 
 So far the most significant changes have been:
 
