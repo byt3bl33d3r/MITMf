@@ -89,7 +89,6 @@ class ArpSpoof(Plugin):
     def add_options(self,options):
         options.add_argument('--iface', dest='interface', help='Specify the interface to use')
         options.add_argument('--routerip', dest='routerip', help='Specify the router IP')
-        options.add_argument('\n  Misc Options:')
         options.add_argument('--target', dest='target', help='Specify a particular host to ARP poison [default: subnet]')
         options.add_argument('--mode', dest='mode', default='req', help='Poisoning mode: requests (req) or replies (rep) [default: req]')
         options.add_argument('--summary', action='store_true', dest='summary', default=False, help='Show packet summary and ask for confirmation before poisoning')
