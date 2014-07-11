@@ -12,7 +12,6 @@ class ArpSpoof(Plugin):
     desc = 'Redirect traffic using arp-spoofing'
     implements = []
     has_opts = True
-    log_level = logging.DEBUG
 
     def initialize(self,options):
         '''Called if plugin is enabled, passed the options namespace'''
@@ -33,7 +32,7 @@ class ArpSpoof(Plugin):
         if self.interface == None or self.routerip == None:
             sys.exit("[-] %s plugin requires --routerip and --interface" % self.name)
 
-        print "[*] %s plugin online" % name
+        print "[*] %s plugin online" % self.name
         if self.setup == True:
             print '[*] Setting up ip_forward and iptables'
             file = open('/proc/sys/net/ipv4/ip_forward', 'w')
