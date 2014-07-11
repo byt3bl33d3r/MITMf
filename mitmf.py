@@ -16,12 +16,13 @@ import argparse
 from plugins import *
 plugin_classes = plugin.Plugin.__subclasses__()
 
+mitmf_version = "0.1"
 sslstrip_version = "0.9"
 sergio_version = "0.2.1"
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description="Sergio Proxy v%s - An HTTP MITM Tool" % sergio_version,epilog="Use wisely, young Padawan.",fromfile_prefix_chars='@')
+    parser = argparse.ArgumentParser(description="MITMf v%s - Framework for MITM attacks" % mitmf_version,epilog="Use wisely, young Padawan.",fromfile_prefix_chars='@')
     #add sslstrip options
     sgroup = parser.add_argument_group("sslstrip","Options for sslstrip library")
     sgroup.add_argument("-w","--write",type=argparse.FileType('w'),metavar="filename", default=sys.stdout,help="Specify file to log to (stdout by default).")
@@ -66,6 +67,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=log_level, format='%(asctime)s %(message)s',stream=args.write)
     
     #All our options should be loaded now, pass them onto plugins
+    print "[*] MITMf v%s started... initializing plugins and modules" % mitmf_version
     load = []
     try:
         for p in plugins:
@@ -86,7 +88,7 @@ if __name__ == "__main__":
 
     reactor.listenTCP(args.listen, strippingFactory)
     
-    print "\n[*] sslstrip " + sslstrip_version + " by Moxie Marlinspike running..."
+    print "\n[*] sslstrip v%s by Moxie Marlinspike running..." % sslstrip_version
     print "[*] sergio-proxy v%s online" % sergio_version
     
     reactor.run()

