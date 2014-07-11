@@ -33,7 +33,7 @@ class ArpSpoof(Plugin):
         if self.interface == None or self.routerip == None:
             sys.exit("[-] %s plugin requires --routerip and --interface" % self.name)
 
-        print "[*] ArpSpoof plugin online"
+        print "[*] %s plugin online" % name
         if self.setup == True:
             print '[*] Setting up ip_forward and iptables'
             file = open('/proc/sys/net/ipv4/ip_forward', 'w')

