@@ -7,7 +7,9 @@ This tool is completely based on sergio-proxy https://code.google.com/p/sergio-p
 
 So far the most significant changes have been:
 
-- Arpspoof plugin has been completely re-written to use scapy instead of third-party tools (e.g. ettercap)
+- Arpspoof plugin has been completely re-written to use scapy (Now able to poison via arp-requests and arp-replies)
+
+- Usage of third party tools has been completely removed (e.g. ettercap)
 
 - Addition of the BrowserProfiler plugin
 
