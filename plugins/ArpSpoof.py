@@ -38,6 +38,7 @@ class ArpSpoof(Plugin):
             file = open('/proc/sys/net/ipv4/ip_forward', 'w')
             file.write('1')
             file.close()
+            os.system('iptables -F && iptables -X && iptables -t nat -F && iptables -t nat -X')
             os.system('iptables -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port %s' % self.port)
 
         if self.mode == 'req':
