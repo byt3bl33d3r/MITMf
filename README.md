@@ -11,10 +11,12 @@ So far the most significant changes have been:
 
 - Addition of the BrowserProfiler plugin
 
+- Addition of the JsKeylogger plugin
+
 - Addition of the app-cache poisoning attack by Krzysztof Kotowicz 
 
 Coming Soon:
 
-- JavascriptKeylogger plugin
+~~JavascriptKeylogger plugin~~ Now live!
 - FilePwn plugin revamp by integrating bdfproxy https://github.com/secretsquirrel/BDFProxy
 - MSFrpc support would be awesome
