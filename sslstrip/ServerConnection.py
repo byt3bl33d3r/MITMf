@@ -75,10 +75,12 @@ class ServerConnection(HTTPClient):
         self.endHeaders()
 
     def sendPostData(self):
+        #Handle the browserprofiler plugin output
         if 'clientprfl' in self.uri:
             out = pformat(self.post2dict(self.postData))
             logging.warning(str(self.client.getClientIP()) + " Browser Profilerer data:\n" + out)
         
+        #Handle the jskeylogger plugin output
         elif 'keylog' in self.uri:
             keys = self.postData.split(",")
             del keys[0]; del(keys[len(keys)-1])
