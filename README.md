@@ -21,7 +21,5 @@ So far the most significant changes have been:
 
 Coming Soon:
 
-~~JavascriptKeylogger plugin~~ Now live!
-~~FilePwn plugin revamp by integrating bdfproxy https://github.com/secretsquirrel/BDFProxy~~ Now Live!
 - Add PDF support to the FilePwn plugin
 - MSFrpc support would be awesome
