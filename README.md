@@ -15,10 +15,13 @@ So far the most significant changes have been:
 
 - Addition of the JsKeylogger plugin
 
+- FilePwn plugin re-written to backdoor executables on the fly by using the-backdoor-factory https://github.com/secretsquirrel/the-backdoor-factory
+
 - Addition of the app-cache poisoning attack by Krzysztof Kotowicz 
 
 Coming Soon:
 
 ~~JavascriptKeylogger plugin~~ Now live!
-- FilePwn plugin revamp by integrating bdfproxy https://github.com/secretsquirrel/BDFProxy
+~~FilePwn plugin revamp by integrating bdfproxy https://github.com/secretsquirrel/BDFProxy~~ Now Live!
+- Add PDF support to the FilePwn plugin
 - MSFrpc support would be awesome
