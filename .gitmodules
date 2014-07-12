@@ -1,0 +1,3 @@
+[submodule "BDFProxy"]
+	path = BDFProxy
+	url = https://github.com/secretsquirrel/BDFProxy
