@@ -9,7 +9,6 @@ import pefile
 import zipfile
 import logging
 import shutil
-import requests
 import random
 import string
 from bdfactory import pebin, elfbin
