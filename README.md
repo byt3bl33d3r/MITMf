@@ -15,7 +15,8 @@ So far the most significant changes have been:
 
 - Addition of the JsKeylogger plugin
 
-- FilePwn plugin re-written to backdoor executables on the fly by using the-backdoor-factory https://github.com/secretsquirrel/the-backdoor-factory
+- FilePwn plugin re-written to backdoor executables and zip files on the fly by using the-backdoor-factory        
+https://github.com/secretsquirrel/the-backdoor-factory
 
 - Addition of the app-cache poisoning attack by Krzysztof Kotowicz 
 
