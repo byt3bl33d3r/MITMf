@@ -7,7 +7,11 @@
 import sys, os
 import pefile
 import zipfile
+import logging
+import json
+import shutil
 from bdfactory import pebin, elfbin
+from plugins.plugin import Plugin
 from tempfile import mkstemp
 
 
@@ -24,7 +28,15 @@ class FilePwn(Plugin):
     has_opts = True
     log_level = logging.DEBUG
     desc = "Backdoor executables being sent over http using bdfactory (STILL WORK IN PROGRESS!!)"
-    
+
+    def convert_to_Bool(self, aString):
+        if aString.lower() == 'true':
+            return True
+        elif aString.lower() == 'false':
+            return False
+        elif aString.lower() == 'none':
+            return None
+
     def initialize(self,options):
         '''Called if plugin is enabled, passed the options namespace'''
 
