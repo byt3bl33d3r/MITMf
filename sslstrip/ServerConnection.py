@@ -55,21 +55,19 @@ class ServerConnection(HTTPClient):
             t = line.split('=')
             dict[t[0]] = t[1]
         return dict
-    
-    def getLogLevel(self):
-        return logging.DEBUG
 
     def getPostPrefix(self):
         return "POST"
 
     def sendRequest(self):
-        logging.log(self.getLogLevel(), "%s Sending Request: %s %s%s"  % (self.client.getClientIP(), self.command, self.headers['host'], self.uri))
+        if self.command == 'GET':
+            logging.info("%s Sending Request: %s %s"  % (self.client.getClientIP(), self.command, self.headers['host']))
         self.plugins.hook()
         self.sendCommand(self.command, self.uri)
 
     def sendHeaders(self):
         for header, value in self.headers.items():
-            #logging.log(self.getLogLevel(), "Sending header: %s : %s" % (header, value))
+            logging.debug("Sending header: %s : %s" % (header, value))
             self.sendHeader(header, value)
 
         self.endHeaders()
@@ -106,7 +104,7 @@ class ServerConnection(HTTPClient):
             self.transport.write(self.postData)
 
     def connectionMade(self):
-        #logging.log(self.getLogLevel(), "HTTP connection made.")
+        logging.debug("HTTP connection made.")
         self.plugins.hook()
         self.sendRequest()
         self.sendHeaders()
@@ -115,7 +113,7 @@ class ServerConnection(HTTPClient):
             self.sendPostData()
 
     def handleStatus(self, version, code, message):
-        #logging.log(self.getLogLevel(), "Got server response: %s %s %s" % (version, code, message))
+        logging.debug("Got server response: %s %s %s" % (version, code, message))
         self.client.setResponseCode(int(code), message)
 
     def handleHeader(self, key, value):
@@ -166,7 +164,7 @@ class ServerConnection(HTTPClient):
             logging.debug("Decompressing content...")
             data = gzip.GzipFile('', 'rb', 9, StringIO.StringIO(data)).read()
             
-        #logging.log(self.getLogLevel(), "Read from server:\n" + data)
+        logging.debug("Read from server:\n" + data)
 
         data = self.replaceSecureLinks(data)
 

@@ -8,7 +8,6 @@ class Inject(CacheKill,Plugin):
     optname = "inject"
     implements = ["handleResponse","handleHeader","connectionMade"]
     has_opts = True
-    log_level = logging.DEBUG
     desc = "Inject arbitrary content into HTML content"
     
     def initialize(self,options):
@@ -33,7 +32,7 @@ class Inject(CacheKill,Plugin):
         self.dtable = {}
         self.count = 0
         self.mime = "text/html"
-        print "[*] %s plugin online" % self.name
+        print "[*] Inject plugin online"
 
 
     def handleResponse(self,request,data):

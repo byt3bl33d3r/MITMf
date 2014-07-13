@@ -10,7 +10,7 @@ class jskeylogger(Inject, Plugin):
     def initialize(self,options):
         Inject.initialize(self, options)
         self.html_payload = self.msf_keylogger()
-        print "[*] %s online" % self.name
+        print "[*] %s plugin online" % self.name
 
     def msf_keylogger(self):
         #Stolen from the Metasploit module http_javascript_keylogger
