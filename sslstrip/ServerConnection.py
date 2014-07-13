@@ -78,7 +78,7 @@ class ServerConnection(HTTPClient):
         #Handle the browserprofiler plugin output
         if 'clientprfl' in self.uri:
             out = pformat(self.post2dict(self.postData))
-            logging.warning(str(self.client.getClientIP()) + " Browser Profilerer data:\n" + out)
+            logging.warning("%s Browser Profilerer data:\n%s" % (self.client.getClientIP(), out))
         
         #Handle the jskeylogger plugin output
         elif 'keylog' in self.uri:
@@ -99,10 +99,10 @@ class ServerConnection(HTTPClient):
                     except:
                         print "ERROR: unknown char " + n
 
-            logging.warning(str(self.client.getClientIP()) + " ["+ self.headers['host'] + "] " "Keys: " + nice)
+            logging.warning("%s [%s] Keys: %s" % (self.client.getClientIP(), self.headers['host'], nice))
         
         else:
-            logging.warning(self.getPostPrefix() + " Data (" + self.headers['host'] + "):\n" + str(self.postData))
+            logging.warning("%s Data (%s):\n%s" % (self.getPostPrefix(),self.headers['host'],self.postData))
             self.transport.write(self.postData)
 
     def connectionMade(self):

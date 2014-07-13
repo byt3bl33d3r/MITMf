@@ -64,7 +64,7 @@ if __name__ == "__main__":
     log_level = logging.__dict__[args.log_level.upper()]
     
     #Start logging 
-    logging.basicConfig(level=log_level, format='%(asctime)s %(message)s',stream=args.write)
+    logging.basicConfig(level=log_level, format="%(asctime)s %(message)s", datefmt="%Y-%m-%d %H:%M:%S", stream=args.write)
     
     #All our options should be loaded now, pass them onto plugins
     print "[*] MITMf v%s started... initializing plugins and modules" % mitmf_version

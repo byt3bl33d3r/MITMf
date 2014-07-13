@@ -33,6 +33,8 @@ class Inject(CacheKill,Plugin):
         self.dtable = {}
         self.count = 0
         self.mime = "text/html"
+        print "[*] %s plugin online" % self.name
+
 
     def handleResponse(self,request,data):
         #We throttle to only inject once every two seconds per client
@@ -46,7 +48,7 @@ class Inject(CacheKill,Plugin):
             self.ctable[ip] = time.time()
             self.dtable[ip+hn] = True
             self.count+=1
-            logging.info("Injected malicious html.")
+            logging.info("%s [%s] Injected malicious html" % (request.client.getClientIP(), request.headers['host']))
             return {'request':request,'data':data}
         else:
             return

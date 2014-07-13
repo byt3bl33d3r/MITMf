@@ -60,7 +60,7 @@ class ArpSpoof(Plugin):
   
     def send_packets(self,pkt,interface):
         while self.send == True:
-            sendp(pkt, inter=2, iface=interface)
+            sendp(pkt, inter=2, iface=interface, verbose=False)
 
     def build_req(self):
         if self.target == None:
