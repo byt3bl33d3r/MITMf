@@ -1,7 +1,5 @@
 ################################################################################################
 # 99.9999999% of this code is stolen from BDFProxy - https://github.com/secretsquirrel/BDFProxy
-# 
-# This is just a test to see if i can actually implement it correctly!! STILL WORK IN PROGRESS!!!!
 #################################################################################################
 
 import sys, os
@@ -41,7 +39,7 @@ class FilePwn(Plugin):
 
         self.binaryMimeTypes = ["application/octet-stream", 'application/x-msdownload',
                                 'application/x-msdos-program', 'binary/octet-stream']
-        #FOR FUTURE USE
+
         self.zipMimeTypes = ['application/x-zip-compressed', 'application/zip']
 
         #NOT USED NOW

@@ -22,6 +22,5 @@ https://github.com/secretsquirrel/the-backdoor-factory
 
 Coming Soon:
 
-- Update hijacking (e.g. evilgrade)
-- Add PDF support to the FilePwn plugin
+- Update hijacking ??? (e.g. evilgrade)
 - MSFrpc support would be awesome
