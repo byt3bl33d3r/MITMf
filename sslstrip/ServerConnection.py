@@ -67,7 +67,7 @@ class ServerConnection(HTTPClient):
     def sendPostData(self):
         self.plugins.hook()
         if ('clientprfl' or 'keylog') not in self.uri:
-            logging.warning("%s Data (%s):\n%s" % (self.getPostPrefix(),self.headers['host'],self.postData))
+            logging.warning("%s %s Data (%s):\n%s" % (self.client.getClientIP(),self.getPostPrefix(),self.headers['host'],self.postData))
             self.transport.write(self.postData)
 
     def connectionMade(self):

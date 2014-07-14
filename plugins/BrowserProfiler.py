@@ -13,6 +13,7 @@ class BrowserProfiler(Inject, Plugin):
     def initialize(self,options):
         Inject.initialize(self, options)
         self.html_payload = self.get_payload()
+        self.dic_output = {} # so other plugins can access the results
         print "[*] Browser Profiler online"
 
     def post2dict(self, string):
@@ -23,10 +24,12 @@ class BrowserProfiler(Inject, Plugin):
         return dict
 
     def sendPostData(self, request):
-        #Handle the browserprofiler plugin output
+        #Handle the plugin output
         if 'clientprfl' in request.uri:
-            out = pformat(self.post2dict(request.postData))
-            logging.warning("%s Browser Profilerer data:\n%s" % (request.client.getClientIP(), out))
+            self.dic_output = self.post2dict(request.postData)
+            self.dic_output['ip'] = str(request.client.getClientIP()) # add the IP of the client
+            pretty_output = pformat(self.dic_output)
+            logging.warning("%s Browser Profiler data:\n%s" % (request.client.getClientIP(), pretty_output))
 
     def get_payload(self):
         payload = """<script type="text/javascript">

