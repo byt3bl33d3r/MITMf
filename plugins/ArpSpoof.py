@@ -36,7 +36,7 @@ class ArpSpoof(Plugin):
         if self.options.log_level == 'debug':
             self.debug = True
 
-        print "[*] %s plugin online" % self.name
+        print "[*] ARP Spoof plugin online"
         if self.setup == True:
             print '[*] Setting up ip_forward and iptables'
             file = open('/proc/sys/net/ipv4/ip_forward', 'w')

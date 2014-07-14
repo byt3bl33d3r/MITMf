@@ -16,7 +16,7 @@ from tempfile import mkstemp
 try:
     from configobj import ConfigObj
 except:
-    sys.exit('[-] configobj not installed!')
+    sys.exit('[-] configobj library not installed!')
 
 class FilePwn(Plugin):
     name = "FilePwn"
@@ -55,7 +55,7 @@ class FilePwn(Plugin):
         self.LinuxType = self.userConfig['targets']['ALL']['LinuxType']
         self.zipblacklist = self.userConfig['ZIP']['blacklist']
 
-        print "[*] %s plugin online" % self.name
+        print "[*] FilePwn plugin online"
 
     def binaryGrinder(self, binaryFile):
         """
