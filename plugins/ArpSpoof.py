@@ -24,6 +24,7 @@ class ArpSpoof(Plugin):
         self.setup = options.setup
         self.mac = get_if_hwaddr(self.interface)
         self.port = self.options.listen
+        self.debug = False
         self.send = True
 
         if os.geteuid() != 0:
@@ -31,6 +32,9 @@ class ArpSpoof(Plugin):
 
         if self.interface == None or self.routerip == None:
             sys.exit("[-] %s plugin requires --routerip and --interface" % self.name)
+
+        if self.options.log_level == 'debug':
+            self.debug = True
 
         print "[*] %s plugin online" % self.name
         if self.setup == True:
@@ -54,13 +58,13 @@ class ArpSpoof(Plugin):
             else:
                 sys.exit(0)
 
-        t = threading.Thread(name='send_packets', target=self.send_packets, args=(pkt,self.interface,))
+        t = threading.Thread(name='send_packets', target=self.send_packets, args=(pkt,self.interface,self.debug,))
         t.setDaemon(True)
         t.start()
   
-    def send_packets(self,pkt,interface):
+    def send_packets(self,pkt,interface, debug):
         while self.send == True:
-            sendp(pkt, inter=2, iface=interface, verbose=False)
+            sendp(pkt, inter=2, iface=interface, verbose=debug)
 
     def build_req(self):
         if self.target == None:

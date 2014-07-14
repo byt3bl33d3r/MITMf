@@ -32,7 +32,7 @@ class ResponseTampererFactory:
         pass
 
     def createTamperer(configFile):
-        logging.log(logging.DEBUG, "Reading tamper config file: %s"  % (configFile))
+        logging.debug(logging.DEBUG, "Reading tamper config file: %s"  % (configFile))
         config = ResponseTampererFactory._default_config.copy()
         if configFile:
           config.update(ResponseTampererFactory.parseConfig(configFile))

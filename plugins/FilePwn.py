@@ -168,7 +168,7 @@ class FilePwn(Plugin):
         logging.info("ZipFile size: %s KB" % (len(aZipFile) / 1024))
 
         if len(aZipFile) > int(self.userConfig['ZIP']['maxSize']):
-            logging.info("ZipFIle maxSize met %s", len(aZipFile))
+            logging.info("ZipFIle maxSize met %s" % len(aZipFile))
             return aZipFile
 
         tmpRan = ''.join(random.choice(string.ascii_lowercase + string.digits + string.ascii_uppercase) for _ in range(8))
