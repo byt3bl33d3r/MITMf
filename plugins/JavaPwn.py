@@ -119,7 +119,6 @@ class JavaPwn(BrowserProfiler, Plugin):
                         if len(jobs) > 0:
                             for k,v in jobs.items():
                                 info = msf.call('job.info', [k])
-                                print info
                                 if exploit in info['name']: 
                                     logging.info('%s >> \t %s exploit already started' % (vic_ip, exploit))
                                     url = info['uripath'] #get the url assigned to the exploit
