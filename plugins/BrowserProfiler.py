@@ -16,7 +16,7 @@ class BrowserProfiler(Inject, Plugin):
         self.dic_output = {} # so other plugins can access the results
         print "[*] Browser Profiler online"
 
-    def post2dict(self, string):
+    def post2dict(self, string): #converts the ajax post to a dic
         dict = {}
         for line in string.split('&'):
             t = line.split('=')
