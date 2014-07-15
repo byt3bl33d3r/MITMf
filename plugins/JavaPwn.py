@@ -27,8 +27,13 @@ class JavaPwn(BrowserProfiler, Plugin):
             sys.exit('[-] JavaPwn plugin requires --msfip')
         
         #Correlates java versions with their relative exploits
-        self.javaVersionDic = {1.705: "java_verifier_field_access",
-                               1.703: "java_atomicreferencearray"}
+        self.javaVersionDic = {1.702: "java_atomicreferencearray",
+                               1.704: "java_verifier_field_access",
+                               1.706: "java_jre17_exec",
+                               1.707: "java_jre17_jaxws",
+                               1.7010: "java_jre17_jmxbean",
+                               1.7017: "java_jre17_driver_manager",
+                               1.7021: "java_storeimagearray"}
                                #add your exploits here converting the max affected java version to a float (e.g. java version 1.7.05 => 1.705)
 
         self.sploited_ips = [] # store ip of pwned or not vulnarable clients so we don't re-exploit
