@@ -20,6 +20,8 @@ https://github.com/secretsquirrel/the-backdoor-factory
 
 - Addition of the app-cache poisoning attack by Krzysztof Kotowicz 
 
+- JavaPwn plugin now live! Auto-detect and exploit clients with out-of-date java plugins using the Metasploit Frameworks rpc interface!!
+
 Coming Soon:
 
 - Update hijacking ??? (e.g. evilgrade)
