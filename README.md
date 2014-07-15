@@ -18,6 +18,8 @@ So far the most significant changes have been:
 - FilePwn plugin re-written to backdoor executables and zip files on the fly by using the-backdoor-factory        
 https://github.com/secretsquirrel/the-backdoor-factory
 
+- Added msfrpc.py for interfacing with Metasploits rpc server
+
 - Addition of the app-cache poisoning attack by Krzysztof Kotowicz 
 
 - JavaPwn plugin now live! Auto-detect and exploit clients with out-of-date java plugins using the Metasploit Frameworks rpc interface!!
