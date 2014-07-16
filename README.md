@@ -3,7 +3,7 @@ MITMf
 
 Framework for Man-In-The-Middle attacks
 
-Quick tutorial and examples at http://sign0f4.blogspot.it/2014/07/introducing-mitmf-framework-for-man-in.html
+Quick tutorial and examples at http://sign0f4.blogspot.it
 
 This tool is completely based on sergio-proxy https://code.google.com/p/sergio-proxy/ and is an attempt to revive and update the project.
 
