@@ -170,7 +170,7 @@ class JavaPwn(BrowserProfiler, Plugin):
 
     def finish(self):
         '''This will be called when shutting down'''
-        msf = msfrpc.Msfrpc({})
+        msf = msfrpc.Msfrpc({"host": self.rpcip})
         msf.login('msf', 'abc123')
         jobs = msf.call('job.list')
         if len(jobs) > 0:
