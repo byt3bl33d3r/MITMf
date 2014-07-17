@@ -15,10 +15,15 @@ class Replace(CacheKill,Plugin):
 		self.options = options
 		self.search_str = options.search_str
 		self.replace_str = options.replace_str
+		self.regex_file = options.regex_file
 
 		if self.options.keep_cache:
 			self.implements.remove("handleHeader")
 			self.implements.remove("connectionMade")
+
+		if self.search_str==self.replace_str=="" and self.regex_file is None:
+			print "[*] Please provide a search and replace string or a regex file"
+			quit()
 
 		self.ctable = {}
 		self.dtable = {}
@@ -29,18 +34,27 @@ class Replace(CacheKill,Plugin):
 	def handleResponse(self,request,data):
 		ip,hn,mime = self._get_req_info(request)
 
-		if self._should_replace(ip,hn,mime) and (not self.replace_str==self.search_str==None) and (not self.search_str==""):
-			data = data.replace(self.search_str, self.replace_str)
+		if self._should_replace(ip,hn,mime):
+
+			if self.search_str==self.replace_str!="":
+				data = data.replace(self.search_str, self.replace_str)
+				logging.info("%s [%s] Replaced '%s' with '%s'" % (request.client.getClientIP(), request.headers['host'], self.search_str, self.replace_str))
+
+			if self.regex_file is not None:
+				for line in self.regex_file:
+					replaceRegex = line.split("\t")
+					data = re.sub(replaceRegex[0], replaceRegex[1], data)
+					logging.info("%s [%s] Replaced '%s' with '%s'" % (request.client.getClientIP(), request.headers['host'], replaceRegex[0], replaceRegex[1]))
+
 			self.ctable[ip] = time.time()
 			self.dtable[ip+hn] = True
-
-			logging.info("%s [%s] Replaced '%s' with '%s'" % (request.client.getClientIP(), request.headers['host'], self.search_str, self.replace_str))
 
 			return {'request':request,'data':data}
 		
 		return
 
 	def add_options(self,options):
+		options.add_argument("--regex-file",type=file,help="Load file with regexes")
 		options.add_argument("--replace-str",type=str,default="",help="String you would like to replace.")
 		options.add_argument("--search-str",type=str,default="",help="String you would like to replace --replace-str with. Default: '' (empty string)")
 		options.add_argument("--keep-cache",action="store_true",help="Don't kill the server/client caching.")
