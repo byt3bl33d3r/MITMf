@@ -30,7 +30,7 @@ class Replace(CacheKill,Plugin):
         ip,hn,mime = self._get_req_info(request)
 
         if self._should_replace(ip,hn,mime) and (not self.replace_str==self.search_str==None) and (not self.search_str==""):
-            data = self._insert_html(data,post=[(self.match_str,self._get_payload())])
+            data = self.replace(self.search_str, self.replace_str)
 
             self.ctable[ip] = time.time()
             self.dtable[ip+hn] = True
