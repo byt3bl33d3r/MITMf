@@ -22,6 +22,8 @@ https://github.com/secretsquirrel/the-backdoor-factory and code from BDFProxy ht
 
 - Added msfrpc.py for interfacing with Metasploits rpc server
 
+- Added Link Re-Writer plugin
+
 - Addition of the app-cache poisoning attack by Krzysztof Kotowicz 
 
 - JavaPwn plugin now live! Auto-detect and exploit clients with out-of-date java plugins using the Metasploit Frameworks rpc interface!!
