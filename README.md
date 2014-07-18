@@ -15,6 +15,7 @@ Availible modules:
 - Inject - Inject arbitrary content into HTML content
 - JavaPwn - Performs drive-by attacks on clients with out-of-date java browser plugins
 - jskeylogger - Injects a javascript keylogger into clients webpages
+- Linkrewriter - Rewrites all href attributes to a specified url
 - Replace - Replace arbitary content in HTML content
 - SMBAuth - Evoke SMB challenge-response auth attempts
 - Upsidedownternet - Flips images 180 degrees
