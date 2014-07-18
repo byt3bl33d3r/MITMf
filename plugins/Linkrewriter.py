@@ -1,4 +1,4 @@
-#There probably is a better way of doing this
+#probably a better way of doing this
 
 import logging, re, sys, os
 from plugins.plugin import Plugin
