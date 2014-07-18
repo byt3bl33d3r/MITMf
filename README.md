@@ -15,7 +15,6 @@ Availible plugins:
 - Inject - Inject arbitrary content into HTML content
 - JavaPwn - Performs drive-by attacks on clients with out-of-date java browser plugins
 - jskeylogger - Injects a javascript keylogger into clients webpages
-- Linkrewriter - Rewrites all href attributes to a specified url
 - Replace - Replace arbitary content in HTML content
 - SMBAuth - Evoke SMB challenge-response auth attempts
 - Upsidedownternet - Flips images 180 degrees
@@ -35,7 +34,7 @@ https://github.com/secretsquirrel/the-backdoor-factory and code from BDFProxy ht
 
 - Added msfrpc.py for interfacing with Metasploits rpc server
 
-- Added Link Re-Writer plugin
+- Added Replace plugin
 
 - Addition of the app-cache poisoning attack by Krzysztof Kotowicz 
 
