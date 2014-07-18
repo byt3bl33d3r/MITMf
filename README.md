@@ -7,7 +7,7 @@ Quick tutorial and examples at http://sign0f4.blogspot.it
 
 This tool is completely based on sergio-proxy https://code.google.com/p/sergio-proxy/ and is an attempt to revive and update the project.
 
-Availible modules:
+Availible plugins:
 - ArpSpoof - Redirect traffic using arp-spoofing
 - BrowserProfiler - Attempts to enumerate all browser plugins of connected clients
 - CacheKill - Kills page caching by modifying headers
@@ -40,7 +40,3 @@ https://github.com/secretsquirrel/the-backdoor-factory and code from BDFProxy ht
 - Addition of the app-cache poisoning attack by Krzysztof Kotowicz 
 
 - JavaPwn plugin now live! Auto-detect and exploit clients with out-of-date java plugins using the Metasploit Frameworks rpc interface!!
-
-Coming Soon:
-
-- Update hijacking ??? (e.g. evilgrade)
