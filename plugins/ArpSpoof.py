@@ -18,6 +18,7 @@ class ArpSpoof(Plugin):
         self.options = options
         self.interface = options.interface
         self.routerip = options.routerip
+        self.routermac = getmacbyip(self.routerip)
         self.summary = options.summary
         self.target = options.target
         self.mode = options.mode
@@ -30,7 +31,7 @@ class ArpSpoof(Plugin):
         if os.geteuid() != 0:
             sys.exit("[-] %s plugin requires root privileges" % self.name)
 
-        if self.interface == None or self.routerip == None:
+        if (not self.interface or not self.routerip):
             sys.exit("[-] %s plugin requires --routerip and --interface" % self.name)
 
         if self.options.log_level == 'debug':
@@ -107,7 +108,5 @@ class ArpSpoof(Plugin):
         file.close()
         os.system('iptables -t nat -F && iptables -t nat -X')
         print '[*] Re-arping network'
-        rearp_mac = getmacbyip(self.routerip)
-        pkt = Ether(src=rearp_mac, dst='ff:ff:ff:ff:ff:ff')/ARP(psrc=self.routerip, hwsrc=self.mac, op=2)
+        pkt = Ether(src=self.routermac, dst='ff:ff:ff:ff:ff:ff')/ARP(psrc=self.routerip, hwsrc=self.routermac, op=2)
         sendp(pkt, inter=1, count=5, iface=self.interface)
-        sys.exit(0)
