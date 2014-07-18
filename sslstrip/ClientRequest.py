@@ -56,6 +56,9 @@ class ClientRequest(Request):
         if 'accept-encoding' in headers:
              headers['accept-encoding'] == 'identity'
 
+        if 'Strict-Transport-Security' in headers: #kill new hsts requests
+            del headers['Strict-Transport-Security']
+        
         if 'if-modified-since' in headers:
             del headers['if-modified-since']
 

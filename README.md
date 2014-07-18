@@ -29,10 +29,12 @@ So far the most significant changes have been:
 
 - Addition of the JsKeylogger plugin
 
-- FilePwn plugin re-written to backdoor executables and zip files on the fly by using the-backdoor-factory        
-https://github.com/secretsquirrel/the-backdoor-factory
+- FilePwn plugin re-written to backdoor executables and zip files on the fly by using the-backdoor-factory
+https://github.com/secretsquirrel/the-backdoor-factory and code from BDFProxy https://github.com/secretsquirrel/BDFProxy
 
 - Added msfrpc.py for interfacing with Metasploits rpc server
+
+- Added Link Re-Writer plugin
 
 - Addition of the app-cache poisoning attack by Krzysztof Kotowicz 
 
