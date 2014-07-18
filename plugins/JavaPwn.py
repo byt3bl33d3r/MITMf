@@ -1,6 +1,3 @@
-#
-# Work in progress
-#
 from plugins.plugin import Plugin
 from plugins.BrowserProfiler import BrowserProfiler
 from time import sleep
