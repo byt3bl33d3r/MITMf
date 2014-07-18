@@ -21,9 +21,14 @@ class Replace(CacheKill,Plugin):
 			self.implements.remove("handleHeader")
 			self.implements.remove("connectionMade")
 
-		if (self.search_str==self.replace_str==None or self.search_str==self.replace_str=="") and self.regex_file is None:
+		if self.search_str==self.replace_str=="" and self.regex_file is None:
 			print "[*] Please provide a search and replace string or a regex file"
 			quit()
+
+		self.regexes = []
+		if self.regex_file is not None:
+			for line in self.regex_file:
+				self.regexes.append(line.strip().split("\t"))
 
 		self.ctable = {}
 		self.dtable = {}
@@ -35,22 +40,20 @@ class Replace(CacheKill,Plugin):
 		ip,hn,mime = self._get_req_info(request)
 
 		if self._should_replace(ip,hn,mime):
-
 			# Did the user provide us a search and replace str?
-			if self.search_str==self.replace_str!=None and self.search_str==self.replace_str!="":
+			if self.search_str!="" and self.replace_str!="":
 				data = data.replace(self.search_str, self.replace_str)
 				logging.info("%s [%s] Replaced '%s' with '%s'" % (request.client.getClientIP(), request.headers['host'], self.search_str, self.replace_str))
 
-			# DI the user provide us with a regex file?
-			if self.regex_file is not None:
-				for line in self.regex_file:
-					replaceRegex = line.split("\t")
-					try:
-						data = re.sub(replaceRegex[0], replaceRegex[1], data)
 
-						logging.info("%s [%s] Replaced '%s' with '%s'" % (request.client.getClientIP(), request.headers['host'], replaceRegex[0], replaceRegex[1]))
-					except Exception, e:
-						logging.error("%s [%s] Your provided regex (%s) or replace value (%s) is empyt or invalid. Please debug your provided regex(es)" % (request.client.getClientIP(), request.headers['host'], replaceRegex[0], replaceRegex[1]))
+			# Did the user provide us with a regex file?
+			for regex in self.regexes:
+				try:
+					data = re.sub(regex[0], regex[1], data)
+
+					logging.info("%s [%s] Replaced '%s' with '%s'" % (request.client.getClientIP(), request.headers['host'], regex[0], regex[1]))
+				except Exception, e:
+					logging.error("%s [%s] Your provided regex (%s) or replace value (%s) is empyt or invalid. Please debug your provided regex(es)" % (request.client.getClientIP(), request.headers['host'], regex[0], regex[1]))
 
 			self.ctable[ip] = time.time()
 			self.dtable[ip+hn] = True
@@ -60,8 +63,8 @@ class Replace(CacheKill,Plugin):
 		return
 
 	def add_options(self,options):
-		options.add_argument("--replace-str",type=str,help="String you would like to replace.")
-		options.add_argument("--search-str",type=str,help="String you would like to replace --replace-str with. Default: '' (empty string)")
+		options.add_argument("--replace-str",type=str,default="",help="String you would like to replace.")
+		options.add_argument("--search-str",type=str,default="",help="String you would like to replace --replace-str with. Default: '' (empty string)")
 		options.add_argument("--regex-file",type=file,help="Load file with regexes. File format: <regex1>[tab]<regex2>[new-line]")
 		options.add_argument("--keep-cache",action="store_true",help="Don't kill the server/client caching.")
 
