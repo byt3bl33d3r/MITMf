@@ -26,7 +26,7 @@ if __name__ == "__main__":
     #add sslstrip options
     sgroup = parser.add_argument_group("sslstrip","Options for sslstrip library")
     sgroup.add_argument("-w","--write",type=argparse.FileType('w'),metavar="filename", default=sys.stdout,help="Specify file to log to (stdout by default).")
-    sgroup.add_argument("--log-level",type=str,choices=['debug','info'],default="info",help="Specify file to log to (stdout by default).")
+    sgroup.add_argument("--log-level",type=str,choices=['debug','info'],default="info",help="Specify a log level [default: info]")
     slogopts = sgroup.add_mutually_exclusive_group()   
     slogopts.add_argument("-p","--post",action="store_true",help="Log only SSL POSTs. (default)")
     slogopts.add_argument("-s","--ssl",action="store_true",help="Log all SSL traffic to and from server.")
