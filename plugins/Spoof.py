@@ -46,13 +46,7 @@ class Spoof(Plugin):
             self.debug = True
 
         print "[*] Spoof plugin online"
-
-        print '[*] Setting up ip_forward and iptables'
-        file = open('/proc/sys/net/ipv4/ip_forward', 'w')
-        file.write('1')
-        file.close()
         os.system('iptables -F && iptables -X && iptables -t nat -F && iptables -t nat -X')
-        os.system('iptables -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port %s' % self.port)
 
         if self.arp == True:
             if self.icmp == True:
@@ -92,6 +86,12 @@ class Spoof(Plugin):
             os.system('iptables -t nat -A PREROUTING -p udp --dport 53 -j NFQUEUE')
             print "[*] DNS Spoofing enabled"
             self.start_dns_queue()
+
+        print '[*] Setting up ip_forward and iptables'
+        file = open('/proc/sys/net/ipv4/ip_forward', 'w')
+        file.write('1')
+        file.close()
+        os.system('iptables -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port %s' % self.port)
 
         t = threading.Thread(name='send_packets', target=self.send_packets, args=(pkt,self.interface,self.debug,))
         t.setDaemon(True)
