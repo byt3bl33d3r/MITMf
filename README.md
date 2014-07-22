@@ -8,7 +8,7 @@ Quick tutorial and examples at http://sign0f4.blogspot.it
 This tool is completely based on sergio-proxy https://code.google.com/p/sergio-proxy/ and is an attempt to revive and update the project.
 
 Availible plugins:
-- ArpSpoof - Redirect traffic using arp-spoofing
+- Spoof - Redirect traffic using ARP Spoofing, DNS Spoofing or ICMP Redirects
 - BrowserProfiler - Attempts to enumerate all browser plugins of connected clients
 - CacheKill - Kills page caching by modifying headers
 - FilePwn - Backdoor executables being sent over http using bdfactory
@@ -21,7 +21,7 @@ Availible plugins:
 
 So far the most significant changes have been:
 
-- Arpspoof plugin has been completely re-written to use scapy (Now able to poison via arp-requests and arp-replies)
+- Spoof plugin is live !! Supports ICMP, ARP and DNS spoofing 
 
 - Usage of third party tools has been completely removed (e.g. ettercap)
 
