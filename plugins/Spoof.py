@@ -1,3 +1,7 @@
+#
+# DNS Spoofing code has been stolen from https://github.com/DanMcInerney/dnsspoof/
+#
+
 from twisted.internet import reactor
 from twisted.internet.interfaces import IReadDescriptor
 from plugins.plugin import Plugin

@@ -21,7 +21,8 @@ Availible plugins:
 
 So far the most significant changes have been:
 
-- Spoof plugin is live !! Supports ICMP, ARP and DNS spoofing 
+- Spoof plugin is live !! Supports ICMP, ARP and DNS spoofing
+DNS Spoofing code was stolen from https://github.com/DanMcInerney/dnsspoof/ 
 
 - Usage of third party tools has been completely removed (e.g. ettercap)
 
