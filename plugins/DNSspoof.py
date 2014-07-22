@@ -1,3 +1,7 @@
+#
+#Most of this code came from https://github.com/DanMcInerney/dnsspoof
+#
+
 from twisted.internet import reactor
 from twisted.internet.interfaces import IReadDescriptor
 from plugins.plugin import Plugin
@@ -11,7 +15,7 @@ import threading
 from time import sleep
 
 class DNSspoof(Plugin):
-    name = "DNS Spoof"
+    name = "PoC DNS Spoof"
     optname = "dnsspoof"
     desc = 'Redirect DNS requests'
     has_opts = True
