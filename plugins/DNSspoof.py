@@ -15,7 +15,7 @@ import threading
 from time import sleep
 
 class DNSspoof(Plugin):
-    name = "PoC DNS Spoof"
+    name = "DNS Spoof PoC"
     optname = "dnsspoof"
     desc = 'Redirect DNS requests'
     has_opts = True
