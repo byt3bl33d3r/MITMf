@@ -176,7 +176,7 @@ class Spoof(Plugin):
     def add_options(self,options):
         options.add_argument('--arp', dest='arp', action='store_true', default=False, help='Redirect traffic using ARP Spoofing')
         options.add_argument('--icmp', dest='icmp', action='store_true', default=False, help='Redirect traffic using ICMP Redirects')
-        options.add_argument('--dns', dest='dns', action='store_true', default=False, help='Redirect DNS requests')
+        options.add_argument('--dns', dest='dns', action='store_true', default=False, help='Redirect DNS requests (Still PoC)')
         #options.add_argument('--dhcp')
         options.add_argument('--iface', dest='interface', help='Specify the interface to use')
         options.add_argument('--gateway', dest='gateway', help='Specify the gateway IP')
