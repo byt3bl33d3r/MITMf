@@ -5,7 +5,6 @@ from twisted.internet import reactor
 
 from sslstrip.StrippingProxy import StrippingProxy
 from sslstrip.URLMonitor import URLMonitor
-from sslstrip.ResponseTampererFactory import ResponseTampererFactory
 from sslstrip.CookieCleaner import CookieCleaner
 from sslstrip.ProxyPlugins import ProxyPlugins
 
@@ -25,17 +24,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="MITMf v%s - Framework for MITM attacks" % mitmf_version,epilog="Use wisely, young Padawan.",fromfile_prefix_chars='@')
     #add sslstrip options
     sgroup = parser.add_argument_group("sslstrip","Options for sslstrip library")
-    sgroup.add_argument("-w","--write",type=argparse.FileType('w'),metavar="filename", default=sys.stdout,help="Specify file to log to (stdout by default).")
-    sgroup.add_argument("--log-level",type=str,choices=['debug','info'],default="info",help="Specify a log level [default: info]")
+    sgroup.add_argument("-w", "--write", type=argparse.FileType('w'), metavar="filename", default=sys.stdout, help="Specify file to log to (stdout by default).")
+    sgroup.add_argument("--log-level", type=str,choices=['debug','info'], default="info", help="Specify a log level [default: info]")
     slogopts = sgroup.add_mutually_exclusive_group()   
-    slogopts.add_argument("-p","--post",action="store_true",help="Log only SSL POSTs. (default)")
-    slogopts.add_argument("-s","--ssl",action="store_true",help="Log all SSL traffic to and from server.")
-    slogopts.add_argument("-a","--all",action="store_true",help="Log all SSL and HTTP traffic to and from server.")
-    sgroup.add_argument("-l","--listen",type=int,metavar="port",default=10000,help="Port to listen on (default 10000)")
-    sgroup.add_argument("-f","--favicon",action="store_true",help="Substitute a lock favicon on secure requests.")
-    sgroup.add_argument("-k","--killsessions",action="store_true",help="Kill sessions in progress.")
-    tgroup = parser.add_argument_group("Options for app-cache poisoning")
-    tgroup.add_argument("-t", "--tamper",type=argparse.FileType('r'),help="Config file for app-cache poisoning")
+    slogopts.add_argument("-p", "--post", action="store_true",help="Log only SSL POSTs. (default)")
+    slogopts.add_argument("-s", "--ssl", action="store_true", help="Log all SSL traffic to and from server.")
+    slogopts.add_argument("-a", "--all", action="store_true", help="Log all SSL and HTTP traffic to and from server.")
+    sgroup.add_argument("-l", "--listen", type=int, metavar="port", default=10000, help="Port to listen on (default 10000)")
+    sgroup.add_argument("-f", "--favicon", action="store_true", help="Substitute a lock favicon on secure requests.")
+    sgroup.add_argument("-k", "--killsessions", action="store_true", help="Kill sessions in progress.")
 
     #Initialize plugins
     plugins = []
@@ -77,10 +74,9 @@ if __name__ == "__main__":
     except NotImplementedError:
         print "Plugin %s lacked initialize function." % p.name
 
-    #Plugins are ready to go, start MITM
+    #Plugins are ready to go, start MITMf
     URLMonitor.getInstance().setFaviconSpoofing(args.favicon)
     CookieCleaner.getInstance().setEnabled(args.killsessions)
-    ResponseTampererFactory.buildTamperer(args.tamper)
     ProxyPlugins.getInstance().setPlugins(load)
 
     strippingFactory              = http.HTTPFactory(timeout=10)

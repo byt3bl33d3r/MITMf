@@ -1,12 +1,12 @@
 from plugins.plugin import Plugin
 from plugins.BrowserProfiler import BrowserProfiler
 from time import sleep
+import libs.msfrpc
 import string
 import random
 import threading
 import logging
 import sys, os
-import msfrpc
 
 class JavaPwn(BrowserProfiler, Plugin):
     name = "JavaPwn"

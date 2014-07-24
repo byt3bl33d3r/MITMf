@@ -45,7 +45,7 @@ class FilePwn(Plugin):
         #NOT USED NOW
         #self.supportedBins = ('MZ', '7f454c46'.decode('hex'))
         
-        self.userConfig = ConfigObj('filepwn.cfg')
+        self.userConfig = ConfigObj('./config_files/filepwn.cfg')
         self.FileSizeMax = self.userConfig['targets']['ALL']['FileSizeMax']
         self.WindowsIntelx86 = self.userConfig['targets']['ALL']['WindowsIntelx86']
         self.WindowsIntelx64 = self.userConfig['targets']['ALL']['WindowsIntelx64']
