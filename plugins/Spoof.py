@@ -152,6 +152,7 @@ class Spoof(Plugin):
                 for k,v in self.dnscfg.items():
                     if k in pkt[DNS].qd.qname:
                         self.modify_dns(payload, pkt, v)
+            
             elif self.domain in pkt[DNS].qd.qname:
                 self.modify_dns(payload, pkt, self.dnsip)
 

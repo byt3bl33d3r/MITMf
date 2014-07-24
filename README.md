@@ -9,6 +9,7 @@ This tool is completely based on sergio-proxy https://code.google.com/p/sergio-p
 
 Availible plugins:
 - Spoof - Redirect traffic using ARP Spoofing, DNS Spoofing or ICMP Redirects
+- AppCachePoison - Perform app cache poison attacks 
 - BrowserProfiler - Attempts to enumerate all browser plugins of connected clients
 - CacheKill - Kills page caching by modifying headers
 - FilePwn - Backdoor executables being sent over http using bdfactory
