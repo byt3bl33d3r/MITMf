@@ -32,6 +32,7 @@ class Spoof(Plugin):
         self.arp = options.arp
         self.icmp = options.icmp
         self.dns = options.dns
+        #self.dhcp = options.dhcp
         self.domain = options.domain
         self.dnsip = options.dnsip
         self.dnscfg = options.dnscfg
@@ -188,7 +189,7 @@ class Spoof(Plugin):
         options.add_argument('--arp', dest='arp', action='store_true', default=False, help='Redirect traffic using ARP Spoofing')
         options.add_argument('--icmp', dest='icmp', action='store_true', default=False, help='Redirect traffic using ICMP Redirects')
         options.add_argument('--dns', dest='dns', action='store_true', default=False, help='Redirect DNS requests')
-        #options.add_argument('--dhcp')
+       # options.add_argument('--dhcp', dest='dhcp', action='store_true', default=False, help='Redirect traffic using fake DHCP offers')
         options.add_argument('--iface', dest='interface', help='Specify the interface to use')
         options.add_argument('--gateway', dest='gateway', help='Specify the gateway IP')
         options.add_argument('--target', dest='target', help='Specify a host to poison [default: subnet]')

