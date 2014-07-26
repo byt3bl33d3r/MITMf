@@ -1,11 +1,13 @@
 from plugins.plugin import Plugin
 from sslstrip.ResponseTampererFactory import ResponseTampererFactory
+import threading
 
 class AppCachePlugin(Plugin):
     name = "App Cache Poison"
     optname = "app"
     desc = "Performs App Cache Poisoning attacks"
     has_opts = True
+    
     def initialize(self,options):
         '''Called if plugin is enabled, passed the options namespace'''
         self.options = options

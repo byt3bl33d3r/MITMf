@@ -15,7 +15,7 @@ import argparse
 from plugins import *
 plugin_classes = plugin.Plugin.__subclasses__()
 
-mitmf_version = "0.1"
+mitmf_version = "0.5"
 sslstrip_version = "0.9"
 sergio_version = "0.2.1"
 
