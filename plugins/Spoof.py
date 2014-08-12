@@ -41,6 +41,7 @@ class Spoof(Plugin):
         self.target = options.target
         self.arpmode = options.arpmode
         self.port = self.options.listen
+        self.manualiptables = options.manualiptables #added by alexander.georgiev@daloo.de
         self.debug = False
         self.send = True
 
@@ -51,7 +52,8 @@ class Spoof(Plugin):
             self.debug = True
 
         print "[*] Spoof plugin online"
-        os.system('iptables -F && iptables -X && iptables -t nat -F && iptables -t nat -X')
+        if not self.manualiptables:
+            os.system('iptables -F && iptables -X && iptables -t nat -F && iptables -t nat -X')
 
         if self.arp == True:
             if self.icmp == True:
@@ -95,15 +97,17 @@ class Spoof(Plugin):
             elif self.dnscfg:
                 self.dnscfg = ConfigObj(self.dnscfg)
             
-            os.system('iptables -t nat -A PREROUTING -p udp --dport 53 -j NFQUEUE')
+            if not self.manualiptables:
+                os.system('iptables -t nat -A PREROUTING -p udp --dport 53 -j NFQUEUE')
             print "[*] DNS Spoofing enabled"
             self.start_dns_queue()
 
-        print '[*] Setting up ip_forward and iptables'
         file = open('/proc/sys/net/ipv4/ip_forward', 'w')
         file.write('1')
         file.close()
-        os.system('iptables -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port %s' % self.port)
+        if not self.manualiptables:
+            print '[*] Setting up iptables rules'
+            os.system('iptables -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port %s' % self.port)
 
         t = threading.Thread(name='send_packets', target=self.send_packets, args=(pkt,self.interface,self.debug,))
         t.setDaemon(True)
@@ -198,15 +202,17 @@ class Spoof(Plugin):
         options.add_argument('--domain', type=str, dest='domain', help='Domain to spoof [e.g google.com]')
         options.add_argument('--dnsip', type=str, dest='dnsip', help='IP address to resolve dns queries to')
         options.add_argument("--dnscfg", type=file, help="Specify a config file")
+        options.add_argument('--manualiptables', dest='manualiptables', action='store_true', default=False, help='Do not setup iptables of flush iptables rules automatically')
 
     def finish(self):
         self.send = False
         sleep(3)
-        print '\n[*] Resetting ip_forward and iptables'
         file = open('/proc/sys/net/ipv4/ip_forward', 'w')
         file.write('0')
         file.close()
-        os.system('iptables -F && iptables -X && iptables -t nat -F && iptables -t nat -X')
+        if not self.manualiptables:
+            print '\n[*] Flushing iptables rules'
+            os.system('iptables -F && iptables -X && iptables -t nat -F && iptables -t nat -X')
 
         if self.dns == True:
             self.q.unbind(socket.AF_INET)
