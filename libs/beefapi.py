@@ -2,9 +2,7 @@
 import requests
 import json
 from random import sample
-from time import sleep
 from string import lowercase, digits
-from unicodedata import normalize
 
 
 class BeefAPI:
@@ -34,7 +32,7 @@ class BeefAPI:
 				return True
 			elif r.status_code != 200:
 				return False
-		
+
 		except Exception, e:
 			print "beefapi ERROR: %s" % e
 
@@ -51,9 +49,9 @@ class BeefAPI:
 		return self.get_sessions("offline", "ip")
 
 	def get_sessions(self, state, value):
-		r = requests.get(self.hookurl).json()
 		hooks = []
 		try:
+			r = requests.get(self.hookurl + self.token).json()
 			for v in r["hooked-browsers"][state].items():
 				hooks.append(str(v[1][value]))
 				return hooks
@@ -61,77 +59,77 @@ class BeefAPI:
 			print "beefapi ERROR: %s" % e
 
 	def getModid(self, name): #Returns module id
-		url = self.url + "%s" % (self.token)
-		r = requests.get(url).json()
+		url = self.mod_url + self.token
 		try:
+			r = requests.get(url).json()
 			for v in r.values():
 				if v["name"] == name:
 					return v["id"]
-		except KeyError:
-			print "beefapi ERROR: module '" + name + "' not found!"
-			return None
+		except Exception, e:
+			print "beefapi ERROR: %s" % e
 
 	def getModname(self, id): #Returns module name
-		url = self.url + "modules?token=%s" % (self.token)
-		r = requests.get(url).json()
+		url = self.mod_url + self.token
 		try:
+			r = requests.get(url).json()
 			for v in r.values():
 				if v["id"] == id:
 					return v["name"]
-		except KeyError:
-			print "beefapi ERROR: module '" + id + "' not found!"
-			return None
+		except Exception, e:
+			print "beefapi ERROR: %s" % e
 
-	def host2session(self, ip): # IP => Session
-		url = self.url + "hooks?token=%s" % (self.token)
-		r = requests.get(url).json()
+	def host2session(self, ip):  #IP => Session
+		url = self.hookurl + self.token
 		try:
+			r = requests.get(url).json()
 			for v in r["hooked-browsers"]["online"].items():
 				if v[1]["ip"] == ip:
 					return v[1]["session"]
 				else:
 					session = None
-		
-				if session == None:
+
+				if session is None:
 					for v in r["hooked-browsers"]["offline"].items():
 						if v[1]["ip"] == ip:
 							return v[1]["session"]
 						else:
 							return None
-	
-		except KeyError:
-			pass
 
-	def session2host(self, session): # Session => IP
-		url = self.url + "hooks?token=%s" % (self.token)
-		r = requests.get(url).json()
+		except Exception, e:
+			print "beefapi ERROR: %s" % e
 
+	def session2host(self, session):  #Session => IP
+		url = self.hookurl + self.token
 		try:
+			r = requests.get(url).json()
 			for v in r["hooked-browsers"]["online"].items():
 				if v[1]["session"] == session:
 					return v[1]["ip"]
 				else:
 					ip = None
-		
-				if ip == None:
+
+				if ip is None:
 					for v in r["hooked-browsers"]["offline"].items():
 						if v[1]["session"] == session:
 							return v[1]["ip"]
 					else:
 						return None
-		except KeyError:
-			pass
+		except Exception, e:
+			print "beefapi ERROR: %s" % e
 
-	def runModule(self, session, mod_id, options={}): #Executes a module on a specified session
-		headers = {"Content-Type": "application/json", "charset": "UTF-8"}
-		payload = json.dumps(options)
-		url = self.url + "modules/%s/%s?token=%s" % (session, mod_id, self.token)
-		return requests.post(url, headers=headers, data=payload).json()
+	def runModule(self, session, mod_id, options={}):  #Executes a module on a specified session
+		try:
+			headers = {"Content-Type": "application/json", "charset": "UTF-8"}
+			payload = json.dumps(options)
+			url = self.url + "modules/%s/%s?token=%s" % (session, mod_id, self.token)
+			return requests.post(url, headers=headers, data=payload).json()
+		except Exception, e:
+			print "beefapi ERROR: %s" % e
 
 	def moduleResult(self, session, mod_id, cmd_id):
 		url = self.mod_url + "%s/%s/%s?token=%s" % (session, mod_id, cmd_id, self.token)
 		return requests.get(url).json()
-	
+
 	def sessionInfo(self, session):  #Returns parsed information on a session
 		url = self.url + "hooks/%s?token=%s" % (session, self.token)
 		return requests.get(url).json()

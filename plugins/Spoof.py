@@ -42,7 +42,7 @@ class Spoof(Plugin):
         self.target = options.target
         self.arpmode = options.arpmode
         self.port = self.options.listen
-        self.manualiptables = options.manualiptables #added by alexander.georgiev@daloo.de
+        self.manualiptables = options.manualiptables  #added by alexander.georgiev@daloo.de
         self.debug = False
         self.send = True
 
