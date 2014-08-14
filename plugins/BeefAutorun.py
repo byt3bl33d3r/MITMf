@@ -57,7 +57,7 @@ class BeefAutorun(Plugin):
 		already_ran = []
 		while True:
 			sessions = beef.onlineSessions()
-			if (sessions is not None) and (len(sessions) > 0):
+			if len(sessions) > 0:
 				for session in sessions:
 					session_ip = beef.session2host(session)
 					if session not in already_hooked:

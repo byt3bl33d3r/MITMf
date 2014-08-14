@@ -49,12 +49,13 @@ class BeefAPI:
 		return self.get_sessions("offline", "ip")
 
 	def get_sessions(self, state, value):
-		hooks = []
 		try:
+			hooks = []
 			r = requests.get(self.hookurl + self.token).json()
 			for v in r["hooked-browsers"][state].items():
-				hooks.append(str(v[1][value]))
-				return hooks
+				hooks.append(v[1][value])
+
+			return hooks
 		except Exception, e:
 			print "beefapi ERROR: %s" % e
 
