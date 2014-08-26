@@ -18,8 +18,7 @@ class BeefAPI:
 		self.log_url = self.url + "logs?token="
 
 	def random_url(self):
-		url = "".join(sample(digits + lowercase, 8))
-		return url
+		return "".join(sample(digits + lowercase, 8))
 
 	def login(self, username, password):
 		try:
@@ -36,30 +35,67 @@ class BeefAPI:
 		except Exception, e:
 			print "beefapi ERROR: %s" % e
 
-	def onlineSessions(self):
+	def sessions_online(self):
 		return self.get_sessions("online", "session")
 
-	def offlineSessions(self):
+	def sessions_offline(self):
 		return self.get_sessions("offline", "session")
 
-	def onlineHosts(self):
+	def session2host(self, session):
+		return self.conversion(session, "ip")
+
+	def session2id(self, session):
+		return self.conversion(session, "id")
+
+	def hook_info(self, hook):  #Returns parsed information on a session
+		session = self.conversion(hook, "session")
+		url = self.hookurl + self.token
+		r = requests.get(url).json()
+
+		try:
+			states = ["online", "offline"]
+			for state in states:
+				for v in r["hooked-browsers"][state].items():
+					if v[1]["session"] == session:
+						return v[1]
+		except IndexError:
+			pass
+
+	def hook_info_all(self, hook):
+		session = self.conversion(hook, "session")
+		url = self.url + "hooks/%s?token=%s" % (session, self.token)
+		return requests.get(url).json()
+
+	def hook_logs(self, hook):
+		session = self.conversion(hook, "session")
+		url = self.url + "logs/%s?token=%s" % (session, self.token)
+		return requests.get(url).json()
+
+	def hosts_online(self):
 		return self.get_sessions("online", "ip")
 
-	def offlineHosts(self):
+	def hosts_offline(self):
 		return self.get_sessions("offline", "ip")
 
-	def get_sessions(self, state, value):
-		try:
-			hooks = []
-			r = requests.get(self.hookurl + self.token).json()
-			for v in r["hooked-browsers"][state].items():
-				hooks.append(v[1][value])
+	def host2session(self, host):
+		return self.conversion(host, "session")
 
-			return hooks
-		except Exception, e:
-			print "beefapi ERROR: %s" % e
+	def host2id(self, host):
+		return self.conversion(host, "id")
 
-	def getModid(self, name): #Returns module id
+	def ids_online(self):
+		return self.get_sessions("online", "id")
+
+	def ids_offline(self):
+		return self.get_sessions("offline", "id")
+
+	def id2session(self, id):
+		return self.conversion(id, "session")
+
+	def id2host(self, id):
+		return self.conversion(id, "ip")
+
+	def module_id(self, name):  #Returns module id
 		url = self.mod_url + self.token
 		try:
 			r = requests.get(url).json()
@@ -69,7 +105,7 @@ class BeefAPI:
 		except Exception, e:
 			print "beefapi ERROR: %s" % e
 
-	def getModname(self, id): #Returns module name
+	def module_name(self, id):  #Returns module name
 		url = self.mod_url + self.token
 		try:
 			r = requests.get(url).json()
@@ -79,47 +115,9 @@ class BeefAPI:
 		except Exception, e:
 			print "beefapi ERROR: %s" % e
 
-	def host2session(self, ip):  #IP => Session
-		url = self.hookurl + self.token
+	def module_run(self, hook, mod_id, options={}):  #Executes a module on a specified session
 		try:
-			r = requests.get(url).json()
-			for v in r["hooked-browsers"]["online"].items():
-				if v[1]["ip"] == ip:
-					return v[1]["session"]
-				else:
-					session = None
-
-				if session is None:
-					for v in r["hooked-browsers"]["offline"].items():
-						if v[1]["ip"] == ip:
-							return v[1]["session"]
-						else:
-							return None
-
-		except Exception, e:
-			print "beefapi ERROR: %s" % e
-
-	def session2host(self, session):  #Session => IP
-		url = self.hookurl + self.token
-		try:
-			r = requests.get(url).json()
-			for v in r["hooked-browsers"]["online"].items():
-				if v[1]["session"] == session:
-					return v[1]["ip"]
-				else:
-					ip = None
-
-				if ip is None:
-					for v in r["hooked-browsers"]["offline"].items():
-						if v[1]["session"] == session:
-							return v[1]["ip"]
-					else:
-						return None
-		except Exception, e:
-			print "beefapi ERROR: %s" % e
-
-	def runModule(self, session, mod_id, options={}):  #Executes a module on a specified session
-		try:
+			session = self.conversion(hook, "session")
 			headers = {"Content-Type": "application/json", "charset": "UTF-8"}
 			payload = json.dumps(options)
 			url = self.url + "modules/%s/%s?token=%s" % (session, mod_id, self.token)
@@ -127,24 +125,45 @@ class BeefAPI:
 		except Exception, e:
 			print "beefapi ERROR: %s" % e
 
-	def moduleResult(self, session, mod_id, cmd_id):
+	def module_results(self, hook, mod_id, cmd_id):
+		session = self.conversion(hook, "session")
 		url = self.mod_url + "%s/%s/%s?token=%s" % (session, mod_id, cmd_id, self.token)
 		return requests.get(url).json()
 
-	def sessionInfo(self, session):  #Returns parsed information on a session
-		url = self.url + "hooks/%s?token=%s" % (session, self.token)
+	def modules_list(self):
+		return requests.get(self.mod_url + self.token).json()
+
+	def module_info(self, id):
+		url = self.url + "modules/%s?token=%s" % (id, self.token)
 		return requests.get(url).json()
 
 	def logs(self):
 		return requests.get(self.log_url + self.token).json()
 
-	def sessionLogs(self, session):
-		url = self.url + "logs/%s?token=%s" % (session, self.token)
-		return requests.get(url).json()
+	def conversion(self, value, return_value):  #Helper function for all conversion functions 
+		url = self.hookurl + self.token
+		try:
+			r = requests.get(url).json()
+			states = ["online", "offline"]
+			for state in states:
+				for v in r["hooked-browsers"][state].items():
+					for r in v[1].values():
+						if str(value) == str(r):
+							return v[1][return_value]
 
-	def listModules(self):
-		return requests.get(self.mod_url + self.token).json()
+		except Exception, e:
+			print "beefapi ERROR: %s" % e
 
-	def moduleInfo(self, id):
-		url = self.url + "modules/%s?token=%s" % (id, self.token)
-		return requests.get(url).json()
+		except IndexError:
+			pass
+
+	def get_sessions(self, state, value):  #Helper function
+		try:
+			hooks = []
+			r = requests.get(self.hookurl + self.token).json()
+			for v in r["hooked-browsers"][state].items():
+				hooks.append(v[1][value])
+
+			return hooks
+		except Exception, e:
+			print "beefapi ERROR: %s" % e
