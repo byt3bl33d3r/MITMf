@@ -292,4 +292,4 @@ class FilePwn(Plugin):
             return {'request': request, 'data': data}
 
     def add_options(self, options):
-        options.add_argument("--filepwncfg", type=file, help="Specify a config file")
+        options.add_argument("--filepwncfg", type=file, help="Specify a config file [default: filepwn.cfg]")

@@ -41,7 +41,7 @@ class JavaPwn(BrowserProfiler, Plugin):
         for key, value in self.javacfg.iteritems():
             self.javaVersionDic[float(key)] = value
 
-        self.sploited_ips = []  #store ip of pwned or not vulnarable clients so we don't re-exploit
+        self.sploited_ips = []  #store ip of pwned or not vulnerable clients so we don't re-exploit
 
         try:
             msf = msfrpc.Msfrpc({"host": self.rpcip})  #create an instance of msfrpc libarary
