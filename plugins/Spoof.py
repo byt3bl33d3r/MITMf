@@ -70,7 +70,7 @@ class Spoof(Plugin):
                 pkt = self.build_arp_req()
             elif self.arpmode == 'rep':
                 pkt = self.build_arp_rep()
-            thread_target = self.send
+            thread_target = self.send_packets
             thread_args = (pkt, self.interface, self.debug,)
 
         elif self.icmp:
@@ -78,7 +78,7 @@ class Spoof(Plugin):
             self.routermac = getmacbyip(self.gateway)
             print "[*] ICMP Redirection enabled"
             pkt = self.build_icmp()
-            thread_target = self.send
+            thread_target = self.send_packets
             thread_args = (pkt, self.interface, self.debug,)
 
         elif self.dhcp:
