@@ -23,7 +23,7 @@ class BeefAutorun(Plugin):
 
 	def initialize(self, options):
 		self.options = options
-		self.autoruncfg = "./config_files/beefautorun.cfg" or options.autoruncfg
+		self.autoruncfg =  options.autoruncfg or "./config_files/beefautorun.cfg"
 		self.beefip = options.beefip
 		self.beefport = options.beefport
 		self.beefuser = options.beefuser

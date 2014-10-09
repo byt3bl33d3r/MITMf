@@ -30,7 +30,7 @@ class JavaPwn(BrowserProfiler, Plugin):
         self.msfport = options.msfport
         self.rpcip = options.rpcip
         self.rpcpass = options.rpcpass
-        self.javapwncfg = './config_files/javapwn.cfg' or options.javapwncfg
+        self.javapwncfg = options.javapwncfg or './config_files/javapwn.cfg'
 
         if not self.msfip:
             sys.exit('[-] JavaPwn plugin requires --msfip')

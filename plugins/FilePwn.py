@@ -38,7 +38,7 @@ class FilePwn(Plugin):
     def initialize(self, options):
         '''Called if plugin is enabled, passed the options namespace'''
         self.options = options
-        self.filepwncfg = "./config_files/filepwn.cfg" or options.filepwncfg
+        self.filepwncfg = options.filepwncfg or "./config_files/filepwn.cfg"
 
         self.binaryMimeTypes = ["application/octet-stream", 'application/x-msdownload',
                                 'application/x-msdos-program', 'binary/octet-stream']
