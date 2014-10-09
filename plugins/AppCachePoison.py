@@ -12,11 +12,8 @@ class AppCachePlugin(Plugin):
     def initialize(self, options):
         '''Called if plugin is enabled, passed the options namespace'''
         self.options = options
-        self.config_file = options.tampercfg
-
-        if self.config_file is None:
-            self.config_file = "./config_files/app_cache_poison.cfg"
-
+        self.config_file = options.tampercfg or "./config_files/app_cache_poison.cfg"
+        
         print "[*] App Cache Poison plugin online"
         ResponseTampererFactory.buildTamperer(self.config_file)
 

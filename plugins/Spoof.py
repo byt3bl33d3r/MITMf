@@ -88,6 +88,8 @@ class Spoof(Plugin):
             self.dhcpcfg = ConfigObj(self.dhcpcfg)
             thread_target = self.dhcp_sniff
             thread_args = ()
+        else:
+            sys.exit("[-] Spoof plugin requires --arp, --icmp or --dhcp")
 
         if self.dns:
             print "[*] DNS Tampering enabled"
@@ -280,7 +282,7 @@ class Spoof(Plugin):
         options.add_argument('--target', dest='target', help='Specify a host to poison [default: subnet]')
         options.add_argument('--arpmode', dest='arpmode', default='req', help=' ARP Spoofing mode: requests (req) or replies (rep) [default: req]')
         #options.add_argument('--summary', action='store_true', dest='summary', default=False, help='Show packet summary and ask for confirmation before poisoning')
-        options.add_argument('--manualiptables', dest='manualiptables', action='store_true', default=False, help='Do not setup iptables or flush them automatically')
+        options.add_argument('--manual-iptables', dest='manualiptables', action='store_true', default=False, help='Do not setup iptables or flush them automatically')
 
     def finish(self):
         self.send = False
