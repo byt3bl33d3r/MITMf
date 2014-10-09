@@ -35,11 +35,11 @@ class Spoof(Plugin):
         self.arp = options.arp
         self.icmp = options.icmp
         self.dns = options.dns
-        self.dnscfg = "./config_files/dns.cfg" or options.dnscfg
+        self.dnscfg = options.dnscfg or "./config_files/dns.cfg"
         self.dhcp = options.dhcp
-        self.dhcpcfg = "./config_files/dhcp.cfg" or options.dhcpcfg
+        self.dhcpcfg = options.dhcpcfg or "./config_files/dhcp.cfg" 
         self.shellshock = options.shellshock
-        self.cmd = "echo 'pwned'" or options.cmd
+        self.cmd = options.cmd or "echo 'pwned'"
         self.gateway = options.gateway
         #self.summary = options.summary
         self.target = options.target
