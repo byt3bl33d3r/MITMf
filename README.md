@@ -40,3 +40,11 @@ https://github.com/secretsquirrel/the-backdoor-factory and code from BDFProxy ht
 - Added beefapi.py for interfacing with BeEF's RESTfulAPI
 
 - Addition of the app-cache poisoning attack by Krzysztof Kotowicz
+
+<h3>How to install on Kali</h3>
+
+First you need to execute install-bdfactory.sh file then execute following commands.
+
+>apt-get install capstone python-nfqueue
+
+>pip install pefile capstone
