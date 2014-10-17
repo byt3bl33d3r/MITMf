@@ -32,7 +32,7 @@ class BrowserProfiler(Inject, Plugin):
             if self.dic_output['plugin_list'] > 0:
                 self.dic_output['plugin_list'] = self.dic_output['plugin_list'].split(',')
             pretty_output = pformat(self.dic_output)
-            logging.warning("%s >> Browser Profiler data:\n%s" % (request.client.getClientIP(), pretty_output))
+            logging.info("%s >> Browser Profiler data:\n%s" % (request.client.getClientIP(), pretty_output))
 
     def get_payload(self):
         payload = """<script type="text/javascript">

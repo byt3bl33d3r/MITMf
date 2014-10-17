@@ -36,11 +36,11 @@ class Spoof(Plugin):
         self.arp = options.arp
         self.icmp = options.icmp
         self.dns = options.dns
-        self.dnscfg = options.dnscfg or "./config_files/dns.cfg"
+        self.dnscfg = options.dnscfg
         self.dhcp = options.dhcp
-        self.dhcpcfg = options.dhcpcfg or "./config_files/dhcp.cfg" 
+        self.dhcpcfg = options.dhcpcfg 
         self.shellshock = options.shellshock
-        self.cmd = options.cmd or "echo 'pwned'"
+        self.cmd = options.cmd
         self.gateway = options.gateway
         #self.summary = options.summary
         self.target = options.target
@@ -86,6 +86,9 @@ class Spoof(Plugin):
 
         elif self.dhcp:
             print "[*] DHCP Spoofing enabled"
+            if self.target:
+                sys.exit("[-] --target argument invalid when DCHP spoofing")
+
             self.rand_number = []
             self.dhcp_dic = {}
             self.dhcpcfg = ConfigObj(self.dhcpcfg)
@@ -308,9 +311,9 @@ class Spoof(Plugin):
         group.add_argument('--dhcp', dest='dhcp', action='store_true', default=False, help='Redirect traffic using DHCP offers')
         options.add_argument('--dns', dest='dns', action='store_true', default=False, help='Modify intercepted DNS queries')
         options.add_argument('--shellshock', dest='shellshock', action='store_true', default=False, help='Trigger the Shellshock vuln when spoofing DHCP')
-        options.add_argument('--cmd', type=str, dest='cmd', help='Command to run on vulnerable clients [default: echo pwned]')
-        options.add_argument("--dnscfg", type=file, help="DNS tampering config file [default: dns.cfg]")
-        options.add_argument("--dhcpcfg", type=file, help="DHCP spoofing config file [default: dhcp.cfg]")
+        options.add_argument('--cmd', type=str, dest='cmd', default="echo 'pwned'", help='Command to run on vulnerable clients [default: echo pwned]')
+        options.add_argument("--dnscfg", type=file, default="./config_files/dns.cfg", help="DNS tampering config file [default: dns.cfg]")
+        options.add_argument("--dhcpcfg", type=file, default="./config_files/dhcp.cfg", help="DHCP spoofing config file [default: dhcp.cfg]")
         options.add_argument('--iface', dest='interface', help='Specify the interface to use')
         options.add_argument('--gateway', dest='gateway', help='Specify the gateway IP')
         options.add_argument('--target', dest='target', help='Specify a host to poison [default: subnet]')
@@ -328,7 +331,7 @@ class Spoof(Plugin):
             print '\n[*] Flushing iptables'
             os.system('iptables -F && iptables -X && iptables -t nat -F && iptables -t nat -X')
 
-        if self.dns:
+        if (self.dns or self.hsts):
             self.q.unbind(socket.AF_INET)
             self.q.close()
 

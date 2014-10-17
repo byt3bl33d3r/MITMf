@@ -30,7 +30,7 @@ class JavaPwn(BrowserProfiler, Plugin):
         self.msfport = options.msfport
         self.rpcip = options.rpcip
         self.rpcpass = options.rpcpass
-        self.javapwncfg = options.javapwncfg or './config_files/javapwn.cfg'
+        self.javapwncfg = options.javapwncfg
 
         if not self.msfip:
             sys.exit('[-] JavaPwn plugin requires --msfip')
@@ -182,7 +182,7 @@ class JavaPwn(BrowserProfiler, Plugin):
         options.add_argument('--msfport', dest='msfport', default='8080', help='Port of MSF web-server [default: 8080]')
         options.add_argument('--rpcip', dest='rpcip', default='127.0.0.1', help='IP of MSF MSGRPC server [default: localhost]')
         options.add_argument('--rpcpass', dest='rpcpass', default='abc123', help='Password for the MSF MSGRPC server [default: abc123]')
-        options.add_argument('--javapwncfg', type=file, help='Specify a config file [default: javapwn.cfg]')
+        options.add_argument('--javapwncfg', type=file, default="./config_files/javapwn.cfg", help='Specify a config file [default: javapwn.cfg]')
 
     def finish(self):
         '''This will be called when shutting down'''

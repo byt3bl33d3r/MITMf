@@ -56,7 +56,7 @@ class Inject(CacheKill, Plugin):
             return
 
     def _get_payload(self):
-        return self._get_js()+self._get_iframe()+self.html_payload
+        return self._get_js() + self._get_iframe() + self.html_payload
 
     def add_options(self,options):
         options.add_argument("--js-url", type=str, help="Location of your (presumably) malicious Javascript.")
