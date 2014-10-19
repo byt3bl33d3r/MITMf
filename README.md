@@ -43,8 +43,4 @@ https://github.com/secretsquirrel/the-backdoor-factory and code from BDFProxy ht
 
 <h3>How to install on Kali</h3>
 
-First you need to execute install-bdfactory.sh file then execute following commands.
-
->apt-get install capstone python-nfqueue
-
->pip install pefile capstone
+Run setup.sh as root to install all submodules and python libraries.
