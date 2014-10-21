@@ -4,8 +4,8 @@ if [[ $EUID -ne 0 ]]; then
   exit 1
 fi
 
-apt-get install python-pip msgpack-python python-nfqueue python-imaging -y
-apt-get install python-requests python-configobj python-pefile -y
+apt-get install python-scapy python-dns python-pip msgpack-python python-nfqueue python-imaging -y
+apt-get install python-dnspython python-requests python-configobj python-pefile -y
 git submodule init
 git submodule update
 cd bdfactory/ && ./install.sh
