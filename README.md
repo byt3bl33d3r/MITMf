@@ -45,6 +45,6 @@ https://github.com/secretsquirrel/the-backdoor-factory and code from BDFProxy ht
 
 Run setup.sh as root to install all submodules and python libraries.
 
-If you get an error similar to ```TypeError: nfqueue_callback() takes exactly 3 arguments (2 given)```
-Then you need to manually compile the python bindings for nfqueue.
+If you get an error, when running mitmf, similar to ```TypeError: nfqueue_callback() takes exactly 3 arguments (2 given)```
+then you need to manually compile the python bindings for nfqueue.
 You can download the latest version at https://www.wzdftpd.net/redmine/projects/nfqueue-bindings/wiki
