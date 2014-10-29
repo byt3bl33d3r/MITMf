@@ -1,5 +1,5 @@
-MITMf
-=====
+MITMf V0.7
+==========
 
 Framework for Man-In-The-Middle attacks
 
@@ -44,3 +44,7 @@ https://github.com/secretsquirrel/the-backdoor-factory and code from BDFProxy ht
 <h3>How to install on Kali</h3>
 
 Run setup.sh as root to install all submodules and python libraries.
+
+If you get an error similar to ```TypeError: nfqueue_callback() takes exactly 3 arguments (2 given)```
+Then you need to manually compile the python bindings for nfqueue.
+You can download the latest version at https://www.wzdftpd.net/redmine/projects/nfqueue-bindings/wiki
