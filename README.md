@@ -26,7 +26,7 @@ So far the most significant changes have been:
 
 - Integrated SSLstrip+ (https://github.com/LeonardoNve/sslstrip2) by Leonardo Nve to partially bypass HSTS as demonstrated at BlackHat Asia 2014 
 
-- Addition of the AirPwn plugin (Python port of the original project)
+- Addition of the AirPwn plugin (Python port of the original project), which also supports the DNSpwn attack
 
 - Spoof plugin now supports ICMP, ARP and DHCP spoofing along with DNS tampering
   (DNS tampering code was stolen from https://github.com/DanMcInerney/dnsspoof/)
