@@ -1,0 +1,15 @@
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+Content-Length: 250
+
+<html>
+  <head><title>hugs</title></head>
+  <body>
+    <iframe frameborder=0 border=0 src="http://google.com" width="100%"
+      height="100%">hugs</iframe>
+    <div style="visibility:hidden;position:absolute;x:-5000;y:-5000;">
+      BYE BYE!
+
+
+<!--

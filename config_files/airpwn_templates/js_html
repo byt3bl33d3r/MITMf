@@ -1,0 +1,13 @@
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+
+<html><head><title>pwned</title>
+</head><body onLoad="
+alert('hi');
+alert('you');
+alert('are');
+alert('so');
+alert('owned');
+alert('cookie: ' + document.cookie);">
+

@@ -11,6 +11,7 @@ Availible plugins:
 - Spoof - Redirect traffic using ARP Spoofing, ICMP Redirects or DHCP Spoofing and modify DNS queries
 - BeEFAutorun - Autoruns BeEF modules based on clients OS or browser type
 - AppCachePoison - Perform app cache poison attacks 
+- AirPwn - Monitor traffic on an 802.11 network and respond with arbitrary content as configured
 - BrowserProfiler - Attempts to enumerate all browser plugins of connected clients
 - CacheKill - Kills page caching by modifying headers
 - FilePwn - Backdoor executables being sent over http using bdfactory
@@ -24,6 +25,8 @@ Availible plugins:
 So far the most significant changes have been:
 
 - Integrated SSLstrip+ (https://github.com/LeonardoNve/sslstrip2) by Leonardo Nve to partially bypass HSTS as demonstrated at BlackHat Asia 2014 
+
+- Addition of the AirPwn plugin (Python port of the original project)
 
 - Spoof plugin now supports ICMP, ARP and DHCP spoofing along with DNS tampering
   (DNS tampering code was stolen from https://github.com/DanMcInerney/dnsspoof/)

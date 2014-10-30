@@ -304,7 +304,7 @@ class Spoof(Plugin):
     def logPrefix(self):
         return 'queue'
 
-    def add_options(self,options):
+    def add_options(self, options):
         group = options.add_mutually_exclusive_group(required=False)
         group.add_argument('--arp', dest='arp', action='store_true', default=False, help='Redirect traffic using ARP spoofing')
         group.add_argument('--icmp', dest='icmp', action='store_true', default=False, help='Redirect traffic using ICMP redirects')

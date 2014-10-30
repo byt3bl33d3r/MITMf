@@ -1,0 +1,10 @@
+HTTP/1.1 200 OK
+Content-type: text/css
+Content-length: 103
+
+body {
+  background-color: red;
+  background-image: url(/airpwnbg.jpg);
+  background-repeat: repeat;
+}
+  

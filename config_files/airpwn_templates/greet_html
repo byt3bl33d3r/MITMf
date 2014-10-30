@@ -1,0 +1,11 @@
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+
+<html><head><title>HELLO DEFCON!</title>
+</head><body>
+<blink><font size=+5 color=red>
+Hello Defcon! Your wireless network is delicious!
+</font>
+</blink>
+<p>
