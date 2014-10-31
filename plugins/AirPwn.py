@@ -33,11 +33,13 @@ class AirPwn(Plugin):
 		except:
 			sys.exit("[-] Error parsing airpwn config file")
 
+		print "[*] AirPwn plugin online"
 		t = threading.Thread(name='sniff_http_thread', target=self.sniff_http, args=(self.mon_interface,))
 		t.setDaemon(True)
 		t.start()
 
 		if self.dnspwn:
+			print "[*] DNSpwn attack enabled"
 			t2 = threading.Thread(name='sniff_dns_thread', target=self.sniff_dns, args=(self.mon_interface,))
 			t2.setDaemon(True)
 			t2.start()
