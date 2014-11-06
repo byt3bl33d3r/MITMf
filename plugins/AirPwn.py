@@ -80,10 +80,10 @@ class AirPwn(Plugin):
 						response[Raw].load = open(rule[1]['response'], 'rb').read()
 						# Calculate new ack
 						response[TCP].ack = packet[TCP].seq + len(response[Raw].load)
-						#delete packet checksums
+						# Delete packet checksums
 						del response[IP].chksum
 						del response[TCP].chksum
-						#Some scapy-fu to re-calculate all checksums
+						# Some scapy-fu to re-calculate all checksums
 						response = response.__class__(str(response))
 						# Send the packet
 						sendp(response, iface=self.mon_interface, verbose=False)
