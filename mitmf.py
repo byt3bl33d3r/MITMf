@@ -28,6 +28,7 @@ if __name__ == "__main__":
     slogopts.add_argument("-p", "--post", action="store_true",help="Log only SSL POSTs. (default)")
     slogopts.add_argument("-s", "--ssl", action="store_true", help="Log all SSL traffic to and from server.")
     slogopts.add_argument("-a", "--all", action="store_true", help="Log all SSL and HTTP traffic to and from server.")
+    #slogopts.add_argument("-c", "--clients", action='store_true', default=False, help='Log each clients data in a seperate file')
     sgroup.add_argument("-l", "--listen", type=int, metavar="port", default=10000, help="Port to listen on (default 10000)")
     sgroup.add_argument("-f", "--favicon", action="store_true", help="Substitute a lock favicon on secure requests.")
     sgroup.add_argument("-k", "--killsessions", action="store_true", help="Kill sessions in progress.")

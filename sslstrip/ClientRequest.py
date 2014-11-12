@@ -48,7 +48,7 @@ class ClientRequest(Request):
         self.urlMonitor    = URLMonitor.getInstance()
         self.cookieCleaner = CookieCleaner.getInstance()
         self.dnsCache      = DnsCache.getInstance()
-#        self.uniqueId      = random.randint(0, 10000)
+        #self.uniqueId      = random.randint(0, 10000)
 
     def cleanHeaders(self):
         headers = self.getAllHeaders().copy()

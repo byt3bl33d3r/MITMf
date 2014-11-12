@@ -65,9 +65,17 @@ class Spoof(Plugin):
         if not self.manualiptables:
             os.system('iptables -F && iptables -X && iptables -t nat -F && iptables -t nat -X')
 
-        if self.arp:
+        try:
             self.mac = get_if_hwaddr(self.interface)
+        except Exception, e:
+            sys.exit('[-] Error retrieving interfaces MAC address: %s' % e)
+        
+        if self.arp:
+            if not self.gateway:
+                sys.exit("[-] --arp argument requires --gateway")
+
             self.routermac = getmacbyip(self.gateway)
+            
             print "[*] ARP Spoofing enabled"
             if self.arpmode == 'req':
                 pkt = self.build_arp_req()
@@ -77,8 +85,11 @@ class Spoof(Plugin):
             thread_args = (pkt, self.interface, self.debug,)
 
         elif self.icmp:
-            self.mac = get_if_hwaddr(self.interface)
+            if not self.gateway:
+                sys.exit("[-] --icmp argument requires --gateway")
+
             self.routermac = getmacbyip(self.gateway)
+
             print "[*] ICMP Redirection enabled"
             pkt = self.build_icmp()
             thread_target = self.send_packets
@@ -249,7 +260,7 @@ class Spoof(Plugin):
         except Exception:
             logging.debug("Error resolving " + domain)
 
-    def nfqueue_callback(self, i, payload):
+    def nfqueue_callback(self, payload, *kargs):
         data = payload.get_data()
         pkt = IP(data)
         if not pkt.haslayer(DNSQR):
