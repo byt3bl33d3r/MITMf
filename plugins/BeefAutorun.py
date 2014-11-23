@@ -61,7 +61,7 @@ class BeefAutorun(Inject, Plugin):
 		already_hooked = []
 		while True:
 			sessions = beef.sessions_online()
-			if len(sessions) > 0:
+			if sessions is not None and len(sessions) > 0:
 				for session in sessions:
 
 					if session not in already_hooked:
