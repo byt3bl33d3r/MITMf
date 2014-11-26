@@ -54,7 +54,7 @@ class ServerConnection(HTTPClient):
 
     def sendRequest(self):
         if self.command == 'GET':
-            logging.info("%s Sending Request: %s %s"  % (self.client.getClientIP(), self.command, self.headers['host']))
+            logging.info("%s Sending Request: %s %s %s"  % (self.client.getClientIP(), self.command, self.headers['host'], self.headers['user-agent']))
         self.plugins.hook()
         self.sendCommand(self.command, self.uri)
 
@@ -100,8 +100,8 @@ class ServerConnection(HTTPClient):
             if (value.find('gzip') != -1):
                 logging.debug("Response is compressed...")
                 self.isCompressed = True
-        if (key.lower() == 'strict-transport-security'):
-            value = 'max-age=0'
+        #if (key.lower() == 'strict-transport-security'):
+        #    value = 'max-age=0'
 
         elif (key.lower() == 'content-length'):
             self.contentLength = value

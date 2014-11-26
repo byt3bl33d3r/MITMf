@@ -94,7 +94,10 @@ class ClientRequest(Request):
         client            = self.getClientIP()
         path              = self.getPathFromUri()
 
-        self.content.seek(0,0)
+        try:
+            self.content.seek(0,0)
+        except:
+            pass
         postData          = self.content.read()
         url               = 'http://' + host + path
 

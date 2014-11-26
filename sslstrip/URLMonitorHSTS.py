@@ -64,14 +64,14 @@ class URLMonitor:
 
 		#LEO: Sustituir HOST
         if not self.sustitucion.has_key(host):
-        	lhost = host[:4]
-        	if lhost=="www.":
+            lhost = host[:4]
+            if lhost=="www.":
         		self.sustitucion[host] = "w"+host
         		self.real["w"+host] = host
-        	else:
+            else:
         		self.sustitucion[host] = "web"+host
         		self.real["web"+host] = host
-        	#logging.info("LEO: ssl host      (%s) tokenized (%s)" % (host,self.sustitucion[host]) )
+            logging.info("LEO: ssl host      (%s) tokenized (%s)" % (host,self.sustitucion[host]) )
         		
         url = 'http://' + host + path
         #logging.debug("LEO stripped URL: %s %s"%(client, url))
