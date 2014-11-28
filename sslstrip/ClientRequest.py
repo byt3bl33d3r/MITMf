@@ -33,6 +33,7 @@ from SSLServerConnection import SSLServerConnection
 from URLMonitor import URLMonitor
 from CookieCleaner import CookieCleaner
 from DnsCache import DnsCache
+from ProxyPlugins import ProxyPlugins
 
 class ClientRequest(Request):
 
@@ -48,6 +49,7 @@ class ClientRequest(Request):
         self.urlMonitor    = URLMonitor.getInstance()
         self.cookieCleaner = CookieCleaner.getInstance()
         self.dnsCache      = DnsCache.getInstance()
+        self.plugins       = ProxyPlugins.getInstance()
         #self.uniqueId      = random.randint(0, 10000)
 
     def cleanHeaders(self):
@@ -66,6 +68,8 @@ class ClientRequest(Request):
 
         if 'cache-control' in headers:
             del headers['cache-control']
+
+        self.plugins.hook()
 
         return headers
 
@@ -96,9 +100,10 @@ class ClientRequest(Request):
 
         try:
             self.content.seek(0,0)
+            postData          = self.content.read()
         except:
             pass
-        postData          = self.content.read()
+
         url               = 'http://' + host + path
 
         self.dnsCache.cacheResolution(host, address)

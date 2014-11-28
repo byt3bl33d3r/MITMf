@@ -16,7 +16,7 @@
 # USA
 #
 
-import re
+import re, os
 
 class URLMonitor:    
 
@@ -40,6 +40,22 @@ class URLMonitor:
                 return True
 
         return (client,url) in self.strippedURLs
+
+    def writeClientLog(self, client, headers, message):
+        if (client.getClientIP() + '.log') not in os.listdir("./logs"):
+            
+            try:
+                log_message = "#Log file for %s (%s)\n" % (client.getClientIP(), headers['user-agent'])
+            except KeyError:
+                log_message = "#Log file for %s\n" % client.getClientIP()
+
+            log_file = open("./logs/" + client.getClientIP() + ".log", 'a')
+            log_file.write(log_message + message + "\n")
+            log_file.close()
+        else:
+            log_file = open("./logs/" + client.getClientIP() + ".log", 'a')
+            log_file.write(message + "\n")
+            log_file.close()
 
     def getSecurePort(self, client, url):
         if (client,url) in self.strippedURLs:
@@ -69,11 +85,15 @@ class URLMonitor:
         self.strippedURLs.add((client, url))
         self.strippedURLPorts[(client, url)] = int(port)
 
-    def setFaviconSpoofing(self, faviconSpoofing):
+    def setValues(self, faviconSpoofing, clientLogging):
         self.faviconSpoofing = faviconSpoofing
+        self.clientLogging = clientLogging
 
     def isFaviconSpoofing(self):
         return self.faviconSpoofing
+
+    def isClientLogging(self):
+        return self.clientLogging
 
     def isSecureFavicon(self, client, url):
         return ((self.faviconSpoofing == True) and (url.find("favicon-x-favicon-x.ico") != -1))

