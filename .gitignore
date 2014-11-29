@@ -1,3 +1,4 @@
 *.pyc
 /plugins/old_plugins/
 backdoored/
+logs/

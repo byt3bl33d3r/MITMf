@@ -76,22 +76,11 @@ class ClientRequest(Request):
         	del headers['if-none-match']
         	
         if 'host' in headers:
-            real_host = self.urlMonitor.URLgetRealHost("%s" % headers['host'])
-        	#logging.info("Modifing HOST header: %s -> %s" % (headers['host'],host))
-            if 'www.' in real_host:
-                fake_host = 'w' + real_host
-                headers['host'] = fake_host
-                fake_host = self.urlMonitor.URLgetRealHost("%s" % headers['host'])
-                headers['securelink'] = '1'
-                self.setHeader('Host', fake_host)
-                logging.info("Modifing HOST header: %s -> %s" % (real_host,fake_host))
-            else:
-                fake_host = 'web' + real_host
-                headers['host'] = fake_host
-                fake_host = self.urlMonitor.URLgetRealHost("%s" % headers['host'])
-                headers['securelink'] = '1'
-                self.setHeader('Host', fake_host)
-                logging.info("Modifing HOST header: %s -> %s" % (real_host,fake_host))
+            host = self.urlMonitor.URLgetRealHost("%s" % headers['host'])
+            logging.debug("Modifing HOST header: %s -> %s" % (headers['host'],host))
+            headers['host'] = host
+            headers['securelink'] = '1'
+            self.setHeader('Host',host)
 
         return headers
 

@@ -42,6 +42,9 @@ class URLMonitor:
         return (client,url) in self.strippedURLs
 
     def writeClientLog(self, client, headers, message):
+        if not os.path.exists("./logs"):
+            os.makedirs("./logs")
+
         if (client.getClientIP() + '.log') not in os.listdir("./logs"):
             
             try:
