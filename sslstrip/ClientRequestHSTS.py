@@ -78,11 +78,11 @@ class ClientRequest(Request):
         	del headers['if-none-match']
         	
         if 'host' in headers:
-        	host = self.urlMonitor.URLgetRealHost("%s" % headers['host'])
-        	logging.debug("Modifing HOST header: %s -> %s" % (headers['host'],host))
-        	headers['host'] = host
-        	headers['securelink'] = '1'
-        	self.setHeader('Host',host)
+            host = self.urlMonitor.URLgetRealHost("%s" % headers['host'])
+            logging.debug("Modifing HOST header: %s -> %s" % (headers['host'],host))
+            headers['host'] = host
+            headers['securelink'] = '1'
+            self.setHeader('Host',host)
 
         self.plugins.hook()
 
@@ -116,7 +116,12 @@ class ClientRequest(Request):
         host = self.urlMonitor.URLgetRealHost("%s" % lhost)
         client = self.getClientIP()
         path = self.getPathFromUri()
-        self.content.seek(0, 0)
+
+        try:
+            self.content.seek(0, 0)
+        except:
+            pass
+
         postData = self.content.read()
         real = self.urlMonitor.real
         patchDict = self.urlMonitor.patchDict

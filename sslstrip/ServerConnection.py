@@ -54,7 +54,12 @@ class ServerConnection(HTTPClient):
 
     def sendRequest(self):
         if self.command == 'GET':
-            logging.info("%s Sending Request: %s"  % (self.client.getClientIP(), self.headers['host']))
+            message = "%s Sending Request: %s"  % (self.client.getClientIP(), self.headers['host'])
+            if self.urlMonitor.isClientLogging() is True:
+                self.urlMonitor.writeClientLog(self.client, self.headers, message)
+            else:
+                logging.info(message)
+
         self.plugins.hook()
         self.sendCommand(self.command, self.uri)
 
@@ -71,7 +76,11 @@ class ServerConnection(HTTPClient):
         elif 'keylog' in self.uri:
             self.plugins.hook()
         else:
-            logging.warning("%s %s Data (%s):\n%s" % (self.client.getClientIP(),self.getPostPrefix(),self.headers['host'],self.postData))
+            message = "%s %s Data (%s):\n%s" % (self.client.getClientIP(),self.getPostPrefix(),self.headers['host'],self.postData)
+            if self.urlMonitor.isClientLogging() is True:
+                self.urlMonitor.writeClientLog(self.client, self.headers, message)
+            else:
+                logging.warning(message)
             self.transport.write(self.postData)
 
     def connectionMade(self):
@@ -88,6 +97,8 @@ class ServerConnection(HTTPClient):
         self.client.setResponseCode(int(code), message)
 
     def handleHeader(self, key, value):
+        self.plugins.hook()
+
         if (key.lower() == 'location'):
             value = self.replaceSecureLinks(value)
 
@@ -100,8 +111,9 @@ class ServerConnection(HTTPClient):
             if (value.find('gzip') != -1):
                 logging.debug("Response is compressed...")
                 self.isCompressed = True
-        if (key.lower() == 'strict-transport-security'):
-            value = 'max-age=0'
+        
+        #if (key.lower() == 'strict-transport-security'):
+        #    value = 'max-age=0'
 
         elif (key.lower() == 'content-length'):
             self.contentLength = value
@@ -109,8 +121,6 @@ class ServerConnection(HTTPClient):
             self.client.responseHeaders.addRawHeader(key, value)
         else:
             self.client.setHeader(key, value)
-
-        self.plugins.hook()
 
     def handleEndHeaders(self):
        if (self.isImageRequest and self.contentLength != None):
