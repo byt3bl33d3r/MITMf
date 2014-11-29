@@ -98,8 +98,12 @@ class ClientRequest(Request):
         client            = self.getClientIP()
         path              = self.getPathFromUri()
 
-        self.content.seek(0,0)
-        postData          = self.content.read()
+        try:
+            self.content.seek(0,0)
+            postData          = self.content.read()
+        except:
+            pass
+
         url               = 'http://' + host + path
 
         self.dnsCache.cacheResolution(host, address)
