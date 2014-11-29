@@ -28,7 +28,7 @@ if __name__ == "__main__":
     slogopts.add_argument("-p", "--post", action="store_true",help="Log only SSL POSTs. (default)")
     slogopts.add_argument("-s", "--ssl", action="store_true", help="Log all SSL traffic to and from server.")
     slogopts.add_argument("-a", "--all", action="store_true", help="Log all SSL and HTTP traffic to and from server.")
-    slogopts.add_argument("-c", "--clients", action='store_true', default=False, help='Log each clients data in a seperate file')
+    #slogopts.add_argument("-c", "--clients", action='store_true', default=False, help='Log each clients data in a seperate file') #not fully tested yet
     sgroup.add_argument("-l", "--listen", type=int, metavar="port", default=10000, help="Port to listen on (default 10000)")
     sgroup.add_argument("-f", "--favicon", action="store_true", help="Substitute a lock favicon on secure requests.")
     sgroup.add_argument("-k", "--killsessions", action="store_true", help="Kill sessions in progress.")
@@ -83,7 +83,7 @@ if __name__ == "__main__":
         from sslstrip.StrippingProxyHSTS import StrippingProxy
         from sslstrip.URLMonitorHSTS import URLMonitor
 
-        URLMonitor.getInstance().setValues(args.favicon, args.clients)
+        URLMonitor.getInstance().setFaviconSpoofing(args.favicon)
         CookieCleaner.getInstance().setEnabled(args.killsessions)
         ProxyPlugins.getInstance().setPlugins(load)
 
@@ -100,6 +100,7 @@ if __name__ == "__main__":
         from sslstrip.StrippingProxy import StrippingProxy
         from sslstrip.URLMonitor import URLMonitor
 
+        args.clients = False # temporary
         URLMonitor.getInstance().setValues(args.favicon, args.clients)
         CookieCleaner.getInstance().setEnabled(args.killsessions)
         ProxyPlugins.getInstance().setPlugins(load)
