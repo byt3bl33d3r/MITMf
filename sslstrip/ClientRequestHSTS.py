@@ -33,6 +33,7 @@ from SSLServerConnectionHSTS import SSLServerConnection
 from URLMonitorHSTS import URLMonitor
 from CookieCleaner import CookieCleaner
 from DnsCache import DnsCache
+from ProxyPlugins import ProxyPlugins
 
 class ClientRequest(Request):
 
@@ -48,6 +49,7 @@ class ClientRequest(Request):
         self.urlMonitor    = URLMonitor.getInstance()
         self.cookieCleaner = CookieCleaner.getInstance()
         self.dnsCache      = DnsCache.getInstance()
+        self.plugins       = ProxyPlugins.getInstance()
 #        self.uniqueId      = random.randint(0, 10000)
 
     def cleanHeaders(self):
@@ -81,6 +83,8 @@ class ClientRequest(Request):
         	headers['host'] = host
         	headers['securelink'] = '1'
         	self.setHeader('Host',host)
+
+        self.plugins.hook()
 
         return headers
 
