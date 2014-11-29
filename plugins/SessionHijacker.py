@@ -1,8 +1,6 @@
-#Almost all of the Firefox related code was stolen from Glenn's Firelamb.
-#glenn@sensepost.com
-
+#Almost all of the Firefox related code was stolen from Firelamb https://github.com/sensepost/mana/tree/master/firelamb
+ 
 from plugins.plugin import Plugin
-from sslstrip.URLMonitor import URLMonitor
 from libs.publicsuffix import PublicSuffixList
 from urlparse import urlparse
 import os
@@ -10,7 +8,7 @@ import sys
 import time
 import logging
 import sqlite3
-import threading
+#import threading
 
 class SessionHijacker(Plugin):
 	name = "Session Hijacker"
@@ -22,8 +20,6 @@ class SessionHijacker(Plugin):
 	def initialize(self, options):
 		'''Called if plugin is enabled, passed the options namespace'''
 		self.options = options
-		self.log_clients = options.clients
-		self.urlMonitor = URLMonitor.getInstance()
 		self.psl = PublicSuffixList()
 		self.firefox = options.firefox
 		self.save_dir = "./logs"
@@ -122,3 +118,6 @@ class SessionHijacker(Plugin):
 
 	def add_options(self, options):
 		options.add_argument('--firefox', dest='firefox', action='store_true', default=False, help='Create a firefox profile with captured cookies')
+
+	def finish(self):
+		print "[*] To load a session run: 'firefox -profile <client-ip> logs/<client-ip>'"

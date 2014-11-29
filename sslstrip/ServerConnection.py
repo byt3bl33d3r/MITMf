@@ -54,7 +54,7 @@ class ServerConnection(HTTPClient):
 
     def sendRequest(self):
         if self.command == 'GET':
-            logging.info("%s Sending Request: %s %s"  % (self.client.getClientIP(), self.command, self.headers['host']))
+            logging.info("%s Sending Request: %s"  % (self.client.getClientIP(), self.headers['host']))
         self.plugins.hook()
         self.sendCommand(self.command, self.uri)
 
