@@ -12,7 +12,7 @@ Availible plugins:
 - BeEFAutorun - Autoruns BeEF modules based on clients OS or browser type
 - AppCachePoison - Perform app cache poison attacks 
 - AirPwn - Monitor traffic on an 802.11 network and respond with arbitrary content as configured
-- SessionHijacking - Performs sessions hijacking attacks, and stores cookies in a firefox profile
+- SessionHijacking - Performs session hijacking attacks, and stores cookies in a firefox profile
 - BrowserProfiler - Attempts to enumerate all browser plugins of connected clients
 - CacheKill - Kills page caching by modifying headers
 - FilePwn - Backdoor executables being sent over http using bdfactory
