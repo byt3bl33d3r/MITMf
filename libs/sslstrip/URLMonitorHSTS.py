@@ -27,7 +27,7 @@ class URLMonitor:
         self.strippedURLPorts   = {}
         self.faviconReplacement = False
 
-        hsts_config = ConfigObj("./config_files/hsts_bypass.cfg")
+        hsts_config = ConfigObj("./config/hsts_bypass.cfg")
 
         for k,v in hsts_config.items():
             self.sustitucion[k] = v

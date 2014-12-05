@@ -13,7 +13,7 @@ import argparse
 from plugins import *
 plugin_classes = plugin.Plugin.__subclasses__()
 
-mitmf_version = "0.8"
+mitmf_version = "0.9"
 sslstrip_version = "0.9"
 sergio_version = "0.2.1"
 
@@ -94,7 +94,7 @@ if __name__ == "__main__":
 
         print "\n[*] sslstrip v%s by Moxie Marlinspike running..." % sslstrip_version
         print "[*] sslstrip+ by Leonardo Nve running..."
-        print "[*] sergio-proxy v%s online" % sergio_version
+        print "[*] sergio-proxy v%s online..." % sergio_version
         
     else:
         from libs.sslstrip.StrippingProxy import StrippingProxy

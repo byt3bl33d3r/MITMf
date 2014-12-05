@@ -38,7 +38,7 @@ class BeefAutorun(Inject, Plugin):
 		else:
 			sys.exit("[-] Error logging in to BeEF!")
 
-		userconfig = ConfigObj(self.autoruncfg)
+		userconfig = ConfigObj("./config/beefautorun.cfg")
 		self.Mode = userconfig['mode']
 
 		self.All_modules = userconfig["ALL"]
@@ -117,10 +117,10 @@ class BeefAutorun(Inject, Plugin):
 									sleep(0.5)
 
 	def add_options(self, options):
-		options.add_argument('--hookip', dest='hookip', help="Hook IP")
+		group = options.add_mutually_exclusive_group(required=False)
+		group.add_argument('--hookip', dest='hookip', help="Hook IP")
+		group.add_argument('--disable-inject', dest='dis_inject', action='store_true', default=True, help='Disables automatically injecting the hook url')
 		options.add_argument('--beefip', dest='beefip', default='127.0.0.1', help="IP of BeEF's server [default: localhost]")
 		options.add_argument('--beefport', dest='beefport', default='3000', help="Port of BeEF's server [default: 3000]")
 		options.add_argument('--beefuser', dest='beefuser', default='beef', help='Username for beef [default: beef]')
 		options.add_argument('--beefpass', dest='beefpass', default='beef', help='Password for beef [default: beef]')
-		options.add_argument('--autoruncfg', type=file, default="./config_files/beefautorun.cfg", help='Specify a config file [default: beefautorun.cfg]')
-		options.add_argument('--disable-inject', dest='dis_inject', action='store_true', default=True, help='Disables automatically injecting the hook url')

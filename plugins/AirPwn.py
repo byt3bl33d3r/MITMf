@@ -32,7 +32,7 @@ class AirPwn(Plugin):
 			sys.exit("[-] AirPwn plugin requires --miface argument")
 
 		try:
-			self.aircfg = ConfigObj(self.aircfg)
+			self.aircfg = ConfigObj("./config/airpwn.cfg")
 			#Here we compile the regexes for faster performance when injecting packets
 			for rule in self.aircfg.items():
 				rule[1]['match'] = re.compile(r'%s' % rule[1]['match'])
@@ -135,5 +135,4 @@ class AirPwn(Plugin):
 
 	def add_options(self, options):
 		options.add_argument('--miface', type=str, dest='mon_interface', help='Interface in monitor mode to use')
-		options.add_argument('--aircfg', type=file, default="./config_files/airpwn.cfg", help="Airpwn config file [default: airpwn.cfg]")
 		options.add_argument('--dnspwn', type=str, dest='dnspwn', help='Enables the DNSpwn attack and specifies ip')
