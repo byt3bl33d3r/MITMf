@@ -8,4 +8,4 @@ apt-get install python-scapy python-dns python-pip msgpack-python python-nfqueue
 apt-get install python-twisted-web python-dnspython python-requests python-configobj python-pefile -y
 git submodule init
 git submodule update
-cd bdfactory/ && ./install.sh
+cd libs/bdfactory/ && ./install.sh

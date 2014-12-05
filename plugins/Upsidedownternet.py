@@ -35,7 +35,7 @@ class Upsidedownternet(Plugin):
                 image_type = request.imageType
                 #For some reason more images get parsed using the parser
                 #rather than a file...PIL still needs some work I guess
-                p = Image.Parser()
+                p = ImageFile.Parser()
                 p.feed(data)
                 im = p.close()
                 im = im.transpose(Image.ROTATE_180)

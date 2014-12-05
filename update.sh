@@ -7,6 +7,6 @@ fi
 echo 'Updating MITMf'
 git pull
 echo 'Updating the-backdoor-factory'
-cd bdfactory/
+cd libs/bdfactory/
 git pull origin master
 ./update.sh

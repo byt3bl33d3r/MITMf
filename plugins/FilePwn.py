@@ -10,7 +10,7 @@ import logging
 import shutil
 import random
 import string
-from bdfactory import pebin, elfbin
+from libs.bdfactory import pebin, elfbin
 from plugins.plugin import Plugin
 from tempfile import mkstemp
 

