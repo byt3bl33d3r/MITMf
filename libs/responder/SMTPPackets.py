@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import struct
-from odict import OrderedDict
+from libs.responder.odict import OrderedDict
 
 class Packet():
     fields = OrderedDict([

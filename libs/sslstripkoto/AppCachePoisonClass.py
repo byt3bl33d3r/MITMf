@@ -1,6 +1,6 @@
 import logging, re, os.path, time
 from datetime import date
-from libs.sslstrip.DummyResponseTamperer import DummyResponseTamperer
+from libs.sslstripkoto.DummyResponseTamperer import DummyResponseTamperer
 
 class AppCachePoisonClass(DummyResponseTamperer):
 

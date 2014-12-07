@@ -20,9 +20,9 @@ import logging, re, string, random, zlib, gzip, StringIO, sys
 import plugins
 
 from twisted.web.http import HTTPClient
-from ResponseTampererFactory import ResponseTampererFactory
+from libs.sslstripkoto.ResponseTampererFactory import ResponseTampererFactory
 from URLMonitor import URLMonitor
-from ProxyPlugins import ProxyPlugins
+from libs.sergioproxy.ProxyPlugins import ProxyPlugins
 
 class ServerConnection(HTTPClient):
 

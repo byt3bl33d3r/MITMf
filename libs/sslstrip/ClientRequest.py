@@ -33,7 +33,7 @@ from SSLServerConnection import SSLServerConnection
 from URLMonitor import URLMonitor
 from CookieCleaner import CookieCleaner
 from DnsCache import DnsCache
-from ProxyPlugins import ProxyPlugins
+from libs.sergioproxy.ProxyPlugins import ProxyPlugins
 
 class ClientRequest(Request):
 

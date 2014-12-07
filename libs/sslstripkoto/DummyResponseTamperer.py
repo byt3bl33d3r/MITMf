@@ -17,7 +17,7 @@
 #
 
 import logging
-from sslstrip.URLMonitor import URLMonitor
+from libs.sslstrip.URLMonitor import URLMonitor
 
 class DummyResponseTamperer:
 

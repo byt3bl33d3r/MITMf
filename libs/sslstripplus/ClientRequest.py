@@ -28,12 +28,12 @@ from twisted.internet import reactor
 from twisted.internet.protocol import ClientFactory
 
 from ServerConnectionFactory import ServerConnectionFactory
-from ServerConnectionHSTS import ServerConnection
-from SSLServerConnectionHSTS import SSLServerConnection
-from URLMonitorHSTS import URLMonitor
+from ServerConnection import ServerConnection
+from SSLServerConnection import SSLServerConnection
+from URLMonitor import URLMonitor
 from CookieCleaner import CookieCleaner
 from DnsCache import DnsCache
-from ProxyPlugins import ProxyPlugins
+from libs.sergioproxy.ProxyPlugins import ProxyPlugins
 
 class ClientRequest(Request):
 

@@ -21,7 +21,7 @@ class AirPwn(Plugin):
 
 	def initialize(self, options):
 		self.options = options
-		self.mon_interface = options.mon_interface
+		self.mon_interface = options.interface
 		self.aircfg = options.aircfg
 		self.dnspwn = options.dnspwn
 
@@ -134,5 +134,4 @@ class AirPwn(Plugin):
 			logging.info("%s >> Spoofed DNS for %s" % (response.src, req_domain))
 
 	def add_options(self, options):
-		options.add_argument('--miface', type=str, dest='mon_interface', help='Interface in monitor mode to use')
 		options.add_argument('--dnspwn', type=str, dest='dnspwn', help='Enables the DNSpwn attack and specifies ip')

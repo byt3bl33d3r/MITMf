@@ -24,7 +24,7 @@ class FilePwn(Plugin):
     name = "FilePwn"
     optname = "filepwn"
     implements = ["handleResponse"]
-    has_opts = True
+    has_opts = False
     desc = "Backdoor executables being sent over http using bdfactory"
 
     def convert_to_Bool(self, aString):
@@ -38,7 +38,6 @@ class FilePwn(Plugin):
     def initialize(self, options):
         '''Called if plugin is enabled, passed the options namespace'''
         self.options = options
-        self.filepwncfg = options.filepwncfg or "./config/filepwn.cfg"
 
         self.binaryMimeTypes = ["application/octet-stream", 'application/x-msdownload',
                                 'application/x-msdos-program', 'binary/octet-stream']
@@ -48,7 +47,7 @@ class FilePwn(Plugin):
         #NOT USED NOW
         #self.supportedBins = ('MZ', '7f454c46'.decode('hex'))
 
-        self.userConfig = ConfigObj(self.filepwncfg)
+        self.userConfig = ConfigObj("./config/filepwn.cfg")
         self.FileSizeMax = self.userConfig['targets']['ALL']['FileSizeMax']
         self.WindowsIntelx86 = self.userConfig['targets']['ALL']['WindowsIntelx86']
         self.WindowsIntelx64 = self.userConfig['targets']['ALL']['WindowsIntelx64']
@@ -290,6 +289,3 @@ class FilePwn(Plugin):
         else:
             logging.debug("%s File is not of supported Content-Type: %s" % (request.client.getClientIP(), content_header))
             return {'request': request, 'data': data}
-
-    def add_options(self, options):
-        options.add_argument("--filepwncfg", type=file, help="Specify a config file [default: filepwn.cfg]")

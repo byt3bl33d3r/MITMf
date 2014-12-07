@@ -17,7 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import re,sys,socket,struct,string
 from socket import *
-from odict import OrderedDict
+from libs.responder.odict import OrderedDict
 
 class Packet():
     fields = OrderedDict([

@@ -1972,8 +1972,8 @@ class SSlSock(ThreadingMixIn, TCPServer):
     def __init__(self, server_address, RequestHandlerClass):
         BaseServer.__init__(self, server_address, RequestHandlerClass)
         ctx = SSL.Context(SSL.SSLv3_METHOD)
-        cert = config.get('HTTPS Server', 'cert'))
-        key =  config.get('HTTPS Server', 'key'))
+        cert = config.get('HTTPS Server', 'cert')
+        key =  config.get('HTTPS Server', 'key')
         ctx.use_privatekey_file(key)
         ctx.use_certificate_file(cert)
         self.socket = SSL.Connection(ctx, socket.socket(self.address_family, self.socket_type))
@@ -2328,7 +2328,7 @@ class ThreadingUDPServer(ThreadingMixIn, UDPServer):
     def server_bind(self):
         if OsInterfaceIsSupported(INTERFACE):
             try:
-                self.socket.setsockopt(socket.SOL_SOCKET, 25, BIND_TO_Interface+'\0')
+                self.socket.setsockopt(socket.SOL_SOCKET, 25, BIND_TO_Interface)
             except:
                 pass
         UDPServer.server_bind(self)
@@ -2386,8 +2386,9 @@ def serve_thread_udp(host, port, handler):
         else:
             server = ThreadingUDPServer((host, port), handler)
             server.serve_forever()
-    except:
-        print "Error starting UDP server on port " + str(port) + ". Check that you have the necessary permissions (i.e. root), no other servers are running and the correct network interface is set in Responder.conf."
+    except Exception, e:
+        print "[-] Error starting TCP server on port " + str(port) + ": " + str(e) 
+        print "Check that you have the necessary permissions (i.e. root), no other servers are running and the correct network interface is set in Responder.conf."
 
 def serve_thread_udp_MDNS(host, port, handler):
     try:
@@ -2440,13 +2441,15 @@ def start_responder(options, ipaddr):
     global Basic; Basic = options.Basic
     global Finger_On_Off; Finger_On_Off = options.Finger
     global INTERFACE; INTERFACE = options.interface
-    global BIND_TO_Interface; BIND_TO_Interface = options.interface 
+    global BIND_TO_Interface; BIND_TO_Interface = options.interface
     global Verbose; Verbose = options.Verbose
     global Force_WPAD_Auth; Force_WPAD_Auth = options.Force_WPAD_Auth
     global AnalyzeMode; AnalyzeMode = options.Analyse
+    global ResponderPATH; ResponderPATH = "./logs/"
 
     #Read the responder.conf file
-    global config; config = ConfigParser.ConfigParser()
+    global config
+    config = ConfigParser.ConfigParser()
     config.read('./config/responder.conf')
 
     On_Off = config.get('Responder Core', 'HTTP').upper()
@@ -2495,13 +2498,18 @@ def start_responder(options, ipaddr):
     #StartMessage = 'Responder Started\nCommand line args:%s' %(CommandLine)
     #logging.warning(StartMessage)
 
-    #Log2Filename = str("./logs/LLMNR-NBT-NS.log"))
-    #logger2 = logging.getLogger('LLMNR/NBT-NS')
-    #logger2.addHandler(logging.FileHandler(Log2Filename,'w'))
+    
+    global Log2Filename
+    Log2Filename = str("./logs/LLMNR-NBT-NS.log")
+    global logger2
+    logger2 = logging.getLogger('LLMNR/NBT-NS')
+    logger2.addHandler(logging.FileHandler(Log2Filename,'w'))
 
-    #AnalyzeFilename = str("./logs/Analyze-LLMNR-NBT-NS.log"))
-    #logger3 = logging.getLogger('Analyze LLMNR/NBT-NS')
-    #logger3.addHandler(logging.FileHandler(AnalyzeFilename,'a'))
+    global AnalyzeFilename
+    AnalyzeFilename = str("./logs/Analyze-LLMNR-NBT-NS.log")
+    global logger3
+    logger3 = logging.getLogger('Analyze LLMNR/NBT-NS')
+    logger3.addHandler(logging.FileHandler(AnalyzeFilename,'a'))
 
     AnalyzeICMPRedirect()
 
@@ -2530,7 +2538,7 @@ def start_responder(options, ipaddr):
         start_message += "Always Serving a Specific File via HTTP&WPAD: %s\n" % Exec_Mode_On_Off
 
         print banner
-        #print start_message
+        print start_message
 
 
         if AnalyzeMode:
@@ -2556,7 +2564,8 @@ def start_responder(options, ipaddr):
         thread.start_new(serve_thread_udp,('', 88, KerbUDP))
         thread.start_new(serve_thread_udp,('', 137,NB))           #NBNS
         thread.start_new(serve_thread_udp_LLMNR,('', 5355, LLMNR)) #LLMNR
+
         while num_thrd > 0:
-            time.sleep(1)
+            time.sleep(0.1)
     except KeyboardInterrupt:
         exit()

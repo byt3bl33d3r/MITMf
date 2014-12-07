@@ -1,5 +1,5 @@
 from plugins.plugin import Plugin
-from libs.sslstrip.ResponseTampererFactory import ResponseTampererFactory
+from libs.sslstripkoto.ResponseTampererFactory import ResponseTampererFactory
 #import threading
 
 

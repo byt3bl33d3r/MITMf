@@ -1,5 +1,5 @@
 import struct
-from odict import OrderedDict
+from libs.responder.odict import OrderedDict
 
 def longueur(payload):
     length = struct.pack(">i", len(''.join(payload)))

@@ -4,11 +4,10 @@ from twisted.web import http
 from twisted.internet import reactor
 
 from libs.sslstrip.CookieCleaner import CookieCleaner
-from libs.sslstrip.ProxyPlugins import ProxyPlugins
+from libs.sergioproxy.ProxyPlugins import ProxyPlugins
 
 import sys, logging, traceback, string, os
 import argparse
-
 
 from plugins import *
 plugin_classes = plugin.Plugin.__subclasses__()
@@ -22,13 +21,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="MITMf v%s - Framework for MITM attacks" % mitmf_version, epilog="Use wisely, young Padawan.",fromfile_prefix_chars='@')
     #add sslstrip options
     sgroup = parser.add_argument_group("sslstrip", "Options for sslstrip library")
-    sgroup.add_argument("-w", "--write", type=argparse.FileType('w'), metavar="filename", default=sys.stdout, help="Specify file to log to (stdout by default).")
+    #sgroup.add_argument("-w", "--write", type=argparse.FileType('w'), metavar="filename", default=sys.stdout, help="Specify file to log to (stdout by default).")
     sgroup.add_argument("--log-level", type=str,choices=['debug', 'info'], default="info", help="Specify a log level [default: info]")
     slogopts = sgroup.add_mutually_exclusive_group()
     slogopts.add_argument("-p", "--post", action="store_true",help="Log only SSL POSTs. (default)")
     slogopts.add_argument("-s", "--ssl", action="store_true", help="Log all SSL traffic to and from server.")
     slogopts.add_argument("-a", "--all", action="store_true", help="Log all SSL and HTTP traffic to and from server.")
     #slogopts.add_argument("-c", "--clients", action='store_true', default=False, help='Log each clients data in a seperate file') #not fully tested yet
+    sgroup.add_argument("-i", "--interface", type=str, required=True,  metavar="interface" ,help="Interface to listen on")
     sgroup.add_argument("-l", "--listen", type=int, metavar="port", default=10000, help="Port to listen on (default 10000)")
     sgroup.add_argument("-f", "--favicon", action="store_true", help="Substitute a lock favicon on secure requests.")
     sgroup.add_argument("-k", "--killsessions", action="store_true", help="Kill sessions in progress.")
@@ -62,7 +62,13 @@ if __name__ == "__main__":
     log_level = logging.__dict__[args.log_level.upper()]
 
     #Start logging 
-    logging.basicConfig(level=log_level, format="%(asctime)s %(message)s", datefmt="%Y-%m-%d %H:%M:%S", stream=args.write)
+    logging.basicConfig(level=log_level, format="%(asctime)s %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+    logFormatter = logging.Formatter("%(asctime)s %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+    rootLogger = logging.getLogger()
+    
+    fileHandler = logging.FileHandler("./logs/mitmf.log")
+    fileHandler.setFormatter(logFormatter)
+    rootLogger.addHandler(fileHandler)
 
     #All our options should be loaded now, pass them onto plugins
     print "[*] MITMf v%s started... initializing plugins and modules" % mitmf_version
@@ -80,8 +86,8 @@ if __name__ == "__main__":
         ProxyPlugins.getInstance().setPlugins(load)
 
     elif args.hsts:
-        from libs.sslstrip.StrippingProxyHSTS import StrippingProxy
-        from libs.sslstrip.URLMonitorHSTS import URLMonitor
+        from libs.sslstripplus.StrippingProxy import StrippingProxy
+        from libs.sslstripplus.URLMonitor import URLMonitor
 
         URLMonitor.getInstance().setFaviconSpoofing(args.favicon)
         CookieCleaner.getInstance().setEnabled(args.killsessions)
