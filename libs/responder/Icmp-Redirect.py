@@ -17,7 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import sys,socket,struct,optparse,random,pipes
 from socket import *
-from libs.responder.odict import OrderedDict
+from odict import OrderedDict
 from random import randrange
 from time import sleep
 from subprocess import call

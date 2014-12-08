@@ -1,4 +1,4 @@
-MITMf V0.8
+MITMf V0.9
 ==========
 
 Framework for Man-In-The-Middle attacks
@@ -8,6 +8,7 @@ Quick tutorials, examples and dev updates at http://sign0f4.blogspot.it
 This tool is completely based on sergio-proxy https://code.google.com/p/sergio-proxy/ and is an attempt to revive and update the project.
 
 Availible plugins:
+- Responder 
 - Spoof - Redirect traffic using ARP Spoofing, ICMP Redirects or DHCP Spoofing and modify DNS queries
 - BeEFAutorun - Autoruns BeEF modules based on clients OS or browser type
 - AppCachePoison - Perform app cache poison attacks 

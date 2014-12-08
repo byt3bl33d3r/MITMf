@@ -1,14 +1,16 @@
 from plugins.plugin import Plugin
 import logging
 import sys
+import os
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Error when importing scapy
-from scapy.all import *
-from libs.responder.Responder import *
+from scapy.all import get_if_addr
+from libs.responder.Responder import start_responder
+import threading
 
 class Responder(Plugin):
     name = "Responder"
     optname = "responder"
-    desc = ""
+    desc = "Poison LLMNR, NBT-NS and MDNS requests"
     has_opts = True
 
     def initialize(self, options):
@@ -27,7 +29,11 @@ class Responder(Plugin):
         except Exception, e:
             sys.exit("[-] Error retrieving interface IP address: %s" % e)
 
-        start_responder(options, self.ip_address)
+        print "[*] Responder plugin online"
+
+        t = threading.Thread(name='responder', target=start_responder, args=(options, self.ip_address))
+        t.setDaemon(True)
+        t.start()
 
     def add_options(self, options):
         options.add_argument('--analyze', dest="Analyse", action="store_true", help="Allows you to see NBT-NS, BROWSER, LLMNR requests from which workstation to which workstation without poisoning")
