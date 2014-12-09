@@ -61,9 +61,7 @@ if HTMLToServe == None:
     HTMLToServe = ''
 
 if len(NumChal) is not 16:
-    print "The challenge must be exactly 16 chars long.\nExample: -c 1122334455667788\n"
-    parser.print_help()
-    exit(-1)
+    sys.exit("[-] The challenge must be exactly 16 chars long.\nExample: -c 1122334455667788\n")
 
 def IsOsX():
     Os_version = sys.platform
@@ -2504,7 +2502,7 @@ def start_responder(options, ip_address):
     if AnalyzeMode:
         print '[*] Responder is in analyze mode. No NBT-NS, LLMNR, MDNS requests will be poisoned\n'
 
-    start_message = "Respoder will redirect requests to: %s\n" % ip_address
+    start_message = "Responder will redirect requests to: %s\n" % ip_address
     start_message += "Challenge set: %s\n" % NumChal
     start_message += "WPAD Proxy Server: %s\n" % WPAD_On_Off
     start_message += "WPAD script loaded: %s\n" % WPAD_Script

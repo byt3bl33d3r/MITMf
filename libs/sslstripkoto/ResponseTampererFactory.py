@@ -26,13 +26,13 @@ class ResponseTampererFactory:
 
     _instance          = None
 
-    _default_config = {"enabled": False, "tamper_class": "sslstrip.DummyResponseTamperer"}
+    _default_config = {"enabled": False, "tamper_class": "libs.sslstripkoto.DummyResponseTamperer"}
 
     def __init__(self):
         pass
 
     def createTamperer(configFile):
-        logging.debug(logging.DEBUG, "Reading tamper config file: %s"  % (configFile))
+        logging.log(logging.DEBUG, "Reading tamper config file: %s"  % (configFile))
         config = ResponseTampererFactory._default_config.copy()
         if configFile:
           config.update(ResponseTampererFactory.parseConfig(configFile))

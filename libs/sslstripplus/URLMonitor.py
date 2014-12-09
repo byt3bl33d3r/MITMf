@@ -40,6 +40,25 @@ class URLMonitor:
 
         return (client,url) in self.strippedURLs
 
+    def writeClientLog(self, client, headers, message):
+        if not os.path.exists("./logs"):
+            os.makedirs("./logs")
+
+        if (client.getClientIP() + '.log') not in os.listdir("./logs"):
+            
+            try:
+                log_message = "#Log file for %s (%s)\n" % (client.getClientIP(), headers['user-agent'])
+            except KeyError:
+                log_message = "#Log file for %s\n" % client.getClientIP()
+
+            log_file = open("./logs/" + client.getClientIP() + ".log", 'a')
+            log_file.write(log_message + message + "\n")
+            log_file.close()
+        else:
+            log_file = open("./logs/" + client.getClientIP() + ".log", 'a')
+            log_file.write(message + "\n")
+            log_file.close()
+
     def getSecurePort(self, client, url):
         if (client,url) in self.strippedURLs:
             return self.strippedURLPorts[(client,url)]
