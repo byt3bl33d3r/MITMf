@@ -72,6 +72,10 @@ if __name__ == "__main__":
 
     #All our options should be loaded now, pass them onto plugins
     print "[*] MITMf v%s started... initializing plugins and modules" % mitmf_version
+    if ('--responder' and '--wpad') in sys.argv:
+        args.listen = 3141
+        print "[*] Listening on port 3141 since --responder --wpad was passed"
+
     load = []
     try:
         for p in plugins:

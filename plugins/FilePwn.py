@@ -13,11 +13,7 @@ import string
 from libs.bdfactory import pebin, elfbin
 from plugins.plugin import Plugin
 from tempfile import mkstemp
-
-try:
-    from configobj import ConfigObj
-except:
-    sys.exit('[-] configobj library not installed!')
+from configobj import ConfigObj
 
 
 class FilePwn(Plugin):

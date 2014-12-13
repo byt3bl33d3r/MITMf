@@ -1,3 +1,4 @@
+import logging
 
 class DnsCache:    
 
@@ -8,6 +9,7 @@ class DnsCache:
     _instance          = None
 
     def __init__(self):
+        self.customAddress = None
         self.cache = {}
 
     def cacheResolution(self, host, address):
@@ -24,5 +26,16 @@ class DnsCache:
             DnsCache._instance = DnsCache()
 
         return DnsCache._instance
+
+    def setCustomRes(self, host, ip_address=None):
+        if ip_address is not None:
+            self.cache[host] = ip_address
+            logging.debug("DNS entry set: %s -> %s" %(host, ip_address))
+        else:
+            if self.customAddress is not None:
+                self.cache[host] = self.customAddress
+
+    def setCustomAddress(self, ip_address):
+        self.customAddress = ip_address
 
     getInstance = staticmethod(getInstance)

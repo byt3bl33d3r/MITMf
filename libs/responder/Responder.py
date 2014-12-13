@@ -22,12 +22,13 @@ from Fingerprint import RunSmbFinger,OsNameClientVersion
 from odict import OrderedDict
 from socket import inet_aton
 from random import randrange
+from libs.sslstrip.DnsCache import DnsCache
 
 VERSION = '2.1.2'
 
 #Config parsing
 config = ConfigParser.ConfigParser()
-config.read("./config/responder.conf")
+config.read("./config/responder/responder.conf")
 
 # Set some vars.
 On_Off = config.get('Responder Core', 'HTTP').upper()
@@ -47,7 +48,7 @@ Exe_On_Off = config.get('HTTP Server', 'Serve-Exe').upper()
 Exec_Mode_On_Off = config.get('HTTP Server', 'Serve-Always').upper()
 FILENAME = config.get('HTTP Server', 'Filename')
 WPAD_Script = config.get('HTTP Server', 'WPADScript')
-HTMLToServe = config.get('HTTP Server', 'HTMLToServe')
+#HTMLToServe = config.get('HTTP Server', 'HTMLToServe')
 RespondTo = config.get('Responder Core', 'RespondTo').strip()
 RespondTo.split(",")
 RespondToName = config.get('Responder Core', 'RespondToName').strip()
@@ -57,8 +58,7 @@ DontRespondTo.split(",")
 DontRespondToName = config.get('Responder Core', 'DontRespondToName').strip()
 DontRespondToName.split(",")
 
-if HTMLToServe == None:
-    HTMLToServe = ''
+HTMLToServe = ''
 
 if len(NumChal) is not 16:
     sys.exit("[-] The challenge must be exactly 16 chars long.\nExample: -c 1122334455667788\n")
@@ -338,6 +338,7 @@ class NB(BaseRequestHandler):
                 if data[2:4] == "\x01\x10":
                     if Validate_NBT_NS(data,Wredirect):
                         if RespondToSpecificName(RespondToName) == False:
+                            DnsCache.getInstance().setCustomRes(Name.lower())
                             buff = NBT_Ans()
                             buff.calculate(data)
                             for x in range(1):
@@ -358,6 +359,7 @@ class NB(BaseRequestHandler):
                                         logging.warning('[+] Fingerprint failed for host: %s'%(self.client_address[0]))
                                         pass
                         if RespondToSpecificName(RespondToName) and RespondToNameScope(RespondToName.upper(), Name.upper()):
+                            DnsCache.getInstance().setCustomRes(Name.lower())
                             buff = NBT_Ans()
                             buff.calculate(data)
                             for x in range(1):
@@ -386,6 +388,7 @@ class NB(BaseRequestHandler):
             if data[2:4] == "\x01\x10":
                 if Validate_NBT_NS(data,Wredirect) and Analyze(AnalyzeMode) == False:
                     if RespondToSpecificName(RespondToName) and RespondToNameScope(RespondToName.upper(), Name.upper()):
+                        DnsCache.getInstance().setCustomRes(Name.lower())
                         buff = NBT_Ans()
                         buff.calculate(data)
                         for x in range(1):
@@ -406,6 +409,7 @@ class NB(BaseRequestHandler):
                                 logging.warning('[+] Fingerprint failed for host: %s'%(self.client_address[0]))
                                 pass
                     if RespondToSpecificName(RespondToName) == False:
+                        DnsCache.getInstance().setCustomRes(Name.lower())
                         buff = NBT_Ans()
                         buff.calculate(data)
                         for x in range(1):
@@ -2304,7 +2308,8 @@ def Is_HTTPS_On(SSL_On_Off):
 #Function name self-explanatory
 def Is_WPAD_On(on_off):
     if on_off == True:
-        return thread.start_new(serve_thread_tcp,('', 3141,ProxyHandler))
+        return True
+        #return thread.start_new(serve_thread_tcp,('', 3141,ProxyHandler))
     if on_off == False:
         return False
 
@@ -2522,7 +2527,7 @@ def start_responder(options, ip_address):
     start_message += "Serving Executable via HTTP&WPAD: %s\n" % Exe_On_Off
     start_message += "Always Serving a Specific File via HTTP&WPAD: %s\n" % Exec_Mode_On_Off
     
-    print start_message
+    logging.debug(start_message)
 
     try:
         num_thrd = 1

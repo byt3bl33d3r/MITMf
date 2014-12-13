@@ -338,7 +338,7 @@ class Spoof(Plugin):
         group.add_argument('--icmp', dest='icmp', action='store_true', default=False, help='Redirect traffic using ICMP redirects')
         group.add_argument('--dhcp', dest='dhcp', action='store_true', default=False, help='Redirect traffic using DHCP offers')
         options.add_argument('--dns', dest='dns', action='store_true', default=False, help='Modify intercepted DNS queries')
-        options.add_argument('--shellshock', type=str, dest='shellshock', help='Trigger the Shellshock vuln when spoofing DHCP, and execute specified command')
+        options.add_argument('--shellshock', type=str, dest='shellshock', default=None, help='Trigger the Shellshock vuln when spoofing DHCP, and execute specified command')
         options.add_argument('--gateway', dest='gateway', help='Specify the gateway IP')
         options.add_argument('--target', dest='target', help='Specify a host to poison [default: subnet]')
         options.add_argument('--arpmode', dest='arpmode', default='req', help=' ARP Spoofing mode: requests (req) or replies (rep) [default: req]')
