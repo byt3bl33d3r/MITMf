@@ -8,7 +8,7 @@ Quick tutorials, examples and dev updates at http://sign0f4.blogspot.it
 This tool is completely based on sergio-proxy https://code.google.com/p/sergio-proxy/ and is an attempt to revive and update the project.
 
 Availible plugins:
-- Responder 
+- Responder - LLMNR, NBT-NS and MDNS poisoner
 - Spoof - Redirect traffic using ARP Spoofing, ICMP Redirects or DHCP Spoofing and modify DNS queries
 - BeEFAutorun - Autoruns BeEF modules based on clients OS or browser type
 - AppCachePoison - Perform app cache poison attacks 
@@ -25,6 +25,8 @@ Availible plugins:
 - Upsidedownternet - Flips images 180 degrees
 
 So far the most significant changes have been:
+
+- Integrated Responder (https://github.com/SpiderLabs/Responder) to poison LLMNR, NBT-NS and MDNS, and act as a WPAD rogue server.
 
 - Integrated SSLstrip+ (https://github.com/LeonardoNve/sslstrip2) by Leonardo Nve to partially bypass HSTS as demonstrated at BlackHat Asia 2014 
 
