@@ -52,4 +52,8 @@ https://github.com/secretsquirrel/the-backdoor-factory and code from BDFProxy ht
 
 <h3>How to install on Kali</h3>
 
-Run setup.sh as root to install all submodules and python libraries.
+MITMf is now in tha kali linux repositories!! wohooooo!!
+
+```apt-get install mitmf```
+
+To get the latest and greatest version clone this repo and run setup.sh as root to install all submodules and python libraries.
