@@ -20,7 +20,6 @@ import logging, re, string, random, zlib, gzip, StringIO, sys
 import plugins
 
 from twisted.web.http import HTTPClient
-from libs.sslstripkoto.ResponseTampererFactory import ResponseTampererFactory
 from URLMonitor import URLMonitor
 from libs.sergioproxy.ProxyPlugins import ProxyPlugins
 
@@ -43,7 +42,6 @@ class ServerConnection(HTTPClient):
         self.headers          = headers
         self.client           = client
         self.urlMonitor       = URLMonitor.getInstance()
-        self.responseTamperer = ResponseTampererFactory.getTampererInstance()
         self.plugins          = ProxyPlugins.getInstance()
         self.isImageRequest   = False
         self.isCompressed     = False
@@ -88,7 +86,7 @@ class ServerConnection(HTTPClient):
 
     def sendHeaders(self):
         for header, value in self.headers.items():
-            logging.debug("Sending header: %s : %s" % (header, value))
+            logging.debug("Sending header: (%s => %s)" % (header, value))
             self.sendHeader(header, value)
 
         self.endHeaders()
@@ -145,6 +143,8 @@ class ServerConnection(HTTPClient):
         else:
             self.client.setHeader(key, value)
 
+        logging.debug("Receiving header: (%s => %s)" % (key, value))
+
     def handleEndHeaders(self):
        if (self.isImageRequest and self.contentLength != None):
            self.client.setHeader("Content-Length", self.contentLength)
@@ -175,11 +175,6 @@ class ServerConnection(HTTPClient):
         logging.debug("Read from server:\n" + data)
 
         data = self.replaceSecureLinks(data)
-
-        #Hook the ResponseTampererFactory
-        if self.responseTamperer:
-            data = self.responseTamperer.tamper(self.client.uri, data, self.client.responseHeaders, self.client.getAllHeaders(), self.client.getClientIP())
-
         res = self.plugins.hook()
         data = res['data']
 

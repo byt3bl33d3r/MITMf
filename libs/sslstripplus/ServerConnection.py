@@ -20,7 +20,6 @@ import logging, re, string, random, zlib, gzip, StringIO
 import plugins
 
 from twisted.web.http import HTTPClient
-from libs.ssltripkoto.ResponseTampererFactory import ResponseTampererFactory
 from URLMonitor import URLMonitor
 from libs.sergioproxy.ProxyPlugins import ProxyPlugins
 
@@ -174,11 +173,6 @@ class ServerConnection(HTTPClient):
         #logging.log(self.getLogLevel(), "Read from server:\n <large data>" )
 
         data = self.replaceSecureLinks(data)
-
-        #Hook the ResponseTampererFactory
-        if self.responseTamperer:
-            data = self.responseTamperer.tamper(self.client.uri, data, self.client.responseHeaders, self.client.getAllHeaders(), self.client.getClientIP())
-
         res = self.plugins.hook()
         data = res['data']
 

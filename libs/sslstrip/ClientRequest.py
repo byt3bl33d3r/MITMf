@@ -105,8 +105,12 @@ class ClientRequest(Request):
             pass
 
         url               = 'http://' + host + path
+        self.uri = url # set URI to absolute
 
-        self.dnsCache.cacheResolution(host, address)
+        #self.dnsCache.cacheResolution(host, address)
+
+        hostparts = host.split(':')
+        self.dnsCache.cacheResolution(hostparts[0], address)
 
         if (not self.cookieCleaner.isClean(self.method, client, host, headers)):
             logging.debug("Sending expired cookies...")
@@ -121,7 +125,12 @@ class ClientRequest(Request):
                              self.urlMonitor.getSecurePort(client, url))
         else:
             logging.debug("Sending request via HTTP...")
-            self.proxyViaHTTP(address, self.method, path, postData, headers)
+            #self.proxyViaHTTP(address, self.method, path, postData, headers)
+            port = 80
+            if len(hostparts) > 1:
+                port = int(hostparts[1])
+
+            self.proxyViaHTTP(address, self.method, path, postData, headers, port)
 
     def handleHostResolvedError(self, error):
         logging.warning("Host resolution error: " + str(error))
@@ -143,15 +152,18 @@ class ClientRequest(Request):
     def process(self):
         logging.debug("Resolving host: %s" % (self.getHeader('host')))
         host     = self.getHeader('host')               
-        deferred = self.resolveHost(host)
+        #deferred = self.resolveHost(host)
+        hostparts = host.split(':')
+        deferred = self.resolveHost(hostparts[0])
 
         deferred.addCallback(self.handleHostResolvedSuccess)
         deferred.addErrback(self.handleHostResolvedError)
         
-    def proxyViaHTTP(self, host, method, path, postData, headers):
+    def proxyViaHTTP(self, host, method, path, postData, headers, port):
         connectionFactory          = ServerConnectionFactory(method, path, postData, headers, self)
         connectionFactory.protocol = ServerConnection
-        self.reactor.connectTCP(host, 80, connectionFactory)
+        #self.reactor.connectTCP(host, 80, connectionFactory)
+        self.reactor.connectTCP(host, port, connectionFactory)
 
     def proxyViaSSL(self, host, method, path, postData, headers, port):
         clientContextFactory       = ssl.ClientContextFactory()
