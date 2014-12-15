@@ -70,6 +70,31 @@ class ServerConnection(HTTPClient):
             else:
                 logging.info(message)
 
+            #Capture google searches
+            if ('google' in self.headers['host']):
+                if ('search' in self.uri): #and ('search' in self.uri):
+                    try:
+                        for param in self.uri.split('&'):
+                            if param.split('=')[0] == 'q':
+                                query = str(param.split('=')[1])
+                                if query:
+                                    logging.info("%s is querying %s for %s" % (self.client.getClientIP(), self.headers['host'], query))
+                    except Exception, e:
+                        error = str(e)
+                        logging.warning("%s Error parsing google search query %s" % (self.client.getClientIP(), error))
+
+            if ('bing' in self.headers['host']):
+                if ('Suggestions' in self.uri):
+                    try:
+                        for param in self.uri.split('&'):
+                            if param.split('=')[0] == 'qry':
+                                query = str(param.split('=')[1])
+                                if query:
+                                    logging.info("%s is querying %s for %s" % (self.client.getClientIP(), self.headers['host'], query))
+                    except Exception, e:
+                        error = str(e)
+                        logging.warning("%s Error parsing bing search query %s" % (self.client.getClientIP(), error))
+
             #check for creds passed in GET requests.. It's surprising to see how many people still do this (please stahp)
             for user in self.http_userfields:
                 username = re.findall("("+ user +")=([^&|;]*)", self.uri, re.IGNORECASE)
