@@ -12,7 +12,6 @@ Availible plugins:
 - Spoof - Redirect traffic using ARP Spoofing, ICMP Redirects or DHCP Spoofing and modify DNS queries
 - BeEFAutorun - Autoruns BeEF modules based on clients OS or browser type
 - AppCachePoison - Perform app cache poison attacks 
-- AirPwn - Monitor traffic on an 802.11 network and respond with arbitrary content as configured
 - SessionHijacking - Performs session hijacking attacks, and stores cookies in a firefox profile
 - BrowserProfiler - Attempts to enumerate all browser plugins of connected clients
 - CacheKill - Kills page caching by modifying headers
@@ -29,8 +28,6 @@ So far the most significant changes have been:
 - Integrated Responder (https://github.com/SpiderLabs/Responder) to poison LLMNR, NBT-NS and MDNS, and act as a WPAD rogue server.
 
 - Integrated SSLstrip+ (https://github.com/LeonardoNve/sslstrip2) by Leonardo Nve to partially bypass HSTS as demonstrated at BlackHat Asia 2014 
-
-- Addition of the AirPwn plugin (Python port of the original project), which also supports the DNSpwn attack
 
 - Addition of the SessionHijacking plugin, which uses code from FireLamb (https://github.com/sensepost/mana/tree/master/firelamb) to store cookies in a Firefox profile 
 
