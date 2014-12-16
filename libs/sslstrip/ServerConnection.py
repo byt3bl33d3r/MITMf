@@ -87,7 +87,7 @@ class ServerConnection(HTTPClient):
                             if param.split('=')[0] == 'q':
                                 query = str(param.split('=')[1])
                                 if query:
-                                    logging.info("%s is querying %s for %s" % (self.client.getClientIP(), self.headers['host'], query))
+                                    logging.info("%s is querying %s for: '%s'" % (self.client.getClientIP(), self.headers['host'], query))
                     except Exception, e:
                         error = str(e)
                         logging.warning("%s Error parsing google search query %s" % (self.client.getClientIP(), error))
@@ -100,7 +100,7 @@ class ServerConnection(HTTPClient):
                             if param.split('=')[0] == 'qry':
                                 query = str(param.split('=')[1])
                                 if query:
-                                    logging.info("%s is querying %s for %s" % (self.client.getClientIP(), self.headers['host'], query))
+                                    logging.info("%s is querying %s for: '%s'" % (self.client.getClientIP(), self.headers['host'], query))
                     except Exception, e:
                         error = str(e)
                         logging.warning("%s Error parsing bing search query %s" % (self.client.getClientIP(), error))
@@ -113,7 +113,7 @@ class ServerConnection(HTTPClient):
                             if param.split('=')[0] == 'command':
                                 query = str(param.split('=')[1])
                                 if query:
-                                    logging.info("%s is querying %s for %s" % (self.client.getClientIP(), self.headers['host'], query))
+                                    logging.info("%s is querying %s for: '%s'" % (self.client.getClientIP(), self.headers['host'], query))
                     except Exception, e:
                         error = str(e)
                         logging.warning("%s Error parsing yahoo search query %s" % (self.client.getClientIP(), error))
