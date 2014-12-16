@@ -33,7 +33,7 @@ if __name__ == "__main__":
     sgroup.add_argument("-f", "--favicon", action="store_true", help="Substitute a lock favicon on secure requests.")
     sgroup.add_argument("-k", "--killsessions", action="store_true", help="Kill sessions in progress.")
     sgroup.add_argument('-d', '--disable-proxy', dest='disproxy', action='store_true', default=False, help='Disable the SSLstrip Proxy')
-    sgroup.add_argument("-b", "--bypass-hsts", dest='hsts', action="store_true", help="Enable HSTS bypass")
+    sgroup.add_argument("-b", "--bypass-hsts", dest='hsts', action="store_true", default=False, help="Enable HSTS bypass")
 
     #Initialize plugins
     plugins = []
@@ -89,29 +89,11 @@ if __name__ == "__main__":
     if args.disproxy:
         ProxyPlugins.getInstance().setPlugins(load)
 
-    elif args.hsts:
-        from libs.sslstripplus.StrippingProxy import StrippingProxy
-        from libs.sslstripplus.URLMonitor import URLMonitor
-
-        URLMonitor.getInstance().setFaviconSpoofing(args.favicon)
-        CookieCleaner.getInstance().setEnabled(args.killsessions)
-        ProxyPlugins.getInstance().setPlugins(load)
-
-        strippingFactory              = http.HTTPFactory(timeout=10)
-        strippingFactory.protocol     = StrippingProxy
-
-        reactor.listenTCP(args.listen, strippingFactory)
-
-        print "\n[*] sslstrip v%s by Moxie Marlinspike running..." % sslstrip_version
-        print "[*] sslstrip+ by Leonardo Nve running..."
-        print "[*] sergio-proxy v%s online..." % sergio_version
-        
     else:
         from libs.sslstrip.StrippingProxy import StrippingProxy
         from libs.sslstrip.URLMonitor import URLMonitor
 
-        args.clients = False # temporary
-        URLMonitor.getInstance().setValues(args.favicon, args.clients)
+        URLMonitor.getInstance().setValues(args.favicon, args.hsts)
         CookieCleaner.getInstance().setEnabled(args.killsessions)
         ProxyPlugins.getInstance().setPlugins(load)
 
@@ -121,6 +103,8 @@ if __name__ == "__main__":
         reactor.listenTCP(args.listen, strippingFactory)
 
         print "\n[*] sslstrip v%s by Moxie Marlinspike running..." % sslstrip_version
+        if args.hsts:
+            print "[*] sslstrip+ by Leonardo Nve running..."
         print "[*] sergio-proxy v%s online" % sergio_version
 
     reactor.run()

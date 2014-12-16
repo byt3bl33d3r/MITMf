@@ -44,9 +44,30 @@ class SSLServerConnection(ServerConnection):
         return "SECURE POST"
 
     def handleHeader(self, key, value):
-        if (key.lower() == 'set-cookie'):
-            value = SSLServerConnection.cookieExpression.sub("\g<1>", value)
+        if ServerConnection.isHsts(self):
+            if (key.lower() == 'set-cookie'):
+                newvalues =[]
+                value = SSLServerConnection.cookieExpression.sub("\g<1>", value)
+                values = value.split(';')
+                for v in values:
+                    if v[:7].lower()==' domain':
+                        dominio=v.split("=")[1]
+                        logging.debug("LEO Parsing cookie domain parameter: %s"%v)
+                        real = self.urlMonitor.sustitucion
+                        if dominio in real:
+                            v=" Domain=%s"%real[dominio]
+                            logging.debug("LEO New cookie domain parameter: %s"%v)
+                    newvalues.append(v)
+                value = ';'.join(newvalues)
+            
+            if (key.lower() == 'access-control-allow-origin'):
+                value='*'
 
+        else:
+            if (key.lower() == 'set-cookie'):
+                value = SSLServerConnection.cookieExpression.sub("\g<1>", value)
+
+        
         ServerConnection.handleHeader(self, key, value)
 
     def stripFileFromPath(self, path):

