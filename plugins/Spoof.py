@@ -20,11 +20,7 @@ from base64 import b64decode
 from urllib import unquote
 import binascii
 import random
-
-try:
-    from configobj import ConfigObj
-except:
-    sys.exit('[-] configobj library not installed!')
+from configobj import ConfigObj
 
 
 class Spoof(Plugin):

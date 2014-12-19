@@ -9,6 +9,16 @@ from libs.sergioproxy.ProxyPlugins import ProxyPlugins
 import sys, logging, traceback, string, os
 import argparse
 
+try:
+    import user_agents
+except:
+    sys.exit("[-] user_agents library not installed!")
+
+try:
+    import configobj
+except:
+    sys.exit("[-] configobj library not installed!")
+
 from plugins import *
 plugin_classes = plugin.Plugin.__subclasses__()
 
