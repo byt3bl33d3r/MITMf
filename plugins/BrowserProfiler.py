@@ -17,9 +17,9 @@ class BrowserProfiler(Inject, Plugin):
         self.dic_output = {}  # so other plugins can access the results
         print "[*] Browser Profiler online"
 
-    def post2dict(self, string):  #converts the ajax post to a dic
+    def post2dict(self, post):  #converts the ajax post to a dic
         dict = {}
-        for line in string.split('&'):
+        for line in post.split('&'):
             t = line.split('=')
             dict[t[0]] = t[1]
         return dict
@@ -69,8 +69,6 @@ function make_xhr(){
         }
 
         var data = [];
-        userAgent = navigator.userAgent;
-        data.push('user_agent=' + userAgent);
         
         var PD = PluginDetect;
         

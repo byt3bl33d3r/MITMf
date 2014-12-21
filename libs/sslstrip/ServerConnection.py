@@ -47,7 +47,6 @@ class ServerConnection(HTTPClient):
         self.postData         = postData
         self.headers          = headers
         self.client           = client
-        self.clientInfo       = None
         self.urlMonitor       = URLMonitor.getInstance()
         self.hsts             = URLMonitor.getInstance().isHstsBypass()
         self.plugins          = ProxyPlugins.getInstance()
@@ -76,7 +75,10 @@ class ServerConnection(HTTPClient):
     def sendRequest(self):
         if self.command == 'GET':
             user_agent = parse(self.headers['user-agent'])
-            self.clientInfo = "%s [type:%s-%s os:%s] "  % (self.client.getClientIP(), user_agent.browser.family, user_agent.browser.version[0], user_agent.os.family)
+            try:
+                self.clientInfo = "%s [type:%s-%s os:%s] "  % (self.client.getClientIP(), user_agent.browser.family, user_agent.browser.version[0], user_agent.os.family)
+            except:
+                self.clientInfo = "%s " % self.client.getClientIP()
 
             logging.info(self.clientInfo + "Sending Request: %s" % self.headers['host'])
 
