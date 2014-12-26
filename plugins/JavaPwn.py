@@ -9,7 +9,6 @@ import sys
 import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Error when importing scapy
 from scapy.all import get_if_addr
-from configobj import ConfigObj
 
 requests_log = logging.getLogger("requests")  #Disables "Starting new HTTP Connection (1)" log message
 requests_log.setLevel(logging.WARNING)
@@ -26,8 +25,15 @@ class JavaPwn(BrowserProfiler, Plugin):
         self.options      = options
         self.sploited_ips = []  #store ip of pwned or not vulnerable clients so we don't re-exploit
 
-        msfcfg       = ConfigObj('./config/mitmf.cfg')['Metasploit']
-        self.javacfg = ConfigObj('./config/javapwn.cfg')
+        try:
+            msfcfg       = options.configfile['MITMf']['Metasploit']
+        except Exception, e:
+            sys.exit("[-] Error parsing Metasploit options in config file : " + str(e))
+        
+        try:
+            self.javacfg = options.configfile['JavaPwn']
+        except Exception, e:
+            sys.exit("[-] Error parsing config for JavaPwn: " + str(e))
 
         self.msfport = msfcfg['msfport']
         self.rpcip   = msfcfg['rpcip']

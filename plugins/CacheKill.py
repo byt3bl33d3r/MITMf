@@ -2,7 +2,7 @@ from plugins.plugin import Plugin
 
 
 class CacheKill(Plugin):
-    name = "CacheKill Plugin"
+    name = "CacheKill"
     optname = "cachekill"
     desc = "Kills page caching by modifying headers"
     implements = ["handleHeader", "connectionMade"]

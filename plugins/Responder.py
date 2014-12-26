@@ -24,6 +24,11 @@ class Responder(Plugin):
             sys.exit("[-] Responder plugin requires root privileges")
 
         try:
+            config = options.configfile['Responder']
+        except Exception, e:
+            sys.exit('[-] Error parsing config for Responder: ' + str(e))
+
+        try:
             self.ip_address = get_if_addr(options.interface)
             if self.ip_address == "0.0.0.0":
                 sys.exit("[-] Interface %s does not have an IP address" % self.interface)
@@ -32,16 +37,16 @@ class Responder(Plugin):
 
         print "[*] Responder plugin online"
         DnsCache.getInstance().setCustomAddress(self.ip_address)
-        DnsCache.getInstance().setCustomRes('wpad', self.ip_address)
-        DnsCache.getInstance().setCustomRes('ISAProxySrv', self.ip_address)
-        DnsCache.getInstance().setCustomRes('RespProxySrv', self.ip_address)
+
+        for name in ['wpad', 'ISAProxySrv', 'RespProxySrv']:
+            DnsCache.getInstance().setCustomRes(name, self.ip_address)
 
         if '--spoof' not in sys.argv:
             print '[*] Setting up iptables'
             os.system('iptables -F && iptables -X && iptables -t nat -F && iptables -t nat -X')
             os.system('iptables -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port %s' % options.listen)
 
-        t = threading.Thread(name='responder', target=start_responder, args=(options, self.ip_address))
+        t = threading.Thread(name='responder', target=start_responder, args=(options, self.ip_address, config))
         t.setDaemon(True)
         t.start()
 

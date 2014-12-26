@@ -15,7 +15,7 @@ except:
     sys.exit("[-] user_agents library not installed!")
 
 try:
-    import configobj
+    from configobj import ConfigObj
 except:
     sys.exit("[-] configobj library not installed!")
 
@@ -29,21 +29,23 @@ sergio_version = "0.2.1"
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="MITMf v%s - Framework for MITM attacks" % mitmf_version, epilog="Use wisely, young Padawan.",fromfile_prefix_chars='@')
+    #add MITMf options
+    mgroup = parser.add_argument_group("MITMf", "Options for MITMf")
+    mgroup.add_argument("--log-level", type=str,choices=['debug', 'info'], default="info", help="Specify a log level [default: info]")
+    mgroup.add_argument("-i", "--interface", type=str,  metavar="interface" ,help="Interface to listen on")
+    mgroup.add_argument("-c", "--config-file", dest='configfile', type=str, default="./config/mitmf.cfg", metavar='configfile', help="Specify config file to use")
+    mgroup.add_argument('-d', '--disable-proxy', dest='disproxy', action='store_true', default=False, help='Only run plugins, disable all proxies')
     #add sslstrip options
-    sgroup = parser.add_argument_group("sslstrip", "Options for sslstrip library")
+    sgroup = parser.add_argument_group("SSLstrip", "Options for SSLstrip library")
     #sgroup.add_argument("-w", "--write", type=argparse.FileType('w'), metavar="filename", default=sys.stdout, help="Specify file to log to (stdout by default).")
-    sgroup.add_argument("--log-level", type=str,choices=['debug', 'info'], default="info", help="Specify a log level [default: info]")
     slogopts = sgroup.add_mutually_exclusive_group()
     slogopts.add_argument("-p", "--post", action="store_true",help="Log only SSL POSTs. (default)")
     slogopts.add_argument("-s", "--ssl", action="store_true", help="Log all SSL traffic to and from server.")
     slogopts.add_argument("-a", "--all", action="store_true", help="Log all SSL and HTTP traffic to and from server.")
     #slogopts.add_argument("-c", "--clients", action='store_true', default=False, help='Log each clients data in a seperate file') #not fully tested yet
-    sgroup.add_argument("-i", "--interface", type=str, required=True,  metavar="interface" ,help="Interface to listen on")
     sgroup.add_argument("-l", "--listen", type=int, metavar="port", default=10000, help="Port to listen on (default 10000)")
     sgroup.add_argument("-f", "--favicon", action="store_true", help="Substitute a lock favicon on secure requests.")
     sgroup.add_argument("-k", "--killsessions", action="store_true", help="Kill sessions in progress.")
-    sgroup.add_argument('-d', '--disable-proxy', dest='disproxy', action='store_true', default=False, help='Disable the SSLstrip Proxy')
-    sgroup.add_argument("-b", "--bypass-hsts", dest='hsts', action="store_true", default=False, help="Enable HSTS bypass")
 
     #Initialize plugins
     plugins = []
@@ -69,6 +71,23 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    try:
+        configfile = ConfigObj(args.configfile)
+    except Exception, e:
+        sys.exit("[-] Error parsing config file: " + str(e))
+
+    config_args = configfile['MITMf']['args']
+    if config_args:
+        print "[*] Loading arguments from config file"
+        for arg in config_args.split(' '):
+            sys.argv.append(arg)
+        args = parser.parse_args()
+
+    if not args.interface:
+        sys.exit("[-] -i , --interface argument is required")
+
+    args.configfile = configfile #so we can pass the configobj down to all the plugins
+
     log_level = logging.__dict__[args.log_level.upper()]
 
     #Start logging 
@@ -84,7 +103,7 @@ if __name__ == "__main__":
     print "[*] MITMf v%s started... initializing plugins and modules" % mitmf_version
     if ('--responder' and '--wpad') in sys.argv:
         args.listen = 3141
-        print "[*] Listening on port 3141 since --wpad was passed"
+        print "[*] SSLstrip is now listening on port 3141 since --wpad was passed"
 
     load = []
     try:
@@ -103,7 +122,7 @@ if __name__ == "__main__":
         from libs.sslstrip.StrippingProxy import StrippingProxy
         from libs.sslstrip.URLMonitor import URLMonitor
 
-        URLMonitor.getInstance().setValues(args.favicon, args.hsts)
+        URLMonitor.getInstance().setFaviconSpoofing(args.favicon)
         CookieCleaner.getInstance().setEnabled(args.killsessions)
         ProxyPlugins.getInstance().setPlugins(load)
 

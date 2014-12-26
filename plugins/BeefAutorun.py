@@ -9,11 +9,6 @@ import json
 import threading
 import libs.beefapi as beefapi
 
-try:
-    from configobj import ConfigObj
-except:
-    sys.exit('[-] configobj library not installed!')
-
 requests_log = logging.getLogger("requests")  #Disables "Starting new HTTP Connection (1)" log message
 requests_log.setLevel(logging.WARNING)
 
@@ -25,10 +20,17 @@ class BeefAutorun(Inject, Plugin):
 	desc     = "Injects BeEF hooks & autoruns modules based on Browser and/or OS type"
 
 	def initialize(self, options):
-		self.options    = options
+		self.options = options
 
-		beefconfig = ConfigObj("./config/mitmf.cfg")['BeEF']
-		userconfig = ConfigObj("./config/beefautorun.cfg")
+		try:
+			beefconfig = options.configfile['MITMf']['BeEF']
+		except Exception, e:
+			sys.exit("[-] Error parsing BeEF options in config file: " + str(e))
+		
+		try:
+			userconfig = options.configfile['BeEFAutorun']
+		except Exception, e:
+			sys.exit("[-] Error parsing config for BeEFAutorun: " + str(e))
 		
 		self.Mode = userconfig['mode']
 		self.All_modules = userconfig["ALL"]

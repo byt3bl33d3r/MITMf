@@ -18,7 +18,6 @@
 
 import re, os
 import logging
-from configobj import ConfigObj
 
 class URLMonitor:    
 
@@ -44,12 +43,7 @@ class URLMonitor:
         self.redirects          = []
         self.faviconReplacement = False
         self.hsts               = False
-
-        hsts_config = ConfigObj("./config/hsts_bypass.cfg")
-
-        for k,v in hsts_config.items():
-            self.sustitucion[k] = v
-            self.real[v] = k
+        self.hsts_config        = None 
 
     def isSecureLink(self, client, url):
         for expression in URLMonitor.javascriptTrickery:
@@ -138,9 +132,19 @@ class URLMonitor:
             self.strippedURLs.add((client, url))
             self.strippedURLPorts[(client, url)] = int(port)
 
-    def setValues(self, faviconSpoofing, hstsbypass=False, clientLogging=False,):
+    def setFaviconSpoofing(self, faviconSpoofing):
         self.faviconSpoofing = faviconSpoofing
-        self.hsts = hstsbypass
+
+    def setHstsBypass(self, hstsconfig):
+        if hstsconfig:
+            self.hsts = True
+            self.hsts_config = hstsconfig
+
+            for k,v in self.hsts_config.items():
+                self.sustitucion[k] = v
+                self.real[v] = k
+
+    def setClientLogging(self, clientLogging):
         self.clientLogging = clientLogging
 
     def isFaviconSpoofing(self):

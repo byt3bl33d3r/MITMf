@@ -20,7 +20,6 @@ from base64 import b64decode
 from urllib import unquote
 import binascii
 import random
-from configobj import ConfigObj
 
 
 class Spoof(Plugin):
@@ -93,7 +92,7 @@ class Spoof(Plugin):
 
             self.rand_number = []
             self.dhcp_dic = {}
-            self.dhcpcfg = ConfigObj("./config/dhcp.cfg")
+            self.dhcpcfg = options.configfile['Spoof']['DHCP']
             
             thread_target = self.dhcp_sniff
             thread_args = ()
@@ -109,9 +108,9 @@ class Spoof(Plugin):
             print "[*] DNS Tampering enabled"
             
             if self.dns:
-                self.dnscfg = ConfigObj("./config/dns.cfg")
+                self.dnscfg = options.configfile['Spoof']['DNS']
 
-            self.hstscfg = ConfigObj("./config/hsts_bypass.cfg")
+            self.hstscfg = options.configfile['SSLstrip+']
 
             if not self.manualiptables:
                 os.system('iptables -t nat -A PREROUTING -p udp --dport 53 -j NFQUEUE')
@@ -334,7 +333,7 @@ class Spoof(Plugin):
         group.add_argument('--icmp', dest='icmp', action='store_true', default=False, help='Redirect traffic using ICMP redirects')
         group.add_argument('--dhcp', dest='dhcp', action='store_true', default=False, help='Redirect traffic using DHCP offers')
         options.add_argument('--dns', dest='dns', action='store_true', default=False, help='Modify intercepted DNS queries')
-        options.add_argument('--shellshock', type=str, dest='shellshock', default=None, help='Trigger the Shellshock vuln when spoofing DHCP, and execute specified command')
+        options.add_argument('--shellshock', type=str, metavar='PAYLOAD', dest='shellshock', default=None, help='Trigger the Shellshock vuln when spoofing DHCP, and execute specified command')
         options.add_argument('--gateway', dest='gateway', help='Specify the gateway IP')
         options.add_argument('--target', dest='target', help='Specify a host to poison [default: subnet]')
         options.add_argument('--arpmode', dest='arpmode', default='req', help=' ARP Spoofing mode: requests (req) or replies (rep) [default: req]')

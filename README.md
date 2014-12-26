@@ -9,6 +9,7 @@ This tool is completely based on sergio-proxy https://code.google.com/p/sergio-p
 
 Availible plugins:
 - Responder - LLMNR, NBT-NS and MDNS poisoner
+- SSLstrip+ - Partially bypass HSTS
 - Spoof - Redirect traffic using ARP Spoofing, ICMP Redirects or DHCP Spoofing and modify DNS queries
 - BeEFAutorun - Autoruns BeEF modules based on clients OS or browser type
 - AppCachePoison - Perform app cache poison attacks 

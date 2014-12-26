@@ -3,6 +3,7 @@ logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Er
 from scapy.all import get_if_addr
 import time
 import re
+import sys
 import argparse
 from plugins.plugin import Plugin
 from plugins.CacheKill import CacheKill
