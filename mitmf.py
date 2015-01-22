@@ -6,13 +6,14 @@ from twisted.internet import reactor
 from libs.sslstrip.CookieCleaner import CookieCleaner
 from libs.sergioproxy.ProxyPlugins import ProxyPlugins
 
-import sys, logging, traceback, string, os
+import sys
+import logging
 import argparse
 
 try:
     import user_agents
 except:
-    sys.exit("[-] user_agents library not installed!")
+    pass
 
 try:
     from configobj import ConfigObj
@@ -94,7 +95,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=log_level, format="%(asctime)s %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
     logFormatter = logging.Formatter("%(asctime)s %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
     rootLogger = logging.getLogger()
-    
+
     fileHandler = logging.FileHandler("./logs/mitmf.log")
     fileHandler.setFormatter(logFormatter)
     rootLogger.addHandler(fileHandler)

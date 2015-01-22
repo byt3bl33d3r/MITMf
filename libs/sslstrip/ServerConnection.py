@@ -19,7 +19,11 @@
 import logging, re, string, random, zlib, gzip, StringIO, sys
 import plugins
 
-from user_agents import parse
+try:
+    from user_agents import parse
+except:
+    pass
+
 from twisted.web.http import HTTPClient
 from URLMonitor import URLMonitor
 from libs.sergioproxy.ProxyPlugins import ProxyPlugins
@@ -74,8 +78,8 @@ class ServerConnection(HTTPClient):
 
     def sendRequest(self):
         if self.command == 'GET':
-            user_agent = parse(self.headers['user-agent'])
             try:
+                user_agent = parse(self.headers['user-agent'])
                 self.clientInfo = "%s [type:%s-%s os:%s] "  % (self.client.getClientIP(), user_agent.browser.family, user_agent.browser.version[0], user_agent.os.family)
             except:
                 self.clientInfo = "%s " % self.client.getClientIP()
