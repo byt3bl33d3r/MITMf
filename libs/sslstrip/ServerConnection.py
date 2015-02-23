@@ -155,8 +155,6 @@ class ServerConnection(HTTPClient):
         self.client.setResponseCode(int(code), message)
 
     def handleHeader(self, key, value):
-        self.plugins.hook()
-
         if (key.lower() == 'location'):
             value = self.replaceSecureLinks(value)
 
@@ -179,6 +177,8 @@ class ServerConnection(HTTPClient):
             self.client.responseHeaders.addRawHeader(key, value)
         else:
             self.client.setHeader(key, value)
+
+        self.plugins.hook()
 
         logging.debug("Receiving header: (%s => %s)" % (key, value))
 

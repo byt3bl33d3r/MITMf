@@ -17,6 +17,8 @@ class Upsidedownternet(Plugin):
         globals()['ImageFile'] = ImageFile
         self.options = options
 
+        print "[*] Upsidedownternet plugin online"
+
     def handleHeader(self, request, key, value):
         '''Kill the image skipping that's in place for speed reasons'''
         if request.isImageRequest:
@@ -29,7 +31,7 @@ class Upsidedownternet(Plugin):
             isImage = getattr(request, 'isImage')
         except AttributeError:
             isImage = False
-
+        
         if isImage:
             try:
                 image_type = request.imageType
@@ -43,7 +45,7 @@ class Upsidedownternet(Plugin):
                 im.save(output, format=image_type)
                 data = output.getvalue()
                 output.close()
-                logging.info("Flipped image")
+                logging.info("%s Flipped image" % request.client.getClientIP())
             except Exception as e:
-                print "Error: %s" % e
+                logging.info("%s Error: %s" % (request.client.getClientIP(), e))
         return {'request': request, 'data': data}
