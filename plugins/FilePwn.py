@@ -1,7 +1,3 @@
-################################################################################################
-# 99.9999999% of this code is stolen from BDFProxy - https://github.com/secretsquirrel/BDFProxy
-#################################################################################################
-
 """
     BackdoorFactory Proxy (BDFProxy) v0.2 - 'Something Something'
 

@@ -10,6 +10,7 @@ class SMBAuth(Inject, Plugin):
     name = "SMBAuth"
     optname = "smbauth"
     desc = "Evoke SMB challenge-response auth attempts"
+    has_opts = True
 
     def initialize(self, options):
         Inject.initialize(self, options)

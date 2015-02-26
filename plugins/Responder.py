@@ -4,6 +4,7 @@ logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Er
 from scapy.all import get_if_addr
 from libs.responder.Responder import start_responder
 from libs.sslstrip.DnsCache import DnsCache
+from twisted.internet import reactor
 import sys
 import os
 import threading
@@ -12,7 +13,6 @@ class Responder(Plugin):
     name = "Responder"
     optname = "responder"
     desc = "Poison LLMNR, NBT-NS and MDNS requests"
-    #implements = ["handleResponse"]
     has_opts = True
 
     def initialize(self, options):
@@ -41,14 +41,12 @@ class Responder(Plugin):
         for name in ['wpad', 'ISAProxySrv', 'RespProxySrv']:
             DnsCache.getInstance().setCustomRes(name, self.ip_address)
 
-        if '--spoof' not in sys.argv:
-            print '[*] Setting up iptables'
-            os.system('iptables -F && iptables -X && iptables -t nat -F && iptables -t nat -X')
-            os.system('iptables -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port %s' % options.listen)
-
         t = threading.Thread(name='responder', target=start_responder, args=(options, self.ip_address, config))
         t.setDaemon(True)
         t.start()
+
+    def plugin_reactor(self, strippingFactory):
+        reactor.listenTCP(3141, strippingFactory)
 
     def add_options(self, options):
         options.add_argument('--analyze', dest="Analyse", action="store_true", help="Allows you to see NBT-NS, BROWSER, LLMNR requests from which workstation to which workstation without poisoning")
@@ -60,8 +58,3 @@ class Responder(Plugin):
         options.add_argument('--forcewpadauth', dest="Force_WPAD_Auth", default=False, action="store_true", help = "Set this if you want to force NTLM/Basic authentication on wpad.dat file retrieval. This might cause a login prompt in some specific cases. Therefore, default value is False")
         options.add_argument('--lm', dest="LM_On_Off", default=False, action="store_true", help="Set this if you want to force LM hashing downgrade for Windows XP/2003 and earlier. Default value is False")
         options.add_argument('--verbose', dest="Verbose", default=False, action="store_true", help="More verbose")
-
-    def finish(self):
-        if '--spoof' not in sys.argv:
-            print '\n[*] Flushing iptables'
-            os.system('iptables -F && iptables -X && iptables -t nat -F && iptables -t nat -X')

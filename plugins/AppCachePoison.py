@@ -1,4 +1,3 @@
-
 # 99.9999999% of this code was stolen from https://github.com/koto/sslstrip by Krzysztof Kotowicz
 
 from plugins.plugin import Plugin

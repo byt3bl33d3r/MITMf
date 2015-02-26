@@ -51,6 +51,7 @@ class ServerConnection(HTTPClient):
         self.postData         = postData
         self.headers          = headers
         self.client           = client
+        self.clientInfo       = None
         self.urlMonitor       = URLMonitor.getInstance()
         self.hsts             = URLMonitor.getInstance().isHstsBypass()
         self.plugins          = ProxyPlugins.getInstance()
@@ -58,17 +59,6 @@ class ServerConnection(HTTPClient):
         self.isCompressed     = False
         self.contentLength    = None
         self.shutdownComplete = False
-
-        #these field names were stolen from the etter.fields file (Ettercap Project)
-        self.http_userfields = ['log','login', 'wpname', 'ahd_username', 'unickname', 'nickname', 'user', 'user_name',
-                                'alias', 'pseudo', 'email', 'username', '_username', 'userid', 'form_loginname', 'loginname',
-                                'login_id', 'loginid', 'session_key', 'sessionkey', 'pop_login', 'uid', 'id', 'user_id', 'screename',
-                                'uname', 'ulogin', 'acctname', 'account', 'member', 'mailaddress', 'membername', 'login_username',
-                                'login_email', 'loginusername', 'loginemail', 'uin', 'sign-in']
-
-        self.http_passfields = ['ahd_password', 'pass', 'password', '_password', 'passwd', 'session_password', 'sessionpassword', 
-                                'login_password', 'loginpassword', 'form_pw', 'pw', 'userpassword', 'pwd', 'upassword', 'login_password'
-                                'passwort', 'passwrd', 'wppassword', 'upasswd']
 
     def getPostPrefix(self):
         return "POST"
@@ -86,44 +76,8 @@ class ServerConnection(HTTPClient):
 
             logging.info(self.clientInfo + "Sending Request: %s" % self.headers['host'])
 
-            #Capture google searches
-            if ('google' in self.headers['host']):
-                if ('search' in self.uri):
-                    self.captureQueries('q')
-
-            #Capture bing searches
-            if ('bing' in self.headers['host']):
-                if ('Suggestions' in self.uri):
-                    self.captureQueries('qry')
-
-            #Capture yahoo searches
-            if ('search.yahoo' in self.headers['host']):
-                if ('nresults' in self.uri):
-                    self.captureQueries('command')
-
-            #check for creds passed in GET requests.. It's surprising to see how many people still do this (please stahp)
-            for user in self.http_userfields:
-                username = re.findall("("+ user +")=([^&|;]*)", self.uri, re.IGNORECASE)
-
-            for passw in self.http_passfields:
-                password = re.findall("(" + passw + ")=([^&|;]*)", self.uri, re.IGNORECASE)
-
-            if (username and password):
-                logging.warning(self.clientInfo + "%s Possible Credentials (%s):\n%s" % (self.command, self.headers['host'], self.uri))
-
         self.plugins.hook()
         self.sendCommand(self.command, self.uri)
-
-    def captureQueries(self, search_param):
-        try:
-            for param in self.uri.split('&'):
-                if param.split('=')[0] == search_param:
-                    query = str(param.split('=')[1])
-                    if query:
-                        logging.info(self.clientInfo + "is querying %s for: %s" % (self.headers['host'], query))
-        except Exception, e:
-            error = str(e)
-            logging.warning(self.clientInfo + "Error parsing google search query %s" % error)
 
     def sendHeaders(self):
         for header, value in self.headers.items():

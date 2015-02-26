@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python2.7
 # MSF-RPC - A  Python library to facilitate MSG-RPC communication with Metasploit
 # Ryan Linn  - RLinn@trustwave.com, Marcello Salvati - byt3bl33d3r@gmail.com
 # Copyright (C) 2011 Trustwave

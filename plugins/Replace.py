@@ -1,5 +1,3 @@
-#import os
-#import subprocess
 import sys
 import logging
 import time

@@ -38,6 +38,7 @@ class ProxyPlugins:
     in handleResponse, but is still annoying.
     '''
     _instance = None
+
     def setPlugins(self,plugins):
         '''Set the plugins in use'''
         self.plist = []
@@ -47,6 +48,7 @@ class ProxyPlugins:
         self.pmthds = {}
         for p in plugins:
             self.addPlugin(p)
+
     def addPlugin(self,p):
         '''Load a plugin'''
         self.plist.append(p)
@@ -55,11 +57,13 @@ class ProxyPlugins:
                 self.pmthds[mthd].append(getattr(p,mthd))
             except KeyError:
                 self.pmthds[mthd] = [getattr(p,mthd)]
+
     def removePlugin(self,p):
         '''Unload a plugin'''
         self.plist.remove(p)
         for mthd in p.implements:
             self.pmthds[mthd].remove(p)
+
     def hook(self):
         '''Magic to hook various function calls in sslstrip'''
         #gets the function name and args of our caller

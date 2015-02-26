@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 
 from twisted.web import http
 from twisted.internet import reactor
@@ -13,7 +13,7 @@ import argparse
 try:
     import user_agents
 except:
-    pass
+    print "[*] user_agents library missing! User-Agent parsing will be disabled!"
 
 try:
     from configobj import ConfigObj
@@ -101,25 +101,23 @@ if __name__ == "__main__":
     rootLogger.addHandler(fileHandler)
 
     #All our options should be loaded now, pass them onto plugins
-    print "[*] MITMf v%s started... initializing plugins and modules" % mitmf_version
-    if ('--responder' and '--wpad') in sys.argv:
-        args.listen = 3141
-        print "[*] SSLstrip is now listening on port 3141 since --wpad was passed"
+    print "[*] MITMf v%s started... initializing plugins" % mitmf_version
 
     load = []
-    try:
-        for p in plugins:
-            if  getattr(args, p.optname):
+   
+    for p in plugins:
+        try:
+            if getattr(args, p.optname):
                 p.initialize(args)
                 load.append(p)
-    except NotImplementedError:
-        print "Plugin %s lacked initialize function." % p.name
+        except NotImplementedError:
+            print "Plugin %s lacked initialize function." % p.name
 
     #Plugins are ready to go, start MITMf
     if args.disproxy:
         ProxyPlugins.getInstance().setPlugins(load)
-
     else:
+        
         from libs.sslstrip.StrippingProxy import StrippingProxy
         from libs.sslstrip.URLMonitor import URLMonitor
 
@@ -132,9 +130,17 @@ if __name__ == "__main__":
 
         reactor.listenTCP(args.listen, strippingFactory)
 
+        #load reactor options for plugins that have the 'plugin_reactor' attribute
+        for p in plugins:
+            if getattr(args, p.optname):
+                if hasattr(p, 'plugin_reactor'):
+                    p.plugin_reactor(strippingFactory) #we pass the default strippingFactory, so the plugins can use it
+
         print "\n[*] sslstrip v%s by Moxie Marlinspike running..." % sslstrip_version
+     
         if args.hsts:
             print "[*] sslstrip+ by Leonardo Nve running..."
+        
         print "[*] sergio-proxy v%s online" % sergio_version
 
     reactor.run()

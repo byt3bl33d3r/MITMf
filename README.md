@@ -11,6 +11,7 @@ Availible plugins:
 - Responder - LLMNR, NBT-NS and MDNS poisoner
 - SSLstrip+ - Partially bypass HSTS
 - Spoof - Redirect traffic using ARP Spoofing, ICMP Redirects or DHCP Spoofing and modify DNS queries
+- Sniffer - Sniffs for various protocol login and auth attempts
 - BeEFAutorun - Autoruns BeEF modules based on clients OS or browser type
 - AppCachePoison - Perform app cache poison attacks 
 - SessionHijacking - Performs session hijacking attacks, and stores cookies in a firefox profile
@@ -25,6 +26,9 @@ Availible plugins:
 - Upsidedownternet - Flips images 180 degrees
 
 So far the most significant changes have been:
+
+- Addition of the Sniffer plugin which integrates Net-Creds (https://github.com/DanMcInerney/net-creds) currently supported protocols are:
+  FTP, IRC, POP, IMAP, Telnet, SMTP, SNMP (community strings), NTLMv1/v2 (all supported protocols like HTTP, SMB, LDAP etc..) and Kerberos
 
 - Integrated Responder (https://github.com/SpiderLabs/Responder) to poison LLMNR, NBT-NS and MDNS, and act as a WPAD rogue server.
 
