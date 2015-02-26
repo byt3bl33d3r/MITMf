@@ -1,0 +1,12 @@
+Twisted
+requests
+scapy
+msgpack-python
+dnspython
+user-agents
+configobj
+pyyaml
+ua-parser
+Pillow
+pefile
+capstone

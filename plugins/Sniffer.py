@@ -25,6 +25,7 @@ class Sniffer(Plugin):
 	def initialize(self, options):
 		self.options = options
 		self.interface = options.interface
+		#self.parse = options.parse
 
 		#these field names were stolen from the etter.fields file (Ettercap Project)
 		self.http_userfields = ['log','login', 'wpname', 'ahd_username', 'unickname', 'nickname', 'user', 'user_name',
@@ -43,9 +44,18 @@ class Sniffer(Plugin):
 		n = NetCreds()
 
 		print "[*] Sniffer plugin online"
+
+		#if not self.parse:
 		t = threading.Thread(name="sniffer", target=n.start, args=(self.interface,))
 		t.setDaemon(True)
 		t.start()
+		#else:
+		#	 pcap = rdpcap(self.parse)
+		#	 for pkt in pcap:
+		#	 	n.pkt_parser(pkt)
+
+	#def add_options(self, options):
+	#	options.add_argument('--parse', dest='parse', type=str, default=None, help='Parse pcap')
 
 	def sendRequest(self, request):
 		#Capture google searches
@@ -772,9 +782,9 @@ class NetCreds:
 
 	def printer(self, src_ip_port, dst_ip_port, msg):
 		if dst_ip_port != None:
-			print_str = '[%s --> %s] %s%s%s' % (src_ip_port, dst_ip_port, T, msg, W)
+			print_str = '%s --> %s %s' % (src_ip_port, dst_ip_port,msg)
 			# All credentials will have dst_ip_port, URLs will not
 			logging.info(print_str)
 		else:
-			print_str = '[%s] %s' % (src_ip_port.split(':')[0], msg)
+			print_str = '%s %s' % (src_ip_port.split(':')[0], msg)
 			logging.info(print_str)
