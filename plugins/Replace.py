@@ -1,3 +1,7 @@
+"""
+Plugin by @rubenthijssen
+"""
+
 import sys
 import logging
 import time
