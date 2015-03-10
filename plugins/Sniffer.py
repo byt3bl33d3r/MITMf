@@ -46,11 +46,11 @@ class Sniffer(Plugin):
 		n = NetCreds()
 
 		#if not self.parse:
+		print "|  |_ Net-Creds online"
 		t = threading.Thread(name="sniffer", target=n.start, args=(self.interface,))
 		t.setDaemon(True)
 		t.start()
 
-		print self.plg_text
 		#else:
 		#	 pcap = rdpcap(self.parse)
 		#	 for pkt in pcap:
