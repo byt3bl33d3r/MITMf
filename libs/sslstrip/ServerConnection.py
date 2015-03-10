@@ -185,6 +185,10 @@ class ServerConnection(HTTPClient):
     def replaceSecureLinks(self, data):
         if self.hsts:
 
+            #Original code from SSLstrip+
+            #Saying that this is unreadible is an understatement
+            #KILL IT WITH FIRE!!
+
             sustitucion = {}
             patchDict = self.urlMonitor.patchDict
             if len(patchDict)>0:

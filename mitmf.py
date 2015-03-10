@@ -5,6 +5,7 @@ from twisted.internet import reactor
 
 from libs.sslstrip.CookieCleaner import CookieCleaner
 from libs.sergioproxy.ProxyPlugins import ProxyPlugins
+from libs.banners import get
 
 import logging
 
@@ -25,11 +26,14 @@ try:
 except:
     print "[-] user_agents library missing! User-Agent parsing will be disabled!"
 
-mitmf_version = "0.9"
+mitmf_version = "0.9.5"
 sslstrip_version = "0.9"
 sergio_version = "0.2.1"
 
-parser = argparse.ArgumentParser(description="MITMf v%s - Framework for MITM attacks" % mitmf_version, epilog="Use wisely, young Padawan.",fromfile_prefix_chars='@')
+banner = get()
+print banner
+
+parser = argparse.ArgumentParser(description="MITMf v%s - Framework for MITM attacks" % mitmf_version, version=mitmf_version, usage='', epilog="Use wisely, young Padawan.",fromfile_prefix_chars='@')
 #add MITMf options
 mgroup = parser.add_argument_group("MITMf", "Options for MITMf")
 mgroup.add_argument("--log-level", type=str,choices=['debug', 'info'], default="info", help="Specify a log level [default: info]")
@@ -137,8 +141,11 @@ for p in plugins:
         if getattr(args, p.optname):
             p.initialize(args)
             load.append(p)
-    except NotImplementedError:
-        print "Plugin %s lacked initialize function." % p.name
+
+        if vars(args)[p.optname] is True:
+            print "|_ %s v%s" % (p.name, p.version)
+    except Exception, e:
+        print "[-] Error loading plugin: " + str(e) 
 
 #Plugins are ready to go, start MITMf
 if args.disproxy:

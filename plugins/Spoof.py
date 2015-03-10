@@ -20,7 +20,7 @@ import random
 class Spoof(Plugin):
 	name     = "Spoof"
 	optname  = "spoof"
-	desc     = 'Redirect/Modify traffic using ICMP, ARP or DHCP'
+	desc     = "Redirect/Modify traffic using ICMP, ARP or DHCP"
 	version  = "0.4"
 	has_opts = True
 	req_root = True

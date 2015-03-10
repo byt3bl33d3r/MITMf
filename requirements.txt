@@ -6,6 +6,7 @@ dnspython
 user-agents
 configobj
 pyyaml
+NetfilterQueue >= 0.6
 ua-parser
 Pillow
 pefile

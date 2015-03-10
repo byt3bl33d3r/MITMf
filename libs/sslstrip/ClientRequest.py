@@ -125,6 +125,10 @@ class ClientRequest(Request):
 
         if self.hsts:
             
+            #Original code from SSLstrip+
+            #Saying that this is unreadible is an understatement
+            #KILL IT WITH FIRE!!
+
             real = self.urlMonitor.real
             patchDict = self.urlMonitor.patchDict
 

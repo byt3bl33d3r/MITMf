@@ -53,6 +53,13 @@ class URLMonitor:
         return (client,url) in self.strippedURLs
 
     def writeClientLog(self, client, headers, message):
+        '''
+        This isn't used for now.. the point was to log every clients
+        data to a seperate file
+
+        Don't see how useful it could be though
+        '''
+
         if not os.path.exists("./logs"):
             os.makedirs("./logs")
 
