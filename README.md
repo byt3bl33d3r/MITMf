@@ -70,7 +70,7 @@ If you find a *bug* please open an issue and include at least the following in t
 - Full command string you used
 - OS your using
 
-Also remeber Github markdown is your friend!
+Also remember: Github markdown is your friend!
 
 How to install on Kali
 ======================
