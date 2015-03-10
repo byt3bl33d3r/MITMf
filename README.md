@@ -1,5 +1,5 @@
-MITMf V0.9.1
-==========
+MITMf V0.9.5
+============
 
 Framework for Man-In-The-Middle attacks
 
@@ -37,7 +37,6 @@ So far the most significant changes have been:
 - Addition of the SessionHijacking plugin, which uses code from FireLamb (https://github.com/sensepost/mana/tree/master/firelamb) to store cookies in a Firefox profile 
 
 - Spoof plugin now supports ICMP, ARP and DHCP spoofing along with DNS tampering
-  (DNS tampering code was stolen from https://github.com/DanMcInerney/dnsspoof/)
 
 - Spoof plugin can now exploit the 'ShellShock' bug when DHCP spoofing! 
 
@@ -54,6 +53,6 @@ https://github.com/secretsquirrel/the-backdoor-factory and code from BDFProxy ht
 
 <h3>How to install on Kali</h3>
 
-MITMf is now in tha kali linux repositories!! wohooooo!!
+MITMf is now in tha kali linux repositories!
 
 ```apt-get install mitmf```

@@ -50,7 +50,7 @@ class JavaPwn(BrowserProfiler, Plugin):
             msf = msfrpc.Msfrpc({"host": self.rpcip})  #create an instance of msfrpc libarary
             msf.login('msf', self.rpcpass)
             version = msf.call('core.version')['version']
-            print "[*] Successfully connected to Metasploit v%s" % version
+            print "|  |_ Connected to Metasploit v%s" % version
         except Exception:
             sys.exit("[-] Error connecting to MSF! Make sure you started Metasploit and its MSGRPC server")
 

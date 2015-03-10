@@ -1,7 +1,3 @@
-#
-# DNS tampering code stolen from https://github.com/DanMcInerney/dnsspoof
-#
-
 from plugins.plugin import Plugin
 from time import sleep
 import dns.resolver

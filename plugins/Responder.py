@@ -24,7 +24,6 @@ class Responder(Plugin):
         except Exception, e:
             sys.exit('[-] Error parsing config for Responder: ' + str(e))
 
-        print "[*] Responder plugin online"
         DnsCache.getInstance().setCustomAddress(self.ip_address)
 
         for name in ['wpad', 'ISAProxySrv', 'RespProxySrv']:

@@ -5,7 +5,7 @@ from twisted.internet import reactor
 
 from libs.sslstrip.CookieCleaner import CookieCleaner
 from libs.sergioproxy.ProxyPlugins import ProxyPlugins
-from libs.banners import get
+from libs.banners import get_banner
 
 import logging
 
@@ -30,7 +30,7 @@ mitmf_version = "0.9.5"
 sslstrip_version = "0.9"
 sergio_version = "0.2.1"
 
-banner = get()
+banner = get_banner()
 print banner
 
 parser = argparse.ArgumentParser(description="MITMf v%s - Framework for MITM attacks" % mitmf_version, version=mitmf_version, usage='', epilog="Use wisely, young Padawan.",fromfile_prefix_chars='@')
@@ -138,12 +138,12 @@ load = []
 
 for p in plugins:
     try:
+        if vars(args)[p.optname] is True:
+            print "|_ %s v%s" % (p.name, p.version)
+
         if getattr(args, p.optname):
             p.initialize(args)
             load.append(p)
-
-        if vars(args)[p.optname] is True:
-            print "|_ %s v%s" % (p.name, p.version)
     except Exception, e:
         print "[-] Error loading plugin: " + str(e) 
 

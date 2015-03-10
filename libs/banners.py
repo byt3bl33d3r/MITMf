@@ -41,25 +41,6 @@ banner3 = """
 """
 
 banner4 = """
-MMMMMMMM               MMMMMMMMIIIIIIIIIITTTTTTTTTTTTTTTTTTTTTTTMMMMMMMM               MMMMMMMM   ffffffffffffffff  
-M:::::::M             M:::::::MI::::::::IT:::::::::::::::::::::TM:::::::M             M:::::::M  f::::::::::::::::f 
-M::::::::M           M::::::::MI::::::::IT:::::::::::::::::::::TM::::::::M           M::::::::M f::::::::::::::::::f
-M:::::::::M         M:::::::::MII::::::IIT:::::TT:::::::TT:::::TM:::::::::M         M:::::::::M f::::::fffffff:::::f
-M::::::::::M       M::::::::::M  I::::I  TTTTTT  T:::::T  TTTTTTM::::::::::M       M::::::::::M f:::::f       ffffff
-M:::::::::::M     M:::::::::::M  I::::I          T:::::T        M:::::::::::M     M:::::::::::M f:::::f             
-M:::::::M::::M   M::::M:::::::M  I::::I          T:::::T        M:::::::M::::M   M::::M:::::::Mf:::::::ffffff       
-M::::::M M::::M M::::M M::::::M  I::::I          T:::::T        M::::::M M::::M M::::M M::::::Mf::::::::::::f       
-M::::::M  M::::M::::M  M::::::M  I::::I          T:::::T        M::::::M  M::::M::::M  M::::::Mf::::::::::::f       
-M::::::M   M:::::::M   M::::::M  I::::I          T:::::T        M::::::M   M:::::::M   M::::::Mf:::::::ffffff       
-M::::::M    M:::::M    M::::::M  I::::I          T:::::T        M::::::M    M:::::M    M::::::M f:::::f             
-M::::::M     MMMMM     M::::::M  I::::I          T:::::T        M::::::M     MMMMM     M::::::M f:::::f             
-M::::::M               M::::::MII::::::II      TT:::::::TT      M::::::M               M::::::Mf:::::::f            
-M::::::M               M::::::MI::::::::I      T:::::::::T      M::::::M               M::::::Mf:::::::f            
-M::::::M               M::::::MI::::::::I      T:::::::::T      M::::::M               M::::::Mf:::::::f            
-MMMMMMMM               MMMMMMMMIIIIIIIIII      TTTTTTTTTTT      MMMMMMMM               MMMMMMMMfffffffff            
-"""
-
-banner5 = """
       ___                                     ___           ___     
      /\  \                                   /\  \         /\__\    
     |::\  \       ___           ___         |::\  \       /:/ _/_   
@@ -71,9 +52,8 @@ banner5 = """
    \:\  \          \::/  / \/__\:\  \      \:\  \        \:\  \     
     \:\__\         /:/  /       \:\__\      \:\__\        \:\__\    
      \/__/         \/__/         \/__/       \/__/         \/__/    
-
 """
 
-def get():
-	banners = [banner1, banner2, banner3, banner4, banner5]
+def get_banner():
+	banners = [banner1, banner2, banner3, banner4]
 	return random.choice(banners)
