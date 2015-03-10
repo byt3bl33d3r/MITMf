@@ -21,6 +21,7 @@ class Spoof(Plugin):
 	name     = "Spoof"
 	optname  = "spoof"
 	desc     = 'Redirect/Modify traffic using ICMP, ARP or DHCP'
+	version  = "0.4"
 	has_opts = True
 	req_root = True
 
@@ -124,10 +125,10 @@ class Spoof(Plugin):
 			self.arp.arp_inter = 1
 			if self.target:
 				print "\n[*] Re-ARPing target"
-				self.arp.reArp_target(5)
+				self.arp.reARP_target(5)
 
 			print "\n[*] Re-ARPing network" 
-			self.arp.reArp_net(5)
+			self.arp.reARP_net(5)
 
 		elif self.options.icmp:
 			self.icmp.stop()
@@ -350,13 +351,13 @@ class _ARP():
 
 		return pkt
 
-	def reArp_net(self, count):
+	def reARP_net(self, count):
 		pkt = Ether(src=self.gatewaymac, dst='ff:ff:ff:ff:ff:ff')/\
 		ARP(psrc=self.gateway, hwsrc=self.gatewaymac, op=2)
 
 		sendp(pkt, inter=self.arp_inter, count=count, iface=self.interface)
 
-	def reArp_target(self, count):
+	def reARP_target(self, count):
 		pkt = Ether(src=self.gatewaymac, dst='ff:ff:ff:ff:ff:ff')/\
 		ARP(psrc=self.target, hwsrc=self.targetmac, op=2)
 
@@ -405,7 +406,7 @@ class _DNS():
 		if not pkt.haslayer(DNSQR):
 			payload.accept()
 		else:
-			logging.info("Got DNS packet for %s %s" % (pkt[DNSQR].qname, pkt[DNSQR].qtype))
+			logging.debug("Got DNS packet for %s %s" % (pkt[DNSQR].qname, pkt[DNSQR].qtype))
 			if self.dns:
 				for k, v in self.dnscfg.items():
 					if k in pkt[DNSQR].qname:

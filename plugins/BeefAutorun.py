@@ -15,6 +15,7 @@ class BeefAutorun(Inject, Plugin):
 	optname  = "beefauto"
 	desc     = "Injects BeEF hooks & autoruns modules based on Browser and/or OS type"
 	depends  = ["Inject"]
+	version  = "0.3"
 	req_root = False
 	has_opts = False
 

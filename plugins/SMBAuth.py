@@ -8,6 +8,7 @@ class SMBAuth(Inject, Plugin):
     optname  = "smbauth"
     desc     = "Evoke SMB challenge-response auth attempts"
     depends  = ["Inject"]
+    version  = "0.1"
     has_opts = True
     req_root = False
 

@@ -13,12 +13,13 @@ import json
 import socket
 
 class SessionHijacker(Plugin):
-	name = "Session Hijacker"
-	optname = "hijack"
-	desc = "Performs session hijacking attacks against clients"
+	name       = "Session Hijacker"
+	optname    = "hijack"
+	desc       = "Performs session hijacking attacks against clients"
 	implements = ["cleanHeaders"] #["handleHeader"]
-	has_opts = True
-	req_root = False
+	version    = "0.1"
+	has_opts   = True
+	req_root   = False
 
 	def initialize(self, options):
 		'''Called if plugin is enabled, passed the options namespace'''

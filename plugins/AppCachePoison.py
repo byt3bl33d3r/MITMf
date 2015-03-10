@@ -14,6 +14,7 @@ class AppCachePlugin(Plugin):
     optname    = "appoison"
     desc       = "Performs App Cache Poisoning attacks"
     implements = ["handleResponse"]
+    version    = "0.3"
     has_opts   = False
     req_root   = False
 

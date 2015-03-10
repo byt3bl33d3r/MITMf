@@ -19,6 +19,7 @@ class JavaPwn(BrowserProfiler, Plugin):
     optname  = "javapwn"
     desc     = "Performs drive-by attacks on clients with out-of-date java browser plugins"
     depends  = ["Browserprofiler"]
+    version  = "0.3"
     has_opts = False
 
     def initialize(self, options):

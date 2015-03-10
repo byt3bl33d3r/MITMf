@@ -15,6 +15,7 @@ class Inject(CacheKill, Plugin):
     has_opts   = True
     req_root   = False
     desc       = "Inject arbitrary content into HTML content"
+    version    = "0.2"
     depends    = ["CacheKill"]
 
     def initialize(self, options):

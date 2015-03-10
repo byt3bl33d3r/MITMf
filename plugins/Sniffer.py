@@ -20,6 +20,7 @@ class Sniffer(Plugin):
 	optname    = "sniffer"
 	desc       = "Sniffs for various protocol login and auth attempts"
 	implements = ["sendRequest"]
+	version    = "0.1"
 	has_opts   = False
 	req_root   = True
 

@@ -10,6 +10,7 @@ class Responder(Plugin):
     name     = "Responder"
     optname  = "responder"
     desc     = "Poison LLMNR, NBT-NS and MDNS requests"
+    version  = "0.2"
     has_opts = True
     req_root = True
 

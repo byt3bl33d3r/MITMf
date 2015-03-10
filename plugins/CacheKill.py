@@ -7,6 +7,7 @@ class CacheKill(Plugin):
     desc        = "Kills page caching by modifying headers"
     implements  = ["handleHeader", "connectionMade"]
     bad_headers = ['if-none-match', 'if-modified-since']
+    version     = "0.1"
     has_opts    = True
     req_root    = False
 

@@ -5,12 +5,13 @@ from PIL import Image
 
 
 class Upsidedownternet(Plugin):
-    name = "Upsidedownternet"
-    optname = "upsidedownternet"
-    desc = 'Flips images 180 degrees'
+    name       = "Upsidedownternet"
+    optname    = "upsidedownternet"
+    desc       = 'Flips images 180 degrees'
     implements = ["handleResponse", "handleHeader"]
-    has_opts = False
-    req_root = False
+    version    = "0.1"
+    has_opts   = False
+    req_root   = False
 
     def initialize(self, options):
         from PIL import Image, ImageFile

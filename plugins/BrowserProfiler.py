@@ -9,6 +9,7 @@ class BrowserProfiler(Inject, Plugin):
     desc       = "Attempts to enumerate all browser plugins of connected clients"
     implements = ["handleResponse", "handleHeader", "connectionMade", "sendPostData"]
     depends    = ["Inject"]
+    version    = "0.2"
     has_opts   = False
     req_root   = False
 

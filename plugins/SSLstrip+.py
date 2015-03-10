@@ -6,6 +6,7 @@ class HSTSbypass(Plugin):
 	name     = 'SSLstrip+'
 	optname  = 'hsts'
 	desc     = 'Enables SSLstrip+ for partial HSTS bypass'
+	version  = "0.2"
 	has_opts = False
 	req_root = False
 

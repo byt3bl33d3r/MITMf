@@ -53,12 +53,13 @@ from tempfile import mkstemp
 from configobj import ConfigObj
 
 class FilePwn(Plugin):
-    name = "FilePwn"
-    optname = "filepwn"
-    desc = "Backdoor executables being sent over http using bdfactory"
+    name       = "FilePwn"
+    optname    = "filepwn"
+    desc       = "Backdoor executables being sent over http using bdfactory"
     implements = ["handleResponse"]
-    has_opts = False
-    req_root = False
+    version    = "0.2"
+    has_opts   = False
+    req_root   = False
 
     def initialize(self, options):
         '''Called if plugin is enabled, passed the options namespace'''

@@ -16,6 +16,7 @@ class Replace(CacheKill, Plugin):
 	desc       = "Replace arbitrary content in HTML content"
 	implements = ["handleResponse", "handleHeader", "connectionMade"]
 	depends    = ["CacheKill"]
+	version    = "0.1"
 	has_opts   = True
 	req_root   = False
 

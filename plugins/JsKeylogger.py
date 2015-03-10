@@ -8,6 +8,7 @@ class jskeylogger(Inject, Plugin):
     desc       = "Injects a javascript keylogger into clients webpages"
     implements = ["handleResponse", "handleHeader", "connectionMade", "sendPostData"]
     depends    = ["Inject"]
+    version    = "0.2"
     has_opts   = False
     req_root   = False
 
