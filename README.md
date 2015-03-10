@@ -7,9 +7,13 @@ Quick tutorials, examples and dev updates at http://sign0f4.blogspot.it
 
 This tool is completely based on sergio-proxy https://code.google.com/p/sergio-proxy/ and is an attempt to revive and update the project.
 
+**Before submitting issues please read the appropriate section.**
+
 Dependency change!
 ===================
-As of v0.9.5 DNS tampering support needs NetfilterQueue v0.6 which has yet to be merged into the main repo! Download it from here https://github.com/fqrouter/python-netfilterqueue and manually install it.
+As of version 0.9.5 DNS tampering support needs NetfilterQueue v0.6 which has yet to be merged into the main repo!
+
+Download it from here https://github.com/fqrouter/python-netfilterqueue and manually install it.
 
 Availible plugins
 =================
@@ -56,6 +60,17 @@ https://github.com/secretsquirrel/the-backdoor-factory and code from BDFProxy ht
 - Added beefapi.py for interfacing with BeEF's RESTfulAPI
 
 - Addition of the app-cache poisoning attack by Krzysztof Kotowicz
+
+Submitting Issues
+=================
+If you have *questions* regarding the framework please email me at byt3bl33d3r@gmail.com
+
+If you find a *bug* please open an issue and include at least the following in the description:
+
+- Full command string you used
+- OS your using
+
+Also remeber Github markdown is your friend!
 
 How to install on Kali
 ======================
