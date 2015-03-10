@@ -131,8 +131,7 @@ rootLogger.addHandler(fileHandler)
 #####################################################################################################
 
 #All our options should be loaded now, pass them onto plugins
-print "[*] MITMf v%s started... initializing plugins" % mitmf_version
-print "[*] sergio-proxy v%s online" % sergio_version
+print "[*] MITMf v%s online... initializing plugins" % mitmf_version
 
 load = []
 
@@ -170,10 +169,9 @@ else:
             if hasattr(p, 'plugin_reactor'):
                 p.plugin_reactor(strippingFactory) #we pass the default strippingFactory, so the plugins can use it
 
-    print "\n[*] sslstrip v%s by Moxie Marlinspike running..." % sslstrip_version
- 
-    if args.hsts:
-        print "[*] sslstrip+ by Leonardo Nve running..."
+    print "|"
+    print "|_ Sergio-Proxy v%s online" % sergio_version
+    print "|_ SSLstrip v%s by Moxie Marlinspike running..." % sslstrip_version
 
 reactor.run()
 

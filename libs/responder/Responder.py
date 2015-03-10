@@ -2503,10 +2503,6 @@ def start_responder(options, ip_address, config):
 
     AnalyzeICMPRedirect()
 
-    print "[*] NBT-NS, LLMNR & MDNS Responder v%s by Laurent Gaffie online" % VERSION
-    if AnalyzeMode:
-        print '[*] Responder is in analyze mode. No NBT-NS, LLMNR, MDNS requests will be poisoned\n'
-
     start_message = "Responder will redirect requests to: %s\n" % ip_address
     start_message += "Challenge set: %s\n" % NumChal
     start_message += "WPAD Proxy Server: %s\n" % WPAD_On_Off

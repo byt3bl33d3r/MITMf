@@ -18,4 +18,6 @@ class HSTSbypass(Plugin):
 		except Exception, e:
 			sys.exit("[-] Error parsing config for SSLstrip+: " + str(e))
 
+		print "|  |_ SSLstrip+ by Leonardo Nve running"
+
 		URLMonitor.getInstance().setHstsBypass(config)

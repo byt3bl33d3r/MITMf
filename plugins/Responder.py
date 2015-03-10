@@ -19,15 +19,22 @@ class Responder(Plugin):
         self.options = options
         self.interface = options.interface
 
+        RESP_VERSION = "2.1.2"
+
         try:
             config = options.configfile['Responder']
         except Exception, e:
             sys.exit('[-] Error parsing config for Responder: ' + str(e))
 
-        DnsCache.getInstance().setCustomAddress(self.ip_address)
+        DnsCache.getInstance().setCustomAddress(options.ip_address)
 
         for name in ['wpad', 'ISAProxySrv', 'RespProxySrv']:
-            DnsCache.getInstance().setCustomRes(name, self.ip_address)
+            DnsCache.getInstance().setCustomRes(name, options.ip_address)
+
+        print "|  |_ NBT-NS, LLMNR & MDNS Responder v%s by Laurent Gaffie online" % RESP_VERSION
+
+        if options.Analyse:
+            print '|  |_ Responder is in analyze mode. No NBT-NS, LLMNR, MDNS requests will be poisoned'
 
         t = threading.Thread(name='responder', target=start_responder, args=(options, options.ip_address, config))
         t.setDaemon(True)
