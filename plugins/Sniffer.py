@@ -16,11 +16,12 @@ import re
 import os
 
 class Sniffer(Plugin):
-	name ='Sniffer'
-	optname = "sniffer"
-	desc = "Sniffs for various protocol login and auth attempts"
+	name       = "Sniffer"
+	optname    = "sniffer"
+	desc       = "Sniffs for various protocol login and auth attempts"
 	implements = ["sendRequest"]
-	has_opts = False
+	has_opts   = False
+	req_root   = True
 
 	def initialize(self, options):
 		self.options = options
@@ -43,12 +44,12 @@ class Sniffer(Plugin):
 
 		n = NetCreds()
 
-		print "[*] Sniffer plugin online"
-
 		#if not self.parse:
 		t = threading.Thread(name="sniffer", target=n.start, args=(self.interface,))
 		t.setDaemon(True)
 		t.start()
+
+		print self.plg_text
 		#else:
 		#	 pcap = rdpcap(self.parse)
 		#	 for pkt in pcap:
@@ -132,7 +133,10 @@ class NetCreds:
 		self.NTLMSSP3_re = 'NTLMSSP\x00\x03\x00\x00\x00.+'
 
 	def start(self, interface):
-		sniff(iface=interface, prn=self.pkt_parser, store=0)
+		try:
+			sniff(iface=interface, prn=self.pkt_parser, store=0)
+		except Exception:
+			pass
 
 	def frag_remover(self, ack, load):
 		'''

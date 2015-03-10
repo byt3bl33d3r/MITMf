@@ -11,11 +11,13 @@ from plugins.CacheKill import CacheKill
 
 
 class Replace(CacheKill, Plugin):
-	name = "Replace"
-	optname = "replace"
+	name       = "Replace"
+	optname    = "replace"
+	desc       = "Replace arbitrary content in HTML content"
 	implements = ["handleResponse", "handleHeader", "connectionMade"]
-	has_opts = True
-	desc = "Replace arbitrary content in HTML content"
+	depends    = ["CacheKill"]
+	has_opts   = True
+	req_root   = False
 
 	def initialize(self, options):
 		self.options = options
@@ -25,11 +27,10 @@ class Replace(CacheKill, Plugin):
 		self.regex_file = options.regex_file
 
 		if (self.search_str is None or self.search_str == "") and self.regex_file is None:
-			sys.exit("[*] Please provide a search string or a regex file")
+			sys.exit("[-] Please provide a search string or a regex file")
 
 		self.regexes = []
 		if self.regex_file is not None:
-			print "[*] Loading regexes from file"
 			for line in self.regex_file:
 				self.regexes.append(line.strip().split("\t"))
 
@@ -40,8 +41,6 @@ class Replace(CacheKill, Plugin):
 		self.ctable = {}
 		self.dtable = {}
 		self.mime = "text/html"
-
-		print "[*] Replace plugin online"
 
 	def handleResponse(self, request, data):
 		ip, hn, mime = self._get_req_info(request)

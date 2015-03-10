@@ -3,19 +3,19 @@ from plugins.Inject import Inject
 from pprint import pformat
 import logging
 
-
 class BrowserProfiler(Inject, Plugin):
-    name = "Browser Profiler"
-    optname = "browserprofiler"
-    desc = "Attempts to enumerate all browser plugins of connected clients"
+    name       = "Browser Profiler"
+    optname    = "browserprofiler"
+    desc       = "Attempts to enumerate all browser plugins of connected clients"
     implements = ["handleResponse", "handleHeader", "connectionMade", "sendPostData"]
-    has_opts = False
+    depends    = ["Inject"]
+    has_opts   = False
+    req_root   = False
 
     def initialize(self, options):
         Inject.initialize(self, options)
         self.html_payload = self.get_payload()
         self.dic_output = {}  # so other plugins can access the results
-        print "[*] Browser Profiler online"
 
     def post2dict(self, post):  #converts the ajax post to a dic
         dict = {}

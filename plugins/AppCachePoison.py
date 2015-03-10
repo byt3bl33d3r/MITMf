@@ -10,14 +10,14 @@ import time
 import sys
 
 class AppCachePlugin(Plugin):
-    name = "App Cache Poison"
-    optname = "appoison"
-    desc = "Performs App Cache Poisoning attacks"
+    name       = "App Cache Poison"
+    optname    = "appoison"
+    desc       = "Performs App Cache Poisoning attacks"
     implements = ["handleResponse"]
-    has_opts = False
+    has_opts   = False
+    req_root   = False
 
     def initialize(self, options):
-        '''Called if plugin is enabled, passed the options namespace'''
         self.options = options
         self.mass_poisoned_browsers = []
         self.urlMonitor = URLMonitor.getInstance()
@@ -26,8 +26,6 @@ class AppCachePlugin(Plugin):
             self.config = options.configfile['AppCachePoison']
         except Exception, e:
             sys.exit("[-] Error parsing config file for AppCachePoison: " + str(e))
-
-        print "[*] App Cache Poison plugin online"
 
     def handleResponse(self, request, data):
 

@@ -1,7 +1,4 @@
 from plugins.plugin import Plugin
-import logging
-logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Error when importing scapy
-from scapy.all import get_if_addr
 from libs.responder.Responder import start_responder
 from libs.sslstrip.DnsCache import DnsCache
 from twisted.internet import reactor
@@ -10,30 +7,21 @@ import os
 import threading
 
 class Responder(Plugin):
-    name = "Responder"
-    optname = "responder"
-    desc = "Poison LLMNR, NBT-NS and MDNS requests"
+    name     = "Responder"
+    optname  = "responder"
+    desc     = "Poison LLMNR, NBT-NS and MDNS requests"
     has_opts = True
+    req_root = True
 
     def initialize(self, options):
         '''Called if plugin is enabled, passed the options namespace'''
         self.options = options
         self.interface = options.interface
 
-        if os.geteuid() != 0:
-            sys.exit("[-] Responder plugin requires root privileges")
-
         try:
             config = options.configfile['Responder']
         except Exception, e:
             sys.exit('[-] Error parsing config for Responder: ' + str(e))
-
-        try:
-            self.ip_address = get_if_addr(options.interface)
-            if self.ip_address == "0.0.0.0":
-                sys.exit("[-] Interface %s does not have an IP address" % self.interface)
-        except Exception, e:
-            sys.exit("[-] Error retrieving interface IP address: %s" % e)
 
         print "[*] Responder plugin online"
         DnsCache.getInstance().setCustomAddress(self.ip_address)
@@ -41,7 +29,7 @@ class Responder(Plugin):
         for name in ['wpad', 'ISAProxySrv', 'RespProxySrv']:
             DnsCache.getInstance().setCustomRes(name, self.ip_address)
 
-        t = threading.Thread(name='responder', target=start_responder, args=(options, self.ip_address, config))
+        t = threading.Thread(name='responder', target=start_responder, args=(options, options.ip_address, config))
         t.setDaemon(True)
         t.start()
 

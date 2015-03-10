@@ -2,12 +2,13 @@ from plugins.plugin import Plugin
 
 
 class CacheKill(Plugin):
-    name = "CacheKill"
-    optname = "cachekill"
-    desc = "Kills page caching by modifying headers"
-    implements = ["handleHeader", "connectionMade"]
-    has_opts = True
+    name        = "CacheKill"
+    optname     = "cachekill"
+    desc        = "Kills page caching by modifying headers"
+    implements  = ["handleHeader", "connectionMade"]
     bad_headers = ['if-none-match', 'if-modified-since']
+    has_opts    = True
+    req_root    = False
 
     def add_options(self, options):
         options.add_argument("--preserve-cookies", action="store_true", help="Preserve cookies (will allow caching in some situations).")

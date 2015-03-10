@@ -3,10 +3,11 @@ from libs.sslstrip.URLMonitor import URLMonitor
 import sys
 
 class HSTSbypass(Plugin):
-	name    = 'SSLstrip+'
-	optname = 'hsts'
-	desc    = 'Enables SSLstrip+ for partial HSTS bypass'
+	name     = 'SSLstrip+'
+	optname  = 'hsts'
+	desc     = 'Enables SSLstrip+ for partial HSTS bypass'
 	has_opts = False
+	req_root = False
 
 	def initialize(self, options):
 		self.options = options
@@ -16,5 +17,4 @@ class HSTSbypass(Plugin):
 		except Exception, e:
 			sys.exit("[-] Error parsing config for SSLstrip+: " + str(e))
 
-		print "[*] SSLstrip+ plugin online"
 		URLMonitor.getInstance().setHstsBypass(config)
