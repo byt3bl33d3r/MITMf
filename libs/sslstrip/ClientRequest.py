@@ -223,13 +223,13 @@ class ClientRequest(Request):
             real = self.urlMonitor.real
 
             if 'wwww' in host:
-                logging.debug("Resolving %s for HSTS bypass" % (host))
+                logging.debug("Resolving %s for HSTS bypass (Twisted)" % (host))
                 host = host[1:]
             elif 'web' in host:
-                logging.debug("Resolving %s for HSTS bypass" % (host))
+                logging.debug("Resolving %s for HSTS bypass (Twisted)" % (host))
                 host = host[3:]
             elif host in real:
-                logging.debug("Resolving %s for HSTS bypass" % (host))
+                logging.debug("Resolving %s for HSTS bypass (Twisted)" % (host))
                 host = real[host]
 
         hostparts = host.split(':')

