@@ -190,7 +190,7 @@ class ClientRequest(Request):
     def process(self):
         logging.debug("Resolving host: %s" % (self.getHeader('host')))
         host     = self.getHeader('host')               
-        
+
         if (self.hsts and host):
             real = self.urlMonitor.real
 

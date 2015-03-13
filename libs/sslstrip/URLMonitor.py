@@ -76,6 +76,10 @@ class URLMonitor:
         method      = url[0:methodIndex]
 
         pathIndex   = url.find("/", methodIndex)
+        if (pathIndex == -1):
+            pathIndex = len(url)
+            url += "/"
+
         host        = url[methodIndex:pathIndex].lower()
         path        = url[pathIndex:]
 

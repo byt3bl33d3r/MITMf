@@ -125,15 +125,14 @@ class ServerConnection(HTTPClient):
                 self.isCompressed = True
 
         elif (key.lower()== 'strict-transport-security'):
-            value="max-age=0"
-            logging.info("Zapped a strict-trasport-security header")
+            logging.info("%s Zapped a strict-trasport-security header" % self.client.getClientIP())
 
         elif (key.lower() == 'content-length'):
             self.contentLength = value
 
         elif (key.lower() == 'set-cookie'):
             self.client.responseHeaders.addRawHeader(key, value)
-        
+
         else:
             self.client.setHeader(key, value)
 
