@@ -11,7 +11,7 @@ This tool is completely based on sergio-proxy https://code.google.com/p/sergio-p
 
 Dependency change!
 ===================
-As of version 0.9.5 DNS tampering support needs NetfilterQueue v0.6 which has yet to be merged into the main repo!
+As of MITMF v0.9.5, DNS tampering support needs NetfilterQueue v0.6 which has yet to be merged into the main repo so it *cannot* be installed via pip or easy_install.
 
 Download it from here https://github.com/fqrouter/python-netfilterqueue and manually install it.
 
