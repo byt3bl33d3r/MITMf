@@ -30,12 +30,12 @@ class URLMonitor:
     javascriptTrickery = [re.compile("http://.+\.etrade\.com/javascript/omntr/tc_targeting\.html")]
     _instance          = None
     sustitucion        = {} # LEO: diccionario host / sustitucion
-    real           = {} # LEO: diccionario host / real
-    patchDict      = {
-            'https:\/\/fbstatic-a.akamaihd.net':'http:\/\/webfbstatic-a.akamaihd.net',
-            'https:\/\/www.facebook.com':'http:\/\/social.facebook.com',
-            'return"https:"':'return"http:"'
-            }
+    real               = {} # LEO: diccionario host / real
+    patchDict          = {
+                          'https:\/\/fbstatic-a.akamaihd.net':'http:\/\/webfbstatic-a.akamaihd.net',
+                          'https:\/\/www.facebook.com':'http:\/\/social.facebook.com',
+                          'return"https:"':'return"http:"'
+                         }
 
     def __init__(self):
         self.strippedURLs       = set()
@@ -51,32 +51,6 @@ class URLMonitor:
                 return True
 
         return (client,url) in self.strippedURLs
-
-    def writeClientLog(self, client, headers, message):
-        '''
-        This isn't used for now.. the point was to log every clients
-        data to a seperate file
-
-        Don't see how useful it could be though
-        '''
-
-        if not os.path.exists("./logs"):
-            os.makedirs("./logs")
-
-        if (client.getClientIP() + '.log') not in os.listdir("./logs"):
-            
-            try:
-                log_message = "#Log file for %s (%s)\n" % (client.getClientIP(), headers['user-agent'])
-            except KeyError:
-                log_message = "#Log file for %s\n" % client.getClientIP()
-
-            log_file = open("./logs/" + client.getClientIP() + ".log", 'a')
-            log_file.write(log_message + message + "\n")
-            log_file.close()
-        else:
-            log_file = open("./logs/" + client.getClientIP() + ".log", 'a')
-            log_file.write(message + "\n")
-            log_file.close()
 
     def getSecurePort(self, client, url):
         if (client,url) in self.strippedURLs:
@@ -115,7 +89,6 @@ class URLMonitor:
                 port = 443
 
         if self.hsts:
-            #LEO: Sustituir HOST
             if not self.sustitucion.has_key(host):
                 lhost = host[:4]
                 if lhost=="www.":
@@ -124,14 +97,15 @@ class URLMonitor:
                 else:
                     self.sustitucion[host] = "web"+host
                     self.real["web"+host] = host
-                logging.debug("LEO: ssl host      (%s) tokenized (%s)" % (host,self.sustitucion[host]) )
+                logging.debug("[URLMonitor][HSTS] SSL host (%s) tokenized (%s)" % (host,self.sustitucion[host]) )
                     
             url = 'http://' + host + path
-            #logging.debug("LEO stripped URL: %s %s"%(client, url))
+            #logging.debug("HSTS stripped URL: %s %s"%(client, url))
 
             self.strippedURLs.add((client, url))
             self.strippedURLPorts[(client, url)] = int(port)
-            return 'http://'+self.sustitucion[host]+path
+            
+            return 'http://'+ self.sustitucion[host] + path
 
         else:
             url = method + host + path
@@ -167,13 +141,13 @@ class URLMonitor:
         return ((self.faviconSpoofing == True) and (url.find("favicon-x-favicon-x.ico") != -1))
     
     def URLgetRealHost(self,host):
-        logging.debug("Parsing host: %s"%host)
+        logging.debug("[URLMonitor][HSTS]Parsing host: %s"%host)
         if self.real.has_key(host):
-            logging.debug("New host: %s"%self.real[host])
-            return self.real[host]
+            logging.debug("[URLMonitor][HSTS]New host: %s"%self.real[host])
+            return (self.real[host], True)
         else:
-            logging.debug("New host: %s"%host)
-            return host
+            logging.debug("[URLMonitor][HSTS]New host: %s"%host)
+            return (host, False)
 
     def getInstance():
         if URLMonitor._instance == None:

