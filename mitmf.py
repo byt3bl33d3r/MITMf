@@ -22,8 +22,16 @@ import argparse
 import os
 
 try:
+    import netfilterqueue
+    if netfilterqueue.VERSION[1] is not 6:
+        print "[-] Wrong version of NetfilterQueue library installed!" 
+        print "[-] Download it from here https://github.com/fqrouter/python-netfilterqueue and manually install it!"
+except ImportError:
+    print "[-] NetfilterQueue library missing! DNS tampering will not work"
+
+try:
     import user_agents
-except:
+except ImportError:
     print "[-] user_agents library missing! User-Agent parsing will be disabled!"
 
 mitmf_version = "0.9.5"
