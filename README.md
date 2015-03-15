@@ -5,7 +5,7 @@ Framework for Man-In-The-Middle attacks
 
 Quick tutorials, examples and dev updates at http://sign0f4.blogspot.it
 
-This tool is completely based on sergio-proxy https://code.google.com/p/sergio-proxy/ and is an attempt to revive and update the project.
+This tool is completely based on sergio-proxy https://github.com/supernothing/sergio-proxy and is an attempt to revive and update the project.
 
 **Before submitting issues please read the appropriate section.**
 
