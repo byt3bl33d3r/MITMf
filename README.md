@@ -7,7 +7,7 @@ Quick tutorials, examples and dev updates at http://sign0f4.blogspot.it
 
 This tool is based on [sergio-proxy](https://github.com/supernothing/sergio-proxy) and is an attempt to revive and update the project.
 
-**Before submitting issues please read the appropriate [section](https://github.com/byt3bl33d3r/MITMf#submitting-issues).**
+**Before submitting issues please read the appropriate [section](#submitting-issues).**
 
 Dependency change!
 ===================
