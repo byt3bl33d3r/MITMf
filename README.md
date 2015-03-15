@@ -54,9 +54,9 @@ Changelog
 
 - FilePwn plugin re-written to backdoor executables and zip files on the fly by using [the-backdoor-factory](https://github.com/secretsquirrel/the-backdoor-factory) and code from [BDFProxy](https://github.com/secretsquirrel/BDFProxy)
 
-- Added msfrpc.py for interfacing with Metasploits rpc server
+- Added [msfrpc.py](https://github.com/byt3bl33d3r/msfrpc/blob/master/python-msfrpc/msfrpc.py) for interfacing with Metasploits rpc server
 
-- Added beefapi.py for interfacing with BeEF's RESTfulAPI
+- Added [beefapi.py](https://github.com/byt3bl33d3r/beefapi) for interfacing with BeEF's RESTfulAPI
 
 - Addition of the app-cache poisoning attack by [Krzysztof Kotowicz](https://github.com/koto/sslstrip) (blogpost explaining the attack here http://blog.kotowicz.net/2010/12/squid-imposter-phishing-websites.html)
 

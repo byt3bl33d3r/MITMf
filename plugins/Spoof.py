@@ -117,7 +117,7 @@ class Spoof(Plugin):
 		options.add_argument('--shellshock', type=str, metavar='PAYLOAD', dest='shellshock', default=None, help='Trigger the Shellshock vuln when spoofing DHCP, and execute specified command')
 		options.add_argument('--gateway', dest='gateway', help='Specify the gateway IP')
 		options.add_argument('--target', dest='target', default=None, help='Specify a host to poison [default: subnet]')
-		options.add_argument('--arpmode', dest='arpmode', default='req', choices=["req", "rep"], help=' ARP Spoofing mode: requests (req) or replies (rep) [default: req]')
+		options.add_argument('--arpmode',type=str, dest='arpmode', default='req', choices=["req", "rep"], help=' ARP Spoofing mode: requests (req) or replies (rep) [default: req]')
 		#options.add_argument('--summary', action='store_true', dest='summary', default=False, help='Show packet summary and ask for confirmation before poisoning')
 
 		#added by alexander.georgiev@daloo.de
@@ -314,7 +314,7 @@ class _ARP():
 		self.arpmode    = 'req'
 		self.debug      = False
 		self.send       = True
-		self.arp_inter  = 2
+		self.arp_inter  = 3
 
 	def start(self):
 		if self.gatewaymac is None:
@@ -325,10 +325,10 @@ class _ARP():
 			if self.targetmac is None:
 				sys.exit("[-] Error: Could not resolve target's MAC address")
 
-		if self.arpmode is 'req':
+		if self.arpmode == 'req':
 			pkt = self.build_arp_req()
 		
-		elif self.arpmode is 'rep':
+		elif self.arpmode == 'rep':
 			pkt = self.build_arp_rep()
 
 		t = threading.Thread(name='arp_spoof', target=self.send_arps, args=(pkt, self.interface, self.debug,))

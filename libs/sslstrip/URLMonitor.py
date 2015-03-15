@@ -1,4 +1,4 @@
-# Copyright (c) 2004-2009 Moxie Marlinspike
+# Copyright (c) 2014-2016 Moxie Marlinspike, Marcello Salvati
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -78,7 +78,7 @@ class URLMonitor:
         method      = url[0:methodIndex]
 
         pathIndex   = url.find("/", methodIndex)
-        if (pathIndex == -1):
+        if pathIndex is -1:
             pathIndex = len(url)
             url += "/"
 

@@ -1,4 +1,4 @@
-# Copyright (c) 2004-2011 Moxie Marlinspike
+# Copyright (c) 2014-2016 Moxie Marlinspike, Marcello Salvati
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
