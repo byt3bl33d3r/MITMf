@@ -5,7 +5,7 @@ Framework for Man-In-The-Middle attacks
 
 Quick tutorials, examples and dev updates at http://sign0f4.blogspot.it
 
-This tool is based on sergio-proxy https://github.com/supernothing/sergio-proxy and is an attempt to revive and update the project.
+This tool is based on [sergio-proxy](https://github.com/supernothing/sergio-proxy) and is an attempt to revive and update the project.
 
 **Before submitting issues please read the appropriate section.**
 
@@ -37,14 +37,14 @@ Availible plugins
 Changelog
 =========
 
-- Addition of the Sniffer plugin which integrates Net-Creds (https://github.com/DanMcInerney/net-creds) currently supported protocols are:
+- Addition of the Sniffer plugin which integrates [Net-Creds](https://github.com/DanMcInerney/net-creds) currently supported protocols are:
   FTP, IRC, POP, IMAP, Telnet, SMTP, SNMP (community strings), NTLMv1/v2 (all supported protocols like HTTP, SMB, LDAP etc..) and Kerberos
 
-- Integrated Responder (https://github.com/SpiderLabs/Responder) to poison LLMNR, NBT-NS and MDNS, and act as a WPAD rogue server.
+- Integrated [Responder](https://github.com/SpiderLabs/Responder) to poison LLMNR, NBT-NS and MDNS, and act as a WPAD rogue server.
 
-- Integrated SSLstrip+ (https://github.com/LeonardoNve/sslstrip2) by Leonardo Nve to partially bypass HSTS as demonstrated at BlackHat Asia 2014 
+- Integrated [SSLstrip+](https://github.com/LeonardoNve/sslstrip2) by Leonardo Nve to partially bypass HSTS as demonstrated at BlackHat Asia 2014 
 
-- Addition of the SessionHijacking plugin, which uses code from FireLamb (https://github.com/sensepost/mana/tree/master/firelamb) to store cookies in a Firefox profile 
+- Addition of the SessionHijacking plugin, which uses code from [FireLamb](https://github.com/sensepost/mana/tree/master/firelamb) to store cookies in a Firefox profile 
 
 - Spoof plugin now supports ICMP, ARP and DHCP spoofing along with DNS tampering
 
@@ -52,14 +52,13 @@ Changelog
 
 - Usage of third party tools has been completely removed (e.g. ettercap)
 
-- FilePwn plugin re-written to backdoor executables and zip files on the fly by using the-backdoor-factory
-https://github.com/secretsquirrel/the-backdoor-factory and code from BDFProxy https://github.com/secretsquirrel/BDFProxy
+- FilePwn plugin re-written to backdoor executables and zip files on the fly by using [the-backdoor-factory](https://github.com/secretsquirrel/the-backdoor-factory) and code from [BDFProxy](https://github.com/secretsquirrel/BDFProxy)
 
 - Added msfrpc.py for interfacing with Metasploits rpc server
 
 - Added beefapi.py for interfacing with BeEF's RESTfulAPI
 
-- Addition of the app-cache poisoning attack by Krzysztof Kotowicz
+- Addition of the app-cache poisoning attack by [Krzysztof Kotowicz](https://github.com/koto/sslstrip) (blogpost explaining the attack here http://blog.kotowicz.net/2010/12/squid-imposter-phishing-websites.html)
 
 Submitting Issues
 =================
