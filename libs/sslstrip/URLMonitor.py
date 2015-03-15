@@ -63,7 +63,9 @@ class URLMonitor:
             if from_url in s:
                 s.add(to_url)
                 return
-        self.redirects.append(set([from_url,to_url]))
+        url_set = set([from_url, to_url])
+        logging.debug("[URLMonitor] Set redirection: %s" % url_set)
+        self.redirects.append(url_set)
 
     def getRedirectionSet(self, url):
         for s in self.redirects:

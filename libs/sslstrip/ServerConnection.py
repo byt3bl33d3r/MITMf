@@ -113,6 +113,7 @@ class ServerConnection(HTTPClient):
 
         if (key.lower() == 'location'):
             value = self.replaceSecureLinks(value)
+            self.urlMonitor.addRedirection(self.client.uri, value)
 
         if (key.lower() == 'content-type'):
             if (value.find('image') != -1):
