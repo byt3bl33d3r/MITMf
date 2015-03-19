@@ -181,10 +181,10 @@ class ClientRequest(Request):
         address = self.dnsCache.getCachedAddress(host)
 
         if address != None:
-            logging.debug("Host cached.")
+            logging.debug("[ClientRequest] Host cached: %s %s" % (host, str(address)))
             return defer.succeed(address)
         else:
-            logging.debug("Host not cached.")
+            logging.debug("[ClientRequest] Host not cached.")
             return reactor.resolve(host)
 
     def process(self):

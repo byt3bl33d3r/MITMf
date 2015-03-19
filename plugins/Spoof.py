@@ -9,6 +9,7 @@ import random
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Error when importing scapy
 from scapy.all import *
 from netfilterqueue import NetfilterQueue
+from libs.sslstrip.DnsCache import DnsCache
 from plugins.plugin import Plugin
 from time import sleep
 from base64 import b64decode
@@ -92,6 +93,11 @@ class Spoof(Plugin):
 
 			if not options.manualiptables:
 				self.sysconfig.iptables_dns(0)
+
+			dnscache = DnsCache.getInstance()
+			
+			for domain, ip in self.dnscfg.items():
+				dnscache.cacheResolution(domain, ip)
 
 			self.dns = _DNS(0)
 			self.dns.dnscfg = self.dnscfg
