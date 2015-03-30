@@ -30,6 +30,13 @@ class DnsCache:
 		self.customAddress = None
 		self.cache = {}
 
+	@staticmethod
+	def getInstance():
+		if DnsCache._instance == None:
+			DnsCache._instance = DnsCache()
+
+		return DnsCache._instance
+
 	def cacheResolution(self, host, address):
 		self.cache[host] = address
 
@@ -38,12 +45,6 @@ class DnsCache:
 			return self.cache[host]
 
 		return None
-
-	def getInstance():
-		if DnsCache._instance == None:
-			DnsCache._instance = DnsCache()
-
-		return DnsCache._instance
 
 	def setCustomRes(self, host, ip_address=None):
 		if ip_address is not None:
@@ -55,5 +56,3 @@ class DnsCache:
 
 	def setCustomAddress(self, ip_address):
 		self.customAddress = ip_address
-
-	getInstance = staticmethod(getInstance)

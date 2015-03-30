@@ -43,7 +43,14 @@ class URLMonitor:
         self.redirects          = []
         self.faviconReplacement = False
         self.hsts               = False
-        self.hsts_config        = None 
+        self.hsts_config        = None
+
+    @staticmethod
+    def getInstance():
+        if URLMonitor._instance == None:
+            URLMonitor._instance = URLMonitor()
+
+        return URLMonitor._instance
 
     def isSecureLink(self, client, url):
         for expression in URLMonitor.javascriptTrickery:
@@ -127,7 +134,7 @@ class URLMonitor:
             self.hsts = True
             self.hsts_config = hstsconfig
 
-            for k,v in self.hsts_config.items():
+            for k,v in self.hsts_config.iteritems():
                 self.sustitucion[k] = v
                 self.real[v] = k
 
@@ -154,11 +161,3 @@ class URLMonitor:
         else:
             logging.debug("[URLMonitor][HSTS]New host: %s"%host)
             return (host, False)
-
-    def getInstance():
-        if URLMonitor._instance == None:
-            URLMonitor._instance = URLMonitor()
-
-        return URLMonitor._instance
-
-    getInstance = staticmethod(getInstance)

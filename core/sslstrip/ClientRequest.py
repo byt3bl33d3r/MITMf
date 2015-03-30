@@ -33,7 +33,7 @@ from SSLServerConnection import SSLServerConnection
 from URLMonitor import URLMonitor
 from CookieCleaner import CookieCleaner
 from DnsCache import DnsCache
-from libs.sergioproxy.ProxyPlugins import ProxyPlugins
+from core.sergioproxy.ProxyPlugins import ProxyPlugins
 from configobj import ConfigObj
 
 class ClientRequest(Request):
@@ -57,7 +57,7 @@ class ClientRequest(Request):
     def cleanHeaders(self):
         headers = self.getAllHeaders().copy()
 
-        #for k,v in headers.items():
+        #for k,v in headers.iteritems():
         #    logging.debug("[ClientRequest] Receiving headers: (%s => %s)" % (k, v))
 
         if 'accept-encoding' in headers:

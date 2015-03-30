@@ -1,4 +1,4 @@
-# Copyright (c) 2010-2011 Ben Schmidt
+# Copyright (c) 2010-2011 Ben Schmidt, Marcello Salvati
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -38,6 +38,13 @@ class ProxyPlugins:
     in handleResponse, but is still annoying.
     '''
     _instance = None
+
+    @staticmethod
+    def getInstance():
+        if ProxyPlugins._instance == None:
+            ProxyPlugins._instance = ProxyPlugins()
+
+        return ProxyPlugins._instance
 
     def setPlugins(self,plugins):
         '''Set the plugins in use'''
@@ -90,11 +97,3 @@ class ProxyPlugins:
 
         #pass our changes to the locals back down
         return args
-
-    def getInstance():
-        if ProxyPlugins._instance == None:
-            ProxyPlugins._instance = ProxyPlugins()
-
-        return ProxyPlugins._instance
-
-    getInstance = staticmethod(getInstance)

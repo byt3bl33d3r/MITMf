@@ -19,9 +19,34 @@
 # USA
 #
 
+import os
 import random
 
-banner1 = """                                                    
+class SystemConfig:
+
+	@staticmethod
+	def setIpForwarding(value):
+		with open('/proc/sys/net/ipv4/ip_forward', 'w') as file:
+			file.write(str(value))
+			file.close()
+
+	class iptables:
+
+		@staticmethod
+		def Flush():
+			os.system('iptables -F && iptables -X && iptables -t nat -F && iptables -t nat -X')
+
+		@staticmethod
+		def HTTP(http_redir_port):
+			os.system('iptables -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port %s' % http_redir_port)
+
+		@staticmethod
+		def DNS(queue_number):
+			os.system('iptables -t nat -A PREROUTING -p udp --dport 53 -j NFQUEUE --queue-num %s' % queue_number)
+
+class Banners:
+
+	banner1 = """                                                    
  __  __   ___   .--.          __  __   ___              
 |  |/  `.'   `. |__|         |  |/  `.'   `.      _.._  
 |   .-.  .-.   '.--.     .|  |   .-.  .-.   '   .' .._| 
@@ -35,7 +60,7 @@ banner1 = """
                        `'-'                     |_|
 """
 
-banner2= """
+	banner2= """
  ███▄ ▄███▓ ██▓▄▄▄█████▓ ███▄ ▄███▓  █████▒
 ▓██▒▀█▀ ██▒▓██▒▓  ██▒ ▓▒▓██▒▀█▀ ██▒▓██   ▒ 
 ▓██    ▓██░▒██▒▒ ▓██░ ▒░▓██    ▓██░▒████ ░ 
@@ -47,7 +72,7 @@ banner2= """
        ░    ░                  ░                                                     
 """
 
-banner3 = """
+	banner3 = """
    ▄▄▄▄███▄▄▄▄    ▄█      ███       ▄▄▄▄███▄▄▄▄      ▄████████ 
  ▄██▀▀▀███▀▀▀██▄ ███  ▀█████████▄ ▄██▀▀▀███▀▀▀██▄   ███    ███ 
  ███   ███   ███ ███▌    ▀███▀▀██ ███   ███   ███   ███    █▀  
@@ -58,7 +83,7 @@ banner3 = """
   ▀█   ███   █▀  █▀      ▄████▀    ▀█   ███   █▀    ███        
 """
 
-banner4 = """
+	banner4 = """
       ___                                     ___           ___     
      /\  \                                   /\  \         /\__\    
     |::\  \       ___           ___         |::\  \       /:/ _/_   
@@ -72,6 +97,7 @@ banner4 = """
      \/__/         \/__/         \/__/       \/__/         \/__/    
 """
 
-def get_banner():
-	banners = [banner1, banner2, banner3, banner4]
-	return random.choice(banners)
+	@property
+	def printBanner(self):
+		banners = [self.banner1, self.banner2, self.banner3, self.banner4]
+		print random.choice(banners)

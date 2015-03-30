@@ -1,11 +1,32 @@
-from plugins.plugin import Plugin
-from plugins.Inject import Inject
-from time import sleep
+#!/usr/bin/env python2.7
+
+# Copyright (c) 2014-2016 Marcello Salvati
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+#
+
 import logging
 import sys
 import json
 import threading
-import libs.beefapi as beefapi
+import core.beefapi as beefapi
+
+from plugins.plugin import Plugin
+from plugins.Inject import Inject
+from time import sleep
 
 requests_log = logging.getLogger("requests")  #Disables "Starting new HTTP Connection (1)" log message
 requests_log.setLevel(logging.WARNING)
@@ -85,7 +106,7 @@ class BeefAutorun(Inject, Plugin):
 
 		if len(self.All_modules) > 0:
 			logging.info("%s >> sending generic modules" % session_ip)
-			for module, options in self.All_modules.items():
+			for module, options in self.All_modules.iteritems():
 				mod_id = beef.module_id(module)
 				resp = beef.module_run(session, mod_id, json.loads(options))
 				if resp["success"] == 'true':
@@ -103,7 +124,7 @@ class BeefAutorun(Inject, Plugin):
 						if browser == hook_browser:
 							modules = self.Targeted_modules[os][browser]
 							if len(modules) > 0:
-								for module, options in modules.items():
+								for module, options in modules.iteritems():
 									mod_id = beef.module_id(module)
 									resp = beef.module_run(session, mod_id, json.loads(options))
 									if resp["success"] == 'true':

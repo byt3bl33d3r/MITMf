@@ -42,17 +42,16 @@ class CookieCleaner:
 
     _instance = None
 
+    def __init__(self):
+        self.cleanedCookies = set();
+        self.enabled        = False
+
+    @staticmethod
     def getInstance():
         if CookieCleaner._instance == None:
             CookieCleaner._instance = CookieCleaner()
 
         return CookieCleaner._instance
-
-    getInstance = staticmethod(getInstance)
-
-    def __init__(self):
-        self.cleanedCookies = set();
-        self.enabled        = False
 
     def setEnabled(self, enabled):
         self.enabled = enabled
