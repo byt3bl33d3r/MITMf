@@ -1,3 +1,6 @@
 [submodule "libs/bdfactory"]
 	path = libs/bdfactory
 	url = https://github.com/secretsquirrel/the-backdoor-factory
+[submodule "libs/responder"]
+	path = libs/responder
+	url = https://github.com/SpiderLabs/Responder
