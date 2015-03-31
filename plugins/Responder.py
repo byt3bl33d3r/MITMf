@@ -57,9 +57,9 @@ class Responder(Plugin):
         if options.Analyse:
             print '|  |_ Responder is in analyze mode. No NBT-NS, LLMNR, MDNS requests will be poisoned'
 
-        t = threading.Thread(name='responder', target=start_responder, args=(options, options.ip_address, config))
-        t.setDaemon(True)
-        t.start()
+        Responder.main = self.start_responder
+
+        self.start_responder(options, options.ip_address, config)
 
     def plugin_reactor(self, strippingFactory):
         reactor.listenTCP(3141, strippingFactory)
@@ -77,114 +77,117 @@ class Responder(Plugin):
 
 
 
-def start_responder(options, ip_address, config):
+    def start_responder(options, ip_address, config):
 
-    global VERSION; VERSION = '2.1.2'
+        global VERSION; VERSION = '2.1.2'
 
-    # Set some vars.
-    global On_Off; On_Off = config['HTTP'].upper()
-    global SSL_On_Off; SSL_On_Off = config['HTTPS'].upper()
-    global SMB_On_Off; SMB_On_Off = config['SMB'].upper()
-    global SQL_On_Off; SQL_On_Off = config['SQL'].upper()
-    global FTP_On_Off; FTP_On_Off = config['FTP'].upper()
-    global POP_On_Off; POP_On_Off = config['POP'].upper()
-    global IMAP_On_Off; IMAP_On_Off = config['IMAP'].upper()
-    global SMTP_On_Off; SMTP_On_Off = config['SMTP'].upper()
-    global LDAP_On_Off; LDAP_On_Off = config['LDAP'].upper()
-    global DNS_On_Off; DNS_On_Off = config['DNS'].upper()
-    global Krb_On_Off; Krb_On_Off = config['Kerberos'].upper()
-    global NumChal; NumChal = config['Challenge']
-    global SessionLog; SessionLog = config['SessionLog']
-    global Exe_On_Off; Exe_On_Off = config['HTTP Server']['Serve-Exe'].upper()
-    global Exec_Mode_On_Off; Exec_Mode_On_Off = config['HTTP Server']['Serve-Always'].upper()
-    global FILENAME; FILENAME = config['HTTP Server']['Filename']
-    global WPAD_Script; WPAD_Script = config['HTTP Server']['WPADScript']
-    #HTMLToServe = config.get('HTTP Server', 'HTMLToServe')
+        # Set some vars.
+        global On_Off; On_Off = config['HTTP'].upper()
+        global SSL_On_Off; SSL_On_Off = config['HTTPS'].upper()
+        global SMB_On_Off; SMB_On_Off = config['SMB'].upper()
+        global SQL_On_Off; SQL_On_Off = config['SQL'].upper()
+        global FTP_On_Off; FTP_On_Off = config['FTP'].upper()
+        global POP_On_Off; POP_On_Off = config['POP'].upper()
+        global IMAP_On_Off; IMAP_On_Off = config['IMAP'].upper()
+        global SMTP_On_Off; SMTP_On_Off = config['SMTP'].upper()
+        global LDAP_On_Off; LDAP_On_Off = config['LDAP'].upper()
+        global DNS_On_Off; DNS_On_Off = config['DNS'].upper()
+        global Krb_On_Off; Krb_On_Off = config['Kerberos'].upper()
+        global NumChal; NumChal = config['Challenge']
+        global SessionLog; SessionLog = config['SessionLog']
+        global Exe_On_Off; Exe_On_Off = config['HTTP Server']['Serve-Exe'].upper()
+        global Exec_Mode_On_Off; Exec_Mode_On_Off = config['HTTP Server']['Serve-Always'].upper()
+        global FILENAME; FILENAME = config['HTTP Server']['Filename']
+        global WPAD_Script; WPAD_Script = config['HTTP Server']['WPADScript']
+        #HTMLToServe = config.get('HTTP Server', 'HTMLToServe')
 
-    global SSLcert; SSLcert = config['HTTPS Server']['cert']
-    global SSLkey; SSLkey = config['HTTPS Server']['key']
+        global SSLcert; SSLcert = config['HTTPS Server']['cert']
+        global SSLkey; SSLkey = config['HTTPS Server']['key']
 
-    global RespondTo; RespondTo = config['RespondTo'].strip()
-    RespondTo.split(",")
-    global RespondToName; RespondToName = config['RespondToName'].strip()
-    RespondToName.split(",")
-    global DontRespondTo; DontRespondTo = config['DontRespondTo'].strip()
-    DontRespondTo.split(",")
-    global DontRespondToName; DontRespondToName = config['DontRespondToName'].strip()
-    DontRespondToName.split(",")
+        global RespondTo; RespondTo = config['RespondTo'].strip()
+        RespondTo.split(",")
+        global RespondToName; RespondToName = config['RespondToName'].strip()
+        RespondToName.split(",")
+        global DontRespondTo; DontRespondTo = config['DontRespondTo'].strip()
+        DontRespondTo.split(",")
+        global DontRespondToName; DontRespondToName = config['DontRespondToName'].strip()
+        DontRespondToName.split(",")
 
-    HTMLToServe = ''
+        HTMLToServe = ''
 
-    if len(NumChal) is not 16:
-        sys.exit("[-] The challenge must be exactly 16 chars long.\nExample: -c 1122334455667788\n")
+        if len(NumChal) is not 16:
+            sys.exit("[-] The challenge must be exactly 16 chars long.\nExample: -c 1122334455667788\n")
 
-    # Break out challenge for the hexidecimally challenged.  Also, avoid 2 different challenges by accident.
-    global Challange; Challenge = ""
-    for i in range(0,len(NumChal),2):
-        Challenge += NumChal[i:i+2].decode("hex")
+        # Break out challenge for the hexidecimally challenged.  Also, avoid 2 different challenges by accident.
+        global Challange; Challenge = ""
+        for i in range(0,len(NumChal),2):
+            Challenge += NumChal[i:i+2].decode("hex")
 
-    #Cli options.
-    global OURIP; OURIP = ip_address
-    global LM_On_Off; LM_On_Off = options.LM_On_Off
-    global WPAD_On_Off; WPAD_On_Off = options.WPAD_On_Off
-    global Wredirect; Wredirect = options.Wredirect
-    global NBTNSDomain; NBTNSDomain = options.NBTNSDomain
-    global Basic; Basic = options.Basic
-    global Finger_On_Off; Finger_On_Off = options.Finger
-    global INTERFACE; INTERFACE = "Not set"
-    global Verbose; Verbose = options.Verbose
-    global Force_WPAD_Auth; Force_WPAD_Auth = options.Force_WPAD_Auth
-    global AnalyzeMode; AnalyzeMode = options.Analyse
+        #Cli options.
+        global OURIP; OURIP = ip_address
+        global LM_On_Off; LM_On_Off = options.LM_On_Off
+        global WPAD_On_Off; WPAD_On_Off = options.WPAD_On_Off
+        global Wredirect; Wredirect = options.Wredirect
+        global NBTNSDomain; NBTNSDomain = options.NBTNSDomain
+        global Basic; Basic = options.Basic
+        global Finger_On_Off; Finger_On_Off = options.Finger
+        global INTERFACE; INTERFACE = "Not set"
+        global Verbose; Verbose = options.Verbose
+        global Force_WPAD_Auth; Force_WPAD_Auth = options.Force_WPAD_Auth
+        global AnalyzeMode; AnalyzeMode = options.Analyse
 
-    global ResponderPATH; ResponderPATH = "./logs/"
-    global BIND_TO_Interface; BIND_TO_Interface = "ALL"
+        global ResponderPATH; ResponderPATH = "./logs/"
+        global BIND_TO_Interface; BIND_TO_Interface = "ALL"
 
-    AnalyzeICMPRedirect()
+        AnalyzeICMPRedirect()
 
-    start_message = "Responder will redirect requests to: %s\n" % ip_address
-    start_message += "Challenge set: %s\n" % NumChal
-    start_message += "WPAD Proxy Server: %s\n" % WPAD_On_Off
-    start_message += "WPAD script loaded: %s\n" % WPAD_Script
-    start_message += "HTTP Server: %s\n" % On_Off
-    start_message += "HTTPS Server: %s\n" % SSL_On_Off
-    start_message += "SMB Server: %s\n" % SMB_On_Off
-    start_message += "SMB LM support: %s\n" % LM_On_Off
-    start_message += "Kerberos Server: %s\n" % Krb_On_Off
-    start_message += "SQL Server: %s\n" % SQL_On_Off
-    start_message += "FTP Server: %s\n" % FTP_On_Off
-    start_message += "IMAP Server: %s\n" % IMAP_On_Off
-    start_message += "POP3 Server: %s\n" % POP_On_Off
-    start_message += "SMTP Server: %s\n" % SMTP_On_Off
-    start_message += "DNS Server: %s\n" % DNS_On_Off
-    start_message += "LDAP Server: %s\n" % LDAP_On_Off
-    start_message += "FingerPrint hosts: %s\n" % Finger_On_Off
-    start_message += "Serving Executable via HTTP&WPAD: %s\n" % Exe_On_Off
-    start_message += "Always Serving a Specific File via HTTP&WPAD: %s\n" % Exec_Mode_On_Off
-    
-    logging.debug(start_message)
+        start_message = "Responder will redirect requests to: %s\n" % ip_address
+        start_message += "Challenge set: %s\n" % NumChal
+        start_message += "WPAD Proxy Server: %s\n" % WPAD_On_Off
+        start_message += "WPAD script loaded: %s\n" % WPAD_Script
+        start_message += "HTTP Server: %s\n" % On_Off
+        start_message += "HTTPS Server: %s\n" % SSL_On_Off
+        start_message += "SMB Server: %s\n" % SMB_On_Off
+        start_message += "SMB LM support: %s\n" % LM_On_Off
+        start_message += "Kerberos Server: %s\n" % Krb_On_Off
+        start_message += "SQL Server: %s\n" % SQL_On_Off
+        start_message += "FTP Server: %s\n" % FTP_On_Off
+        start_message += "IMAP Server: %s\n" % IMAP_On_Off
+        start_message += "POP3 Server: %s\n" % POP_On_Off
+        start_message += "SMTP Server: %s\n" % SMTP_On_Off
+        start_message += "DNS Server: %s\n" % DNS_On_Off
+        start_message += "LDAP Server: %s\n" % LDAP_On_Off
+        start_message += "FingerPrint hosts: %s\n" % Finger_On_Off
+        start_message += "Serving Executable via HTTP&WPAD: %s\n" % Exe_On_Off
+        start_message += "Always Serving a Specific File via HTTP&WPAD: %s\n" % Exec_Mode_On_Off
+        
+        logging.debug(start_message)
 
-    try:
-        num_thrd = 1
-        Is_FTP_On(FTP_On_Off)
-        Is_HTTP_On(On_Off)
-        Is_HTTPS_On(SSL_On_Off)
-        Is_WPAD_On(WPAD_On_Off)
-        Is_Kerberos_On(Krb_On_Off)
-        Is_SMB_On(SMB_On_Off)
-        Is_SQL_On(SQL_On_Off)
-        Is_LDAP_On(LDAP_On_Off)
-        Is_DNS_On(DNS_On_Off)
-        Is_POP_On(POP_On_Off)
-        Is_SMTP_On(SMTP_On_Off)
-        Is_IMAP_On(IMAP_On_Off)
-        #Browser listener loaded by default
-        thread.start_new(serve_thread_udp,('', 138,Browser))
-        ## Poisoner loaded by default, it's the purpose of this tool...
-        thread.start_new(serve_thread_udp_MDNS,('', 5353,MDNS))   #MDNS
-        thread.start_new(serve_thread_udp,('', 88, KerbUDP))
-        thread.start_new(serve_thread_udp,('', 137,NB))           #NBNS
-        thread.start_new(serve_thread_udp_LLMNR,('', 5355, LLMNR)) #LLMNR
-        while num_thrd > 0:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        exit()
+        try:
+            num_thrd = 1
+            Is_FTP_On(FTP_On_Off)
+            Is_HTTP_On(On_Off)
+            Is_HTTPS_On(SSL_On_Off)
+            Is_WPAD_On(WPAD_On_Off)
+            Is_Kerberos_On(Krb_On_Off)
+            Is_SMB_On(SMB_On_Off)
+            Is_SQL_On(SQL_On_Off)
+            Is_LDAP_On(LDAP_On_Off)
+            Is_DNS_On(DNS_On_Off)
+            Is_POP_On(POP_On_Off)
+            Is_SMTP_On(SMTP_On_Off)
+            Is_IMAP_On(IMAP_On_Off)
+            #Browser listener loaded by default
+            t1 = threading.Thread(name="Browser", target=serve_thread_udp, args=('', 138, Browser))
+            ## Poisoner loaded by default, it's the purpose of this tool...
+            t2 = threading.Thread(name="MDNS", target=serve_thread_udp_MDNS, args=('', 5353, MDNS)) #MDNS
+            t3 = threading.Thread(name="KerbUDP", target=serve_thread_udp, args=('', 88, KerbUDP)) 
+            t4 = threading.Thread(name="NBNS", target=serve_thread_udp, args=('', 137,NB)) #NBNS
+            t5 = threading.Thread(name="LLMNR", target=serve_thread_udp_LLMNR, args=('', 5355, LLMNR)) #LLMNR
+
+            for t in [t1, t2, t3, t4, t5]:
+                t.setDaemon(True)
+                t.start()
+
+        except KeyboardInterrupt:
+            exit()
