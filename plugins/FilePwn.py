@@ -547,12 +547,12 @@ class FilePwn(Plugin):
             if self.bytes_have_format(data, 'zip'):
                 logging.info("%s Detected supported zip file type!" % client_ip)
                 
-                process = multiprocessing.Process(target=self.zip, args=(data,))
+                process = multiprocessing.Process(name='zip', target=self.zip, args=(data,))
                 process.daemon = True
                 process.start()
                 process.join()
                 bd_zip = self.patched.get()
-                
+
                 if bd_zip:
                     logging.info("%s Patching complete, forwarding to client" % client_ip)
                     return {'request': request, 'data': bd_zip}
@@ -562,12 +562,12 @@ class FilePwn(Plugin):
                     if self.bytes_have_format(data, tartype):
                         logging.info("%s Detected supported tar file type!" % client_ip)
                         
-                        process = multiprocessing.Process(target=self.tar_files, args=(data,))
+                        process = multiprocessing.Process(name='tar_files', target=self.tar_files, args=(data,))
                         process.daemon = True
                         process.start()
                         process.join()
                         bd_tar = self.patched.get()
-                        
+
                         if bd_tar:
                             logging.info("%s Patching complete, forwarding to client" % client_ip)
                             return {'request': request, 'data': bd_tar}
@@ -580,7 +580,7 @@ class FilePwn(Plugin):
                     fd, tmpFile = mkstemp()
                     with open(tmpFile, 'w') as f:
                         f.write(data)
-            
+
                     process = multiprocessing.Process(name='binaryGrinder', target=self.binaryGrinder, args=(tmpFile,))
                     process.daemon = True
                     process.start()
