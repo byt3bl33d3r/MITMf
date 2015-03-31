@@ -52,7 +52,7 @@ class Responder(Plugin):
         if options.Analyse:
             print '|  |_ Responder is in analyze mode. No NBT-NS, LLMNR, MDNS requests will be poisoned'
 
-        start_responder(options, options.ip_address, config)
+        start_responder(options, config)
 
     def plugin_reactor(self, strippingFactory):
         reactor.listenTCP(3141, strippingFactory)
@@ -66,4 +66,3 @@ class Responder(Plugin):
         options.add_argument('--wpad', dest="WPAD_On_Off", default=False, action="store_true", help = "Set this to start the WPAD rogue proxy server. Default value is False")
         options.add_argument('--forcewpadauth', dest="Force_WPAD_Auth", default=False, action="store_true", help = "Set this if you want to force NTLM/Basic authentication on wpad.dat file retrieval. This might cause a login prompt in some specific cases. Therefore, default value is False")
         options.add_argument('--lm', dest="LM_On_Off", default=False, action="store_true", help="Set this if you want to force LM hashing downgrade for Windows XP/2003 and earlier. Default value is False")
-        options.add_argument('--verbose', dest="Verbose", default=False, action="store_true", help="More verbose")
