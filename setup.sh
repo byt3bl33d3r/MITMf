@@ -4,6 +4,5 @@ if [[ $EUID -ne 0 ]]; then
   exit 1
 fi
 
-git submodule init
-git submodule update
+git submodule init && git submodule update --recursive
 cd libs/bdfactory/ && ./install.sh

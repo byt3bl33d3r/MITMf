@@ -53,7 +53,7 @@ mitmf_version = "0.9.6"
 sslstrip_version = "0.9"
 sergio_version = "0.2.1"
 
-Banners().printBanner
+Banners().printBanner()
 
 parser = argparse.ArgumentParser(description="MITMf v%s - Framework for MITM attacks" % mitmf_version, version=mitmf_version, usage='', epilog="Use wisely, young Padawan.",fromfile_prefix_chars='@')
 #add MITMf options
@@ -162,12 +162,18 @@ load = []
 
 for p in plugins:
     try:
-        if vars(args)[p.optname] is True:
-            print "|_ %s v%s" % (p.name, p.version)
 
         if getattr(args, p.optname):
             p.initialize(args)
             load.append(p)
+
+        if vars(args)[p.optname] is True:
+            print "|_ %s v%s" % (p.name, p.version)
+
+            if p.output:
+                for line in p.output:
+                    print "|  |_ %s" % line
+
     except Exception, e:
         print "[-] Error loading plugin %s: %s" % (p.name, str(e)) 
 

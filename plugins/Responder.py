@@ -47,10 +47,10 @@ class Responder(Plugin):
         except Exception, e:
             sys.exit('[-] Error parsing config for Responder: ' + str(e))
 
-        print "|  |_ NBT-NS, LLMNR & MDNS Responder v%s by Laurent Gaffie online" % RESP_VERSION
+        self.output.append("NBT-NS, LLMNR & MDNS Responder v%s by Laurent Gaffie online" % RESP_VERSION)
 
         if options.Analyse:
-            print '|  |_ Responder is in analyze mode. No NBT-NS, LLMNR, MDNS requests will be poisoned'
+            self.output.append("Responder is in analyze mode. No NBT-NS, LLMNR, MDNS requests will be poisoned")
 
         start_responder(options, config)
 

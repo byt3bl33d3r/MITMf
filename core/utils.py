@@ -97,7 +97,6 @@ class Banners:
      \/__/         \/__/         \/__/       \/__/         \/__/    
 """
 
-	@property
 	def printBanner(self):
 		banners = [self.banner1, self.banner2, self.banner3, self.banner4]
 		print random.choice(banners)

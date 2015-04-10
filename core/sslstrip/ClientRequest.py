@@ -59,20 +59,8 @@ class ClientRequest(Request):
 
         #for k,v in headers.iteritems():
         #    logging.debug("[ClientRequest] Receiving headers: (%s => %s)" % (k, v))
-
-        if 'accept-encoding' in headers:
-             headers['accept-encoding'] == 'identity'
-             logging.debug("Zapped encoding")
-
-        if 'if-modified-since' in headers:
-            del headers['if-modified-since']
-
-        if 'cache-control' in headers:
-            del headers['cache-control']
-
+        
         if self.hsts:
-            if 'if-none-match' in headers:
-                del headers['if-none-match']
 
             if 'referer' in headers:
                 real = self.urlMonitor.real
@@ -80,15 +68,24 @@ class ClientRequest(Request):
                     dregex = re.compile("(%s)" % "|".join(map(re.escape, real.keys())))
                     headers['referer'] = dregex.sub(lambda x: str(real[x.string[x.start() :x.end()]]), headers['referer'])
 
+            if 'if-none-match' in headers:
+                del headers['if-none-match']
+
             if 'host' in headers:
-                host = self.urlMonitor.URLgetRealHost(headers['host'])
-                if host[1] is True:
-                    logging.debug("[ClientRequest][HSTS] Modifing HOST header: %s -> %s" % (headers['host'],host[0]))
-                    headers['host'] = host[0]
-                    headers['securelink'] = '1'
-                    self.setHeader('Host',host[0])
-                else:
-                    logging.debug("[ClientRequest][HSTS] Passed on HOST header: %s " % headers['host'])
+                host = self.urlMonitor.URLgetRealHost(str(headers['host']))
+                logging.debug("[ClientRequest][HSTS] Modifing HOST header: %s -> %s" % (headers['host'], host))
+                headers['host'] = host
+                self.setHeader('Host', host)
+
+        if 'accept-encoding' in headers:
+             del headers['accept-encoding']
+             logging.debug("Zapped encoding")
+
+        if 'if-modified-since' in headers:
+            del headers['if-modified-since']
+
+        if 'cache-control' in headers:
+            del headers['cache-control']
 
         self.plugins.hook()
 
@@ -113,7 +110,7 @@ class ClientRequest(Request):
         return "lock.ico"        
 
     def handleHostResolvedSuccess(self, address):
-        logging.debug("Resolved host successfully: %s -> %s" % (self.getHeader('host'), address))
+        logging.debug("[ClientRequest] Resolved host successfully: %s -> %s" % (self.getHeader('host'), address))
         host              = self.getHeader("host")
         headers           = self.cleanHeaders()
         client            = self.getClientIP()
@@ -123,12 +120,16 @@ class ClientRequest(Request):
 
         if self.content:
             self.content.seek(0,0)
+        
         postData          = self.content.read()
 
         if self.hsts:
 
-            real = self.urlMonitor.real
+            host      = self.urlMonitor.URLgetRealHost(str(host))
+            real      = self.urlMonitor.real
             patchDict = self.urlMonitor.patchDict
+            url       = 'http://' + host + path
+            self.uri  = url # set URI to absolute
 
             if len(real) > 0:
                 dregex = re.compile("(%s)" % "|".join(map(re.escape, real.keys())))
@@ -140,7 +141,7 @@ class ClientRequest(Request):
                     postData = dregex.sub(lambda x: str(patchDict[x.string[x.start() :x.end()]]), postData)
 
             
-            headers['content-length'] = "%d" % len(postData)
+            headers['content-length'] = str(len(postData))
 
         #self.dnsCache.cacheResolution(host, address)
         hostparts = host.split(':')
@@ -171,7 +172,7 @@ class ClientRequest(Request):
             self.proxyViaHTTP(address, self.method, path, postData, headers, port)
 
     def handleHostResolvedError(self, error):
-        logging.warning("Host resolution error: " + str(error))
+        logging.warning("[ClientRequest] Host resolution error: " + str(error))
         try:
             self.finish()
         except:
@@ -188,26 +189,13 @@ class ClientRequest(Request):
             return reactor.resolve(host)
 
     def process(self):
-        logging.debug("Resolving host: %s" % (self.getHeader('host')))
-        host     = self.getHeader('host')               
+        logging.debug("[ClientRequest] Resolving host: %s" % (self.getHeader('host')))
+        host = self.getHeader('host').split(":")[0]
 
-        if (self.hsts and host):
-            real = self.urlMonitor.real
+        if self.hsts:
+            host = self.urlMonitor.URLgetRealHost("%s"%host)                 
 
-            if 'wwww' in host:
-                logging.info("%s Resolving %s for HSTS bypass (Twisted)" % (self.getClientIP(), host))
-                host = host[1:]
-            elif 'web' in host:
-                logging.info("%s Resolving %s for HSTS bypass (Twisted)" % (self.getClientIP(), host))
-                host = host[3:]
-            elif host in real:
-                logging.info("%s Resolving %s for HSTS bypass (Twisted)" % (self.getClientIP(), host))
-                host = real[host]
-
-        hostparts = host.split(':')
-        #deferred = self.resolveHost(host)
-        deferred = self.resolveHost(hostparts[0])
-
+        deferred = self.resolveHost(host)
         deferred.addCallback(self.handleHostResolvedSuccess)
         deferred.addErrback(self.handleHostResolvedError)
         

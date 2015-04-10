@@ -5,11 +5,13 @@ can get called during the MITM attack.
 
 
 class Plugin(object):
-    name = "Generic plugin"
-    optname = "generic"
-    desc = ""
+    name       = "Generic plugin"
+    optname    = "generic"
+    desc       = ""
     implements = []
-    has_opts = False
+    output     = []
+    has_opts   = False
+    req_root   = False
 
     def __init__(self):
         '''Called on plugin instantiation. Probably don't need this'''

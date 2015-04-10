@@ -66,7 +66,8 @@ class BeefAutorun(Inject, Plugin):
 		if not beef.login(beefconfig['user'], beefconfig['pass']):
 			sys.exit("[-] Error logging in to BeEF!")
 
-		print "|  |_ Mode: %s" % self.Mode
+		self.output.append("Mode: %s" % self.Mode)
+
 		t = threading.Thread(name="autorun", target=self.autorun, args=(beef,))
 		t.setDaemon(True)
 		t.start()

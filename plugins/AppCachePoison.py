@@ -44,6 +44,8 @@ class AppCachePlugin(Plugin):
         self.mass_poisoned_browsers = []
         self.urlMonitor = URLMonitor.getInstance()
 
+        self.urlMonitor.setAppCachePoisoning()
+
         try:
             self.config = options.configfile['AppCachePoison']
         except Exception, e:

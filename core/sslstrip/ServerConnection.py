@@ -54,6 +54,7 @@ class ServerConnection(HTTPClient):
         self.clientInfo       = None
         self.urlMonitor       = URLMonitor.getInstance()
         self.hsts             = URLMonitor.getInstance().isHstsBypass()
+        self.app              = URLMonitor.getInstance().isAppCachePoisoning()
         self.plugins          = ProxyPlugins.getInstance()
         self.isImageRequest   = False
         self.isCompressed     = False
@@ -62,9 +63,6 @@ class ServerConnection(HTTPClient):
 
     def getPostPrefix(self):
         return "POST"
-
-    def isHsts(self):
-        return self.hsts
 
     def sendRequest(self):
         if self.command == 'GET':
@@ -113,7 +111,8 @@ class ServerConnection(HTTPClient):
 
         if (key.lower() == 'location'):
             value = self.replaceSecureLinks(value)
-            self.urlMonitor.addRedirection(self.client.uri, value)
+            if self.app:
+                self.urlMonitor.addRedirection(self.client.uri, value)
 
         if (key.lower() == 'content-type'):
             if (value.find('image') != -1):
@@ -166,7 +165,7 @@ class ServerConnection(HTTPClient):
             logging.debug("Decompressing content...")
             data = gzip.GzipFile('', 'rb', 9, StringIO.StringIO(data)).read()
             
-        logging.debug("Read from server:\n" + data)
+        #logging.debug("Read from server:\n" + data)
 
         data = self.replaceSecureLinks(data)
         res = self.plugins.hook()

@@ -124,6 +124,8 @@ class FilePwn(Plugin):
         self.zipblacklist    = self.userConfig['ZIP']['blacklist']
         self.tarblacklist    = self.userConfig['TAR']['blacklist']
 
+        self.output.append("BDFProxy by midnite_runr online")
+
     def convert_to_Bool(self, aString):
         if aString.lower() == 'true':
             return True

@@ -43,6 +43,7 @@ class URLMonitor:
         self.redirects          = []
         self.faviconReplacement = False
         self.hsts               = False
+        self.app                = False
         self.hsts_config        = None
 
     @staticmethod
@@ -71,7 +72,7 @@ class URLMonitor:
                 s.add(to_url)
                 return
         url_set = set([from_url, to_url])
-        logging.debug("[URLMonitor] Set redirection: %s" % url_set)
+        logging.debug("[URLMonitor][AppCachePoison] Set redirection: %s" % url_set)
         self.redirects.append(url_set)
 
     def getRedirectionSet(self, url):
@@ -138,6 +139,9 @@ class URLMonitor:
                 self.sustitucion[k] = v
                 self.real[v] = k
 
+    def setAppCachePoisoning(self):
+        self.app = True
+
     def setClientLogging(self, clientLogging):
         self.clientLogging = clientLogging
 
@@ -150,14 +154,17 @@ class URLMonitor:
     def isHstsBypass(self):
         return self.hsts
 
+    def isAppCachePoisoning(self):
+        return self.app
+
     def isSecureFavicon(self, client, url):
         return ((self.faviconSpoofing == True) and (url.find("favicon-x-favicon-x.ico") != -1))
     
-    def URLgetRealHost(self,host):
-        logging.debug("[URLMonitor][HSTS]Parsing host: %s"%host)
+    def URLgetRealHost(self, host):
+        logging.debug("[URLMonitor][HSTS] Parsing host: %s"% host)
         if self.real.has_key(host):
-            logging.debug("[URLMonitor][HSTS]New host: %s"%self.real[host])
-            return (self.real[host], True)
+            logging.debug("[URLMonitor][HSTS] Found host in list: %s"% self.real[host])
+            return self.real[host]
         else:
-            logging.debug("[URLMonitor][HSTS]New host: %s"%host)
-            return (host, False)
+            logging.debug("[URLMonitor][HSTS] Host not in list: %s"% host)
+            return host

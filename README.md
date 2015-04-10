@@ -15,6 +15,10 @@ As of v0.9.5 DNS tampering support needs NetfilterQueue v0.6 which is currently 
 
 Download it from here https://github.com/fqrouter/python-netfilterqueue and manually install it.
 
+Installation
+============
+If MITMf is not in your distribuitions repo, or you just want the latest version, clone the repo run the ```setup.sh``` script and install all python dependencies in the ```requirements.txt``` file
+
 Availible plugins
 =================
 - Responder - LLMNR, NBT-NS and MDNS poisoner
