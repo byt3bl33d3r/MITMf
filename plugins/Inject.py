@@ -28,6 +28,8 @@ import argparse
 from plugins.plugin import Plugin
 from plugins.CacheKill import CacheKill
 
+mitmf_logger = logging.getLogger('mitmf')
+
 class Inject(CacheKill, Plugin):
     name       = "Inject"
     optname    = "inject"
@@ -87,7 +89,7 @@ class Inject(CacheKill, Plugin):
                 self.ctable[ip] = time.time()
                 self.dtable[ip+hn] = True
                 self.count += 1
-                logging.info("%s [%s] Injected malicious html" % (ip, hn))
+                mitmf_logger.info("%s [%s] Injected malicious html" % (ip, hn))
                 return {'request': request, 'data': data}
             else:
                 return

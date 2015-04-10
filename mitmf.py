@@ -60,7 +60,7 @@ parser = argparse.ArgumentParser(description="MITMf v%s - Framework for MITM att
 mgroup = parser.add_argument_group("MITMf", "Options for MITMf")
 mgroup.add_argument("--log-level", type=str,choices=['debug', 'info'], default="info", help="Specify a log level [default: info]")
 mgroup.add_argument("-i", "--interface", required=True, type=str,  metavar="interface" ,help="Interface to listen on")
-mgroup.add_argument("-c", "--config-file", dest='configfile', type=str, default="./config/mitmf.cfg", metavar='configfile', help="Specify config file to use")
+mgroup.add_argument("-c", "--config-file", dest='configfile', type=str, default="./config/mitmf.conf", metavar='configfile', help="Specify config file to use")
 mgroup.add_argument('-d', '--disable-proxy', dest='disproxy', action='store_true', default=False, help='Only run plugins, disable all proxies')
 #added by alexander.georgiev@daloo.de
 mgroup.add_argument('-m', '--manual-iptables', dest='manualiptables', action='store_true', default=False, help='Do not setup iptables or flush them automatically')
@@ -147,11 +147,11 @@ log_level = logging.__dict__[args.log_level.upper()]
 #Start logging 
 logging.basicConfig(level=log_level, format="%(asctime)s %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 logFormatter = logging.Formatter("%(asctime)s %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
-rootLogger = logging.getLogger()
+mitmf_logger = logging.getLogger('mitmf')
 
 fileHandler = logging.FileHandler("./logs/mitmf.log")
 fileHandler.setFormatter(logFormatter)
-rootLogger.addHandler(fileHandler)
+mitmf_logger.addHandler(fileHandler)
 
 #####################################################################################################
 
@@ -173,6 +173,7 @@ for p in plugins:
             if p.output:
                 for line in p.output:
                     print "|  |_ %s" % line
+                    p.output.remove(line)
 
     except Exception, e:
         print "[-] Error loading plugin %s: %s" % (p.name, str(e)) 

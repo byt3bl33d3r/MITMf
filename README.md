@@ -11,13 +11,9 @@ This tool is based on [sergio-proxy](https://github.com/supernothing/sergio-prox
 
 Dependency change!
 ===================
-As of v0.9.5 DNS tampering support needs NetfilterQueue v0.6 which is currently a fork, so it *cannot* be installed via pip or easy_install.
+As of v0.9.5, DNS tampering support needs NetfilterQueue v0.6 which is currently a fork, so it *cannot* be installed via pip or easy_install.
 
-Download it from here https://github.com/fqrouter/python-netfilterqueue and manually install it.
-
-Installation
-============
-If MITMf is not in your distribuitions repo, or you just want the latest version, clone the repo run the ```setup.sh``` script and install all python dependencies in the ```requirements.txt``` file
+**Please read the [install](#installation) guide for details**
 
 Availible plugins
 =================
@@ -63,6 +59,13 @@ Changelog
 - Added [beefapi.py](https://github.com/byt3bl33d3r/beefapi) for interfacing with BeEF's RESTfulAPI
 
 - Addition of the app-cache poisoning attack by [Krzysztof Kotowicz](https://github.com/koto/sslstrip) (blogpost explaining the attack here http://blog.kotowicz.net/2010/12/squid-imposter-phishing-websites.html)
+
+Installation
+============
+If MITMf is not in your distros repo or you just want the latest version, clone this repository run the ```setup.sh``` script and install all python dependencies in the ```requirements.txt``` file using ```pip```.
+
+Then, download the ```python-netfilterqueue``` library from here 
+https://github.com/fqrouter/python-netfilterqueue and manually install it.
 
 Submitting Issues
 =================

@@ -23,6 +23,7 @@ from cStringIO import StringIO
 from plugins.plugin import Plugin
 from PIL import Image
 
+mitmf_logger = logging.getLogger('mitmf')
 
 class Upsidedownternet(Plugin):
     name       = "Upsidedownternet"
@@ -65,7 +66,7 @@ class Upsidedownternet(Plugin):
                 im.save(output, format=image_type)
                 data = output.getvalue()
                 output.close()
-                logging.info("%s Flipped image" % request.client.getClientIP())
+                mitmf_logger.info("%s Flipped image" % request.client.getClientIP())
             except Exception as e:
-                logging.info("%s Error: %s" % (request.client.getClientIP(), e))
+                mitmf_logger.info("%s Error: %s" % (request.client.getClientIP(), e))
         return {'request': request, 'data': data}

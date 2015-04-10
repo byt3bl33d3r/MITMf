@@ -7,3 +7,6 @@
 [submodule "core/beefapi"]
 	path = core/beefapi
 	url = https://github.com/byt3bl33d3r/beefapi
+[submodule "libs/dnschef"]
+	path = libs/dnschef
+	url = https://github.com/byt3bl33d3r/dnschef

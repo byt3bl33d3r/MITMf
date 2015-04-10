@@ -35,6 +35,8 @@ import threading
 import re
 import os
 
+mitmf_logger = logging.getLogger('mitmf')
+
 class Sniffer(Plugin):
 	name       = "Sniffer"
 	optname    = "sniffer"
@@ -103,7 +105,7 @@ class Sniffer(Plugin):
 				if param.split('=')[0] == search_param:
 					query = str(param.split('=')[1])
 					if query:
-						logging.info(request.clientInfo + "is querying %s for: %s" % (request.headers['host'], query))
+						mitmf_logger.info(request.clientInfo + "is querying %s for: %s" % (request.headers['host'], query))
 		except Exception, e:
 			error = str(e)
 			logging.warning(request.clientInfo + "Error parsing search query %s" % error)
@@ -809,7 +811,7 @@ class NetCreds:
 		if dst_ip_port != None:
 			print_str = '%s --> %s %s' % (src_ip_port, dst_ip_port,msg)
 			# All credentials will have dst_ip_port, URLs will not
-			logging.info(print_str)
+			mitmf_logger.info(print_str)
 		else:
 			print_str = '%s %s' % (src_ip_port.split(':')[0], msg)
-			logging.info(print_str)
+			mitmf_logger.info(print_str)

@@ -29,6 +29,7 @@ import re
 from plugins.plugin import Plugin
 from plugins.CacheKill import CacheKill
 
+mitmf_logger = logging.getLogger('mitmf')
 
 class Replace(CacheKill, Plugin):
 	name       = "Replace"
@@ -70,14 +71,14 @@ class Replace(CacheKill, Plugin):
 
 			if self.search_str is not None and self.search_str != "":
 				data = data.replace(self.search_str, self.replace_str)
-				logging.info("%s [%s] Replaced '%s' with '%s'" % (request.client.getClientIP(), request.headers['host'], self.search_str, self.replace_str))
+				mitmf_logger.info("%s [%s] Replaced '%s' with '%s'" % (request.client.getClientIP(), request.headers['host'], self.search_str, self.replace_str))
 
 			# Did the user provide us with a regex file?
 			for regex in self.regexes:
 				try:
 					data = re.sub(regex[0], regex[1], data)
 
-					logging.info("%s [%s] Occurances matching '%s' replaced with '%s'" % (request.client.getClientIP(), request.headers['host'], regex[0], regex[1]))
+					mitmf_logger.info("%s [%s] Occurances matching '%s' replaced with '%s'" % (request.client.getClientIP(), request.headers['host'], regex[0], regex[1]))
 				except Exception:
 					logging.error("%s [%s] Your provided regex (%s) or replace value (%s) is empty or invalid. Please debug your provided regex(es)" % (request.client.getClientIP(), request.headers['host'], regex[0], regex[1]))
 

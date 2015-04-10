@@ -18,6 +18,8 @@
 
 import logging
 
+mitmf_logger = logging.getLogger('mitmf')
+
 class DnsCache:    
 
 	'''
@@ -49,7 +51,7 @@ class DnsCache:
 	def setCustomRes(self, host, ip_address=None):
 		if ip_address is not None:
 			self.cache[host] = ip_address
-			logging.debug("DNS entry set: %s -> %s" %(host, ip_address))
+			mitmf_logger.debug("DNS entry set: %s -> %s" %(host, ip_address))
 		else:
 			if self.customAddress is not None:
 				self.cache[host] = self.customAddress

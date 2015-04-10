@@ -19,6 +19,8 @@
 import re, os
 import logging
 
+mitmf_logger = logging.getLogger('mimtf')
+
 class URLMonitor:    
 
     '''
@@ -72,7 +74,7 @@ class URLMonitor:
                 s.add(to_url)
                 return
         url_set = set([from_url, to_url])
-        logging.debug("[URLMonitor][AppCachePoison] Set redirection: %s" % url_set)
+        mitmf_logger.debug("[URLMonitor][AppCachePoison] Set redirection: %s" % url_set)
         self.redirects.append(url_set)
 
     def getRedirectionSet(self, url):
@@ -111,10 +113,10 @@ class URLMonitor:
                 else:
                     self.sustitucion[host] = "web"+host
                     self.real["web"+host] = host
-                logging.debug("[URLMonitor][HSTS] SSL host (%s) tokenized (%s)" % (host,self.sustitucion[host]) )
+                mitmf_logger.debug("[URLMonitor][HSTS] SSL host (%s) tokenized (%s)" % (host,self.sustitucion[host]) )
                     
             url = 'http://' + host + path
-            #logging.debug("HSTS stripped URL: %s %s"%(client, url))
+            #mitmf_logger.debug("HSTS stripped URL: %s %s"%(client, url))
 
             self.strippedURLs.add((client, url))
             self.strippedURLPorts[(client, url)] = int(port)
@@ -161,10 +163,10 @@ class URLMonitor:
         return ((self.faviconSpoofing == True) and (url.find("favicon-x-favicon-x.ico") != -1))
     
     def URLgetRealHost(self, host):
-        logging.debug("[URLMonitor][HSTS] Parsing host: %s"% host)
+        mitmf_logger.debug("[URLMonitor][HSTS] Parsing host: %s"% host)
         if self.real.has_key(host):
-            logging.debug("[URLMonitor][HSTS] Found host in list: %s"% self.real[host])
+            mitmf_logger.debug("[URLMonitor][HSTS] Found host in list: %s"% self.real[host])
             return self.real[host]
         else:
-            logging.debug("[URLMonitor][HSTS] Host not in list: %s"% host)
+            mitmf_logger.debug("[URLMonitor][HSTS] Host not in list: %s"% host)
             return host

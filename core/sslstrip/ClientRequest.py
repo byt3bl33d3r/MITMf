@@ -34,7 +34,8 @@ from URLMonitor import URLMonitor
 from CookieCleaner import CookieCleaner
 from DnsCache import DnsCache
 from core.sergioproxy.ProxyPlugins import ProxyPlugins
-from configobj import ConfigObj
+
+mitmf_logger = logging.getLogger('mitmf')
 
 class ClientRequest(Request):
 
@@ -58,7 +59,7 @@ class ClientRequest(Request):
         headers = self.getAllHeaders().copy()
 
         #for k,v in headers.iteritems():
-        #    logging.debug("[ClientRequest] Receiving headers: (%s => %s)" % (k, v))
+        #    mitmf_logger.debug("[ClientRequest] Receiving headers: (%s => %s)" % (k, v))
         
         if self.hsts:
 
@@ -73,13 +74,13 @@ class ClientRequest(Request):
 
             if 'host' in headers:
                 host = self.urlMonitor.URLgetRealHost(str(headers['host']))
-                logging.debug("[ClientRequest][HSTS] Modifing HOST header: %s -> %s" % (headers['host'], host))
+                mitmf_logger.debug("[ClientRequest][HSTS] Modifing HOST header: %s -> %s" % (headers['host'], host))
                 headers['host'] = host
                 self.setHeader('Host', host)
 
         if 'accept-encoding' in headers:
              del headers['accept-encoding']
-             logging.debug("Zapped encoding")
+             mitmf_logger.debug("Zapped encoding")
 
         if 'if-modified-since' in headers:
             del headers['if-modified-since']
@@ -110,7 +111,7 @@ class ClientRequest(Request):
         return "lock.ico"        
 
     def handleHostResolvedSuccess(self, address):
-        logging.debug("[ClientRequest] Resolved host successfully: %s -> %s" % (self.getHeader('host'), address))
+        mitmf_logger.debug("[ClientRequest] Resolved host successfully: %s -> %s" % (self.getHeader('host'), address))
         host              = self.getHeader("host")
         headers           = self.cleanHeaders()
         client            = self.getClientIP()
@@ -148,22 +149,22 @@ class ClientRequest(Request):
         self.dnsCache.cacheResolution(hostparts[0], address)
 
         if (not self.cookieCleaner.isClean(self.method, client, host, headers)):
-            logging.debug("Sending expired cookies...")
+            mitmf_logger.debug("Sending expired cookies...")
             self.sendExpiredCookies(host, path, self.cookieCleaner.getExpireHeaders(self.method, client, host, headers, path))
         
         elif (self.urlMonitor.isSecureFavicon(client, path)):
-            logging.debug("Sending spoofed favicon response...")
+            mitmf_logger.debug("Sending spoofed favicon response...")
             self.sendSpoofedFaviconResponse()
 
         elif (self.urlMonitor.isSecureLink(client, url) or ('securelink' in headers)):
             if 'securelink' in headers:
                 del headers['securelink']
             
-            logging.debug("Sending request via SSL...(%s %s)" % (client,url))
+            mitmf_logger.debug("Sending request via SSL...(%s %s)" % (client,url))
             self.proxyViaSSL(address, self.method, path, postData, headers, self.urlMonitor.getSecurePort(client, url))
         
         else:
-            logging.debug("Sending request via HTTP...")
+            mitmf_logger.debug("Sending request via HTTP...")
             #self.proxyViaHTTP(address, self.method, path, postData, headers)
             port = 80
             if len(hostparts) > 1:
@@ -182,14 +183,14 @@ class ClientRequest(Request):
         address = self.dnsCache.getCachedAddress(host)
 
         if address != None:
-            logging.debug("[ClientRequest] Host cached: %s %s" % (host, str(address)))
+            mitmf_logger.debug("[ClientRequest] Host cached: %s %s" % (host, str(address)))
             return defer.succeed(address)
         else:
-            logging.debug("[ClientRequest] Host not cached.")
+            mitmf_logger.debug("[ClientRequest] Host not cached.")
             return reactor.resolve(host)
 
     def process(self):
-        logging.debug("[ClientRequest] Resolving host: %s" % (self.getHeader('host')))
+        mitmf_logger.debug("[ClientRequest] Resolving host: %s" % (self.getHeader('host')))
         host = self.getHeader('host').split(":")[0]
 
         if self.hsts:

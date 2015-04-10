@@ -25,7 +25,6 @@ import logging
 from plugins.plugin import Plugin
 from core.utils import SystemConfig
 from core.sslstrip.URLMonitor import URLMonitor
-from core.wrappers.protocols import _DNS
 
 class HSTSbypass(Plugin):
 	name     = 'SSLstrip+'
@@ -44,19 +43,13 @@ class HSTSbypass(Plugin):
 		except Exception, e:
 			sys.exit("[-] Error parsing config for SSLstrip+: " + str(e))
 
-		if not options.manualiptables:
-			SystemConfig.iptables.DNS(1)
-
-		self.dns = _DNS.getInstance()
-		self.dns.enableHSTS(config)
-
 		self.output.append("SSLstrip+ by Leonardo Nve running")
 
 		URLMonitor.getInstance().setHstsBypass(config)
 
-	def finish(self):
-		if _DNS.checkInstance() is True:
-			_DNS.getInstance().stop()
+	#def finish(self):
+	#	if _DNS.checkInstance() is True:
+	#		_DNS.getInstance().stop()
 
-		if not self.manualiptables:
-			SystemConfig.iptables.Flush()
+	#	if not self.manualiptables:
+	#		SystemConfig.iptables.Flush()

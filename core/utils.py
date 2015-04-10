@@ -41,8 +41,8 @@ class SystemConfig:
 			os.system('iptables -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port %s' % http_redir_port)
 
 		@staticmethod
-		def DNS(queue_number):
-			os.system('iptables -t nat -A PREROUTING -p udp --dport 53 -j NFQUEUE --queue-num %s' % queue_number)
+		def DNS(ip, port):
+			os.system('iptables -t nat -A PREROUTING -p udp --dport 53 -j DNAT --to %s:%s' % (ip, port))
 
 class Banners:
 
