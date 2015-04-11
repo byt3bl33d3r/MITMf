@@ -81,7 +81,6 @@ class FilePwn(Plugin):
     tree_output = ["BDFProxy v0.2 online"]
     version     = "0.2"
     has_opts    = False
-    req_root    = False
 
     def initialize(self, options):
         '''Called if plugin is enabled, passed the options namespace'''

@@ -39,7 +39,6 @@ class AppCachePlugin(Plugin):
     implements = ["handleResponse"]
     version    = "0.3"
     has_opts   = False
-    req_root   = False
 
     def initialize(self, options):
         self.options = options

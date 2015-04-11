@@ -29,7 +29,6 @@ class CacheKill(Plugin):
     bad_headers = ['if-none-match', 'if-modified-since']
     version     = "0.1"
     has_opts    = True
-    req_root    = False
 
     def add_options(self, options):
         options.add_argument("--preserve-cookies", action="store_true", help="Preserve cookies (will allow caching in some situations).")

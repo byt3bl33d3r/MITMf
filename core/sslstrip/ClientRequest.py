@@ -16,7 +16,7 @@
 # USA
 #
 
-import urlparse, logging, os, sys, random, re
+import urlparse, logging, os, sys, random, re, dns.resolver
 
 from twisted.web.http import Request
 from twisted.web.http import HTTPChannel
@@ -43,8 +43,8 @@ class ClientRequest(Request):
     the magic begins.  Here we remove the client headers we dont like, and then
     respond with either favicon spoofing, session denial, or proxy through HTTP
     or SSL to the server.
-    '''    
-    
+    '''
+
     def __init__(self, channel, queued, reactor=reactor):
         Request.__init__(self, channel, queued)
         self.reactor       = reactor
@@ -54,6 +54,12 @@ class ClientRequest(Request):
         self.dnsCache      = DnsCache.getInstance()
         self.plugins       = ProxyPlugins.getInstance()
         #self.uniqueId      = random.randint(0, 10000)
+        
+        #Use are own DNS server instead of reactor.resolve()
+        self.resolver       = URLMonitor.getInstance().getResolver()
+        self.customResolver = dns.resolver.Resolver()    
+        self.customResolver.nameservers  = ['127.0.0.1']
+        self.customResolver.port = URLMonitor.getInstance().getResolverPort()
 
     def cleanHeaders(self):
         headers = self.getAllHeaders().copy()
@@ -173,7 +179,7 @@ class ClientRequest(Request):
             self.proxyViaHTTP(address, self.method, path, postData, headers, port)
 
     def handleHostResolvedError(self, error):
-        logging.warning("[ClientRequest] Host resolution error: " + str(error))
+        logging.debug("[ClientRequest] Host resolution error: " + str(error))
         try:
             self.finish()
         except:
@@ -186,8 +192,18 @@ class ClientRequest(Request):
             mitmf_logger.debug("[ClientRequest] Host cached: %s %s" % (host, str(address)))
             return defer.succeed(address)
         else:
+            
             mitmf_logger.debug("[ClientRequest] Host not cached.")
-            return reactor.resolve(host)
+            
+            if self.resolver == 'dnschef':
+                try:
+                    address = str(self.customResolver.query(host)[0].address)
+                    return defer.succeed(address)
+                except Exception:
+                    return defer.fail()
+            
+            elif self.resolver == 'twisted':
+                return reactor.resolve(host)
 
     def process(self):
         mitmf_logger.debug("[ClientRequest] Resolving host: %s" % (self.getHeader('host')))

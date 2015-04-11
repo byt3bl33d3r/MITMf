@@ -39,7 +39,6 @@ class Replace(CacheKill, Plugin):
 	depends    = ["CacheKill"]
 	version    = "0.1"
 	has_opts   = True
-	req_root   = False
 
 	def initialize(self, options):
 		self.options = options

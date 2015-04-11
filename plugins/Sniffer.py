@@ -45,7 +45,6 @@ class Sniffer(Plugin):
 	implements  = ["sendRequest"]
 	version     = "0.1"
 	has_opts    = False
-	req_root    = True
 
 	def initialize(self, options):
 		self.options = options

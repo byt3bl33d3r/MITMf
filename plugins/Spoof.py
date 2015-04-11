@@ -21,11 +21,11 @@
 import logging
 import sys
 
-from core.utils import SystemConfig
+from core.utils import SystemConfig, IpTables
 from core.sslstrip.DnsCache import DnsCache
 from core.wrappers.protocols import _ARP, _DHCP, _ICMP
 from plugins.plugin import Plugin
-from libs.dnschef.dnschef import start_dnschef
+from libs.dnschef.dnschef import DNSChef
 
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Error when importing scapy
 from scapy.all import *
@@ -35,14 +35,12 @@ class Spoof(Plugin):
 	optname     = "spoof"
 	desc        = "Redirect/Modify traffic using ICMP, ARP, DHCP or DNS"
 	version     = "0.6"
-	tree_output = []
 	has_opts    = True
-	req_root    = True
 
 	def initialize(self, options):
 		'''Called if plugin is enabled, passed the options namespace'''
 		self.options = options
-		self.dnscfg = options.configfile['Spoof']['DNS']
+		self.dnscfg = options.configfile['MITMf']['DNS']
 		self.dhcpcfg = options.configfile['Spoof']['DHCP']
 		self.target = options.target
 		self.manualiptables = options.manualiptables
@@ -91,10 +89,10 @@ class Spoof(Plugin):
 		if options.dns:
 
 			if not options.manualiptables:
-				SystemConfig.iptables.DNS(options.ip_address, self.dnscfg['port'])
+				if IpTables.getInstance().dns is False:
+					IpTables.getInstance().DNS(options.ip_address, self.dnscfg['port'])
 
-			self.tree_output.append("DNSChef v0.3 online")
-			start_dnschef(options, self.dnscfg)
+			DNSChef.getInstance().loadRecords(self.dnscfg)
 
 		if not options.arp and not options.icmp and not options.dhcp and not options.dns:
 			sys.exit("[-] Spoof plugin requires --arp, --icmp, --dhcp or --dns")
@@ -102,7 +100,8 @@ class Spoof(Plugin):
 		SystemConfig.setIpForwarding(1)
 
 		if not options.manualiptables:
-			SystemConfig.iptables.HTTP(options.listen)
+			if IpTables.getInstance().http is False:
+				IpTables.getInstance().HTTP(options.listen)
 
 		for protocol in self.protocolInstances:
 			protocol.start()
@@ -124,6 +123,6 @@ class Spoof(Plugin):
 			protocol.stop()
 
 		if not self.manualiptables:
-			SystemConfig.iptables.Flush()
+			IpTables.getInstance().Flush()
 
 		SystemConfig.setIpForwarding(0)

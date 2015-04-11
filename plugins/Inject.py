@@ -35,7 +35,6 @@ class Inject(CacheKill, Plugin):
     optname    = "inject"
     implements = ["handleResponse", "handleHeader", "connectionMade"]
     has_opts   = True
-    req_root   = False
     desc       = "Inject arbitrary content into HTML content"
     version    = "0.2"
     depends    = ["CacheKill"]

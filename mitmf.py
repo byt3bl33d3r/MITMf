@@ -37,14 +37,6 @@ from plugins import *
 plugin_classes = plugin.Plugin.__subclasses__()
 
 try:
-    import netfilterqueue
-    if netfilterqueue.VERSION[1] is not 6:
-        print "[-] Wrong version of NetfilterQueue library installed!" 
-        print "[-] Download it from here https://github.com/fqrouter/python-netfilterqueue and manually install it!"
-except ImportError:
-    print "[-] NetfilterQueue library missing! DNS tampering will not work"
-
-try:
     import user_agents
 except ImportError:
     print "[-] user_agents library missing! User-Agent parsing will be disabled!"
@@ -52,8 +44,12 @@ except ImportError:
 mitmf_version = "0.9.6"
 sslstrip_version = "0.9"
 sergio_version = "0.2.1"
+dnschef_version = "0.4"
 
 Banners().printBanner()
+
+if os.geteuid() != 0:
+    sys.exit("[-] When man-in-the-middle you want, run as r00t you will, hmm?")
 
 parser = argparse.ArgumentParser(description="MITMf v%s - Framework for MITM attacks" % mitmf_version, version=mitmf_version, usage='', epilog="Use wisely, young Padawan.",fromfile_prefix_chars='@')
 #add MITMf options
@@ -113,15 +109,6 @@ if config_args:
     for arg in config_args.split(' '):
         sys.argv.append(arg)
     args = parser.parse_args()
-
-#Check to see if called plugins require elevated privs
-try:
-    for p in plugins:
-        if (vars(args)[p.optname] is True) and (p.req_root is True):
-           if os.geteuid() != 0:
-                sys.exit("[-] %s plugin requires root privileges" % p.name)
-except AttributeError:
-    sys.exit("[-] %s plugin is missing the req_root attribute" % p.name)
 
 ####################################################################################################
 
@@ -189,8 +176,18 @@ else:
     
     from core.sslstrip.StrippingProxy import StrippingProxy
     from core.sslstrip.URLMonitor import URLMonitor
+    from libs.dnschef.dnschef import DNSChef
 
     URLMonitor.getInstance().setFaviconSpoofing(args.favicon)
+    URLMonitor.getInstance().setResolver(args.configfile['MITMf']['DNS']['resolver'])
+    URLMonitor.getInstance().setResolverPort(args.configfile['MITMf']['DNS']['port'])
+    
+    DNSChef.getInstance().setCoreVars(args.configfile['MITMf']['DNS'])
+    if args.configfile['MITMf']['DNS']['tcp'].lower() == 'on':
+        DNSChef.getInstance().startTCP()
+    else:
+        DNSChef.getInstance().startUDP()
+
     CookieCleaner.getInstance().setEnabled(args.killsessions)
     ProxyPlugins.getInstance().setPlugins(load)
 
@@ -207,7 +204,8 @@ else:
 
     print "|"
     print "|_ Sergio-Proxy v%s online" % sergio_version
-    print "|_ SSLstrip v%s by Moxie Marlinspike running...\n" % sslstrip_version
+    print "|_ SSLstrip v%s by Moxie Marlinspike online" % sslstrip_version
+    print "|_ DNSChef v%s online\n" % dnschef_version
 
 reactor.run()
 

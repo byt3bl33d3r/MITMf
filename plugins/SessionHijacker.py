@@ -41,7 +41,6 @@ class SessionHijacker(Plugin):
 	implements = ["cleanHeaders"] #["handleHeader"]
 	version    = "0.1"
 	has_opts   = True
-	req_root   = False
 
 	def initialize(self, options):
 		'''Called if plugin is enabled, passed the options namespace'''

@@ -30,7 +30,6 @@ class SMBAuth(Inject, Plugin):
     depends  = ["Inject"]
     version  = "0.1"
     has_opts = True
-    req_root = False
 
     def initialize(self, options):
         Inject.initialize(self, options)

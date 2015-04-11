@@ -40,7 +40,6 @@ class BeefAutorun(Inject, Plugin):
 	tree_output = []
 	depends     = ["Inject"]
 	version     = "0.3"
-	req_root    = False
 	has_opts    = False
 
 	def initialize(self, options):

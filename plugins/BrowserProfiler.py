@@ -33,7 +33,6 @@ class BrowserProfiler(Inject, Plugin):
     depends    = ["Inject"]
     version    = "0.2"
     has_opts   = False
-    req_root   = False
 
     def initialize(self, options):
         Inject.initialize(self, options)

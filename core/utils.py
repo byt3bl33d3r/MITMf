@@ -30,19 +30,33 @@ class SystemConfig:
 			file.write(str(value))
 			file.close()
 
-	class iptables:
+class IpTables:
 
-		@staticmethod
-		def Flush():
-			os.system('iptables -F && iptables -X && iptables -t nat -F && iptables -t nat -X')
+	_instance = None
 
-		@staticmethod
-		def HTTP(http_redir_port):
-			os.system('iptables -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port %s' % http_redir_port)
+	def __init__(self):
+		self.dns   = False
+		self.http  = False
 
-		@staticmethod
-		def DNS(ip, port):
-			os.system('iptables -t nat -A PREROUTING -p udp --dport 53 -j DNAT --to %s:%s' % (ip, port))
+	@staticmethod
+	def getInstance():
+		if IpTables._instance == None:
+			IpTables._instance = IpTables()
+
+		return IpTables._instance
+
+	def Flush(self):
+		os.system('iptables -F && iptables -X && iptables -t nat -F && iptables -t nat -X')
+		self.dns  = False
+		self.http = False
+
+	def HTTP(self, http_redir_port):
+		os.system('iptables -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port %s' % http_redir_port)
+		self.http = True
+
+	def DNS(self, ip, port):
+		os.system('iptables -t nat -A PREROUTING -p udp --dport 53 -j DNAT --to %s:%s' % (ip, port))
+		self.dns = True
 
 class Banners:
 

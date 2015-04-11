@@ -47,6 +47,8 @@ class URLMonitor:
         self.hsts               = False
         self.app                = False
         self.hsts_config        = None
+        self.resolver           = 'dnschef'
+        self.resolverport       = 53
 
     @staticmethod
     def getInstance():
@@ -54,6 +56,22 @@ class URLMonitor:
             URLMonitor._instance = URLMonitor()
 
         return URLMonitor._instance
+    
+    #This is here because I'm lazy
+    def setResolver(self, resolver):
+        self.resolver = str(resolver).lower()
+
+    #This is here because I'm lazy
+    def getResolver(self):
+        return self.resolver
+
+    #This is here because I'm lazy
+    def setResolverPort(self, port):
+        self.resolverport = int(port)
+    
+    #This is here because I'm lazy
+    def getResolverPort(self):
+        return self.resolverport
 
     def isSecureLink(self, client, url):
         for expression in URLMonitor.javascriptTrickery:
@@ -133,13 +151,12 @@ class URLMonitor:
         self.faviconSpoofing = faviconSpoofing
 
     def setHstsBypass(self, hstsconfig):
-        if hstsconfig:
-            self.hsts = True
-            self.hsts_config = hstsconfig
+        self.hsts = True
+        self.hsts_config = hstsconfig
 
-            for k,v in self.hsts_config.iteritems():
-                self.sustitucion[k] = v
-                self.real[v] = k
+        for k,v in self.hsts_config.iteritems():
+            self.sustitucion[k] = v
+            self.real[v] = k
 
     def setAppCachePoisoning(self):
         self.app = True

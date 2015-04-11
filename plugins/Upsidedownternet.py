@@ -32,7 +32,6 @@ class Upsidedownternet(Plugin):
     implements = ["handleResponse", "handleHeader"]
     version    = "0.1"
     has_opts   = False
-    req_root   = False
 
     def initialize(self, options):
         from PIL import Image, ImageFile
