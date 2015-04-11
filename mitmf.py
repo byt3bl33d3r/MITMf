@@ -163,17 +163,21 @@ load = []
 for p in plugins:
     try:
 
+        if vars(args)[p.optname] is True:
+            print "|_ %s v%s" % (p.name, p.version)
+            if hasattr(p, 'tree_output') and p.tree_output:
+                for line in p.tree_output:
+                    print "|  |_ %s" % line
+                    p.tree_output.remove(line)
+
         if getattr(args, p.optname):
             p.initialize(args)
             load.append(p)
 
         if vars(args)[p.optname] is True:
-            print "|_ %s v%s" % (p.name, p.version)
-
-            if p.output:
-                for line in p.output:
+            if hasattr(p, 'tree_output') and p.tree_output:
+                for line in p.tree_output:
                     print "|  |_ %s" % line
-                    p.output.remove(line)
 
     except Exception, e:
         print "[-] Error loading plugin %s: %s" % (p.name, str(e)) 

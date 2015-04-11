@@ -31,12 +31,13 @@ logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Er
 from scapy.all import *
 
 class Spoof(Plugin):
-	name     = "Spoof"
-	optname  = "spoof"
-	desc     = "Redirect/Modify traffic using ICMP, ARP, DHCP or DNS"
-	version  = "0.6"
-	has_opts = True
-	req_root = True
+	name        = "Spoof"
+	optname     = "spoof"
+	desc        = "Redirect/Modify traffic using ICMP, ARP, DHCP or DNS"
+	version     = "0.6"
+	tree_output = []
+	has_opts    = True
+	req_root    = True
 
 	def initialize(self, options):
 		'''Called if plugin is enabled, passed the options namespace'''
@@ -92,8 +93,8 @@ class Spoof(Plugin):
 			if not options.manualiptables:
 				SystemConfig.iptables.DNS(options.ip_address, self.dnscfg['port'])
 
+			self.tree_output.append("DNSChef v0.3 online")
 			start_dnschef(options, self.dnscfg)
-			self.output.append("DNSChef v0.3 online")
 
 		if not options.arp and not options.icmp and not options.dhcp and not options.dns:
 			sys.exit("[-] Spoof plugin requires --arp, --icmp, --dhcp or --dns")

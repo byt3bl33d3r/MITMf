@@ -28,29 +28,26 @@ from core.sslstrip.DnsCache import DnsCache
 from twisted.internet import reactor
 
 class Responder(Plugin):
-    name     = "Responder"
-    optname  = "responder"
-    desc     = "Poison LLMNR, NBT-NS and MDNS requests"
-    version  = "0.2"
-    has_opts = True
-    req_root = True
+    name        = "Responder"
+    optname     = "responder"
+    desc        = "Poison LLMNR, NBT-NS and MDNS requests"
+    tree_output = ["NBT-NS, LLMNR & MDNS Responder v2.1.2 by Laurent Gaffie online"]
+    version     = "0.2"
+    has_opts    = True
+    req_root    = True
 
     def initialize(self, options):
         '''Called if plugin is enabled, passed the options namespace'''
         self.options = options
         self.interface = options.interface
 
-        RESP_VERSION = "2.1.2"
-
         try:
             config = options.configfile['Responder']
         except Exception, e:
             sys.exit('[-] Error parsing config for Responder: ' + str(e))
 
-        self.output.append("NBT-NS, LLMNR & MDNS Responder v%s by Laurent Gaffie online" % RESP_VERSION)
-
         if options.Analyse:
-            self.output.append("Responder is in analyze mode. No NBT-NS, LLMNR, MDNS requests will be poisoned")
+            self.tree_output.append("Responder is in analyze mode. No NBT-NS, LLMNR, MDNS requests will be poisoned")
 
         start_responder(options, config)
 

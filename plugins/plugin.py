@@ -9,7 +9,6 @@ class Plugin(object):
     optname    = "generic"
     desc       = ""
     implements = []
-    output     = []
     has_opts   = False
     req_root   = False
 

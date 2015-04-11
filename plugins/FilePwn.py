@@ -74,13 +74,14 @@ from configobj import ConfigObj
 mitmf_logger = logging.getLogger('mitmf')
 
 class FilePwn(Plugin):
-    name       = "FilePwn"
-    optname    = "filepwn"
-    desc       = "Backdoor executables being sent over http using bdfactory"
-    implements = ["handleResponse"]
-    version    = "0.2"
-    has_opts   = False
-    req_root   = False
+    name        = "FilePwn"
+    optname     = "filepwn"
+    desc        = "Backdoor executables being sent over http using bdfactory"
+    implements  = ["handleResponse"]
+    tree_output = ["BDFProxy v0.2 online"]
+    version     = "0.2"
+    has_opts    = False
+    req_root    = False
 
     def initialize(self, options):
         '''Called if plugin is enabled, passed the options namespace'''

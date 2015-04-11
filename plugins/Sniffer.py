@@ -38,13 +38,14 @@ import os
 mitmf_logger = logging.getLogger('mitmf')
 
 class Sniffer(Plugin):
-	name       = "Sniffer"
-	optname    = "sniffer"
-	desc       = "Sniffs for various protocol login and auth attempts"
-	implements = ["sendRequest"]
-	version    = "0.1"
-	has_opts   = False
-	req_root   = True
+	name        = "Sniffer"
+	optname     = "sniffer"
+	desc        = "Sniffs for various protocol login and auth attempts"
+	tree_output = ["Net-Creds online"]
+	implements  = ["sendRequest"]
+	version     = "0.1"
+	has_opts    = False
+	req_root    = True
 
 	def initialize(self, options):
 		self.options = options
@@ -66,9 +67,7 @@ class Sniffer(Plugin):
 			sys.exit("[-] Sniffer plugin requires root privileges")
 
 		n = NetCreds()
-
 		#if not self.parse:
-		self.output.append("Net-Creds online")
 		t = threading.Thread(name="sniffer", target=n.start, args=(self.interface,))
 		t.setDaemon(True)
 		t.start()

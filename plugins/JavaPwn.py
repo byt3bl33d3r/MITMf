@@ -38,12 +38,13 @@ requests_log.setLevel(logging.WARNING)
 mitmf_logger = logging.getLogger('mitmf')
 
 class JavaPwn(BrowserProfiler, Plugin):
-    name     = "JavaPwn"
-    optname  = "javapwn"
-    desc     = "Performs drive-by attacks on clients with out-of-date java browser plugins"
-    depends  = ["Browserprofiler"]
-    version  = "0.3"
-    has_opts = False
+    name        = "JavaPwn"
+    optname     = "javapwn"
+    desc        = "Performs drive-by attacks on clients with out-of-date java browser plugins"
+    tree_output = []
+    depends     = ["Browserprofiler"]
+    version     = "0.3"
+    has_opts    = False
 
     def initialize(self, options):
         '''Called if plugin is enabled, passed the options namespace'''
@@ -73,7 +74,7 @@ class JavaPwn(BrowserProfiler, Plugin):
             msf = msfrpc.Msfrpc({"host": self.rpcip})  #create an instance of msfrpc libarary
             msf.login('msf', self.rpcpass)
             version = msf.call('core.version')['version']
-            self.output.append("Connected to Metasploit v%s" % version)
+            self.tree_output.append("Connected to Metasploit v%s" % version)
         except Exception:
             sys.exit("[-] Error connecting to MSF! Make sure you started Metasploit and its MSGRPC server")
 

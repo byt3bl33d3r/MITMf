@@ -25,12 +25,14 @@ import logging
 from plugins.plugin import Plugin
 from core.utils import SystemConfig
 from core.sslstrip.URLMonitor import URLMonitor
+from libs.dnschef.dnschef import start_dnschef
 
 class HSTSbypass(Plugin):
 	name     = 'SSLstrip+'
 	optname  = 'hsts'
 	desc     = 'Enables SSLstrip+ for partial HSTS bypass'
 	version  = "0.4"
+	tree_output   = ["SSLstrip+ by Leonardo Nve running", "DNSChef v0.3 online"]
 	has_opts = False
 	req_root = True
 
@@ -39,17 +41,11 @@ class HSTSbypass(Plugin):
 		self.manualiptables = options.manualiptables
 
 		try:
-			config = options.configfile['SSLstrip+']
+			hstsconfig = options.configfile['SSLstrip+']
+			dnsconfig  = options.configfile['Spoof']['DNS']
 		except Exception, e:
 			sys.exit("[-] Error parsing config for SSLstrip+: " + str(e))
 
-		self.output.append("SSLstrip+ by Leonardo Nve running")
+		URLMonitor.getInstance().setHstsBypass(hstsconfig)
 
-		URLMonitor.getInstance().setHstsBypass(config)
-
-	#def finish(self):
-	#	if _DNS.checkInstance() is True:
-	#		_DNS.getInstance().stop()
-
-	#	if not self.manualiptables:
-	#		SystemConfig.iptables.Flush()
+		start_dnschef(options, dnsconfig, hstsconfig)

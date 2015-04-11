@@ -34,13 +34,14 @@ requests_log.setLevel(logging.WARNING)
 mitmf_logger = logging.getLogger('mitmf')
 
 class BeefAutorun(Inject, Plugin):
-	name     = "BeEFAutorun"
-	optname  = "beefauto"
-	desc     = "Injects BeEF hooks & autoruns modules based on Browser and/or OS type"
-	depends  = ["Inject"]
-	version  = "0.3"
-	req_root = False
-	has_opts = False
+	name        = "BeEFAutorun"
+	optname     = "beefauto"
+	desc        = "Injects BeEF hooks & autoruns modules based on Browser and/or OS type"
+	tree_output = []
+	depends     = ["Inject"]
+	version     = "0.3"
+	req_root    = False
+	has_opts    = False
 
 	def initialize(self, options):
 		self.options = options
@@ -68,7 +69,7 @@ class BeefAutorun(Inject, Plugin):
 		if not beef.login(beefconfig['user'], beefconfig['pass']):
 			sys.exit("[-] Error logging in to BeEF!")
 
-		self.output.append("Mode: %s" % self.Mode)
+		self.tree_output.append("Mode: %s" % self.Mode)
 
 		t = threading.Thread(name="autorun", target=self.autorun, args=(beef,))
 		t.setDaemon(True)
