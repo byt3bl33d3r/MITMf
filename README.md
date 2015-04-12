@@ -42,7 +42,7 @@ Availible plugins
 Changelog
 =========
 
-- Addition of [DNSChef](https://github.com/iphelix/dnschef), which acts as an internal DNS server for the framework!
+- Addition of [DNSChef](https://github.com/iphelix/dnschef), the framework is now a IPv4/IPv6 (TCP & UDP) DNS server ! Supported queries are: 'A', 'AAAA', 'MX', 'PTR', 'NS', 'CNAME', 'TXT', 'SOA', 'NAPTR', 'SRV', 'DNSKEY' and 'RRSIG'
 
 - Addition of the Sniffer plugin which integrates [Net-Creds](https://github.com/DanMcInerney/net-creds) currently supported protocols are:
   FTP, IRC, POP, IMAP, Telnet, SMTP, SNMP (community strings), NTLMv1/v2 (all supported protocols like HTTP, SMB, LDAP etc..) and Kerberos
@@ -53,9 +53,9 @@ Changelog
 
 - Addition of the SessionHijacking plugin, which uses code from [FireLamb](https://github.com/sensepost/mana/tree/master/firelamb) to store cookies in a Firefox profile 
 
-- Spoof plugin now supports ICMP, ARP and DHCP spoofing along with DNS tampering
-
 - Spoof plugin can now exploit the 'ShellShock' bug when DHCP spoofing! 
+
+- Spoof plugin now supports ICMP, ARP and DHCP spoofing
 
 - Usage of third party tools has been completely removed (e.g. ettercap)
 
