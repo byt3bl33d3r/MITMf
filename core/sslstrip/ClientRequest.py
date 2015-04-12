@@ -179,7 +179,7 @@ class ClientRequest(Request):
             self.proxyViaHTTP(address, self.method, path, postData, headers, port)
 
     def handleHostResolvedError(self, error):
-        logging.debug("[ClientRequest] Host resolution error: " + str(error))
+        mitmf_logger.debug("[ClientRequest] Host resolution error: " + str(error))
         try:
             self.finish()
         except:
