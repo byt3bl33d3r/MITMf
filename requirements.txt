@@ -10,4 +10,3 @@ pyyaml
 ua-parser
 Pillow
 pefile
-dnslib
