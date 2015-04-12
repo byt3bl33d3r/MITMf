@@ -22,12 +22,12 @@ import logging
 import threading
 import binascii
 import random
-import dns.resolver
+#import dns.resolver
 
 from base64 import b64decode
 from urllib import unquote
 from time import sleep
-from netfilterqueue import NetfilterQueue
+#from netfilterqueue import NetfilterQueue
 
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Error when importing scapy
 from scapy.all import *
@@ -245,6 +245,7 @@ class _ICMP():
 		while self.send:
 			sendp(pkt, inter=self.icmp_interval, iface=interface, verbose=debug)
 
+"""
 class _DNS():
 
 	hsts      = False
@@ -374,3 +375,4 @@ class _DNS():
 		
 		except Exception, e:
 			print "Exception occurred while modifying DNS: " + str(e)
+"""
