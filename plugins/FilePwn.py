@@ -292,7 +292,7 @@ class FilePwn(Plugin):
 
         except Exception as e:
             print 'Exception', str(e)
-            logging.warning("EXCEPTION IN binaryGrinder %s", str(e))
+            mitmf_logger.warning("EXCEPTION IN binaryGrinder %s", str(e))
             return None
 
     def tar_files(self, aTarFileBytes, formatt):

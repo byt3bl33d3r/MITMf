@@ -106,7 +106,7 @@ class Sniffer(Plugin):
 						mitmf_logger.info(request.clientInfo + "is querying %s for: %s" % (request.headers['host'], query))
 		except Exception, e:
 			error = str(e)
-			logging.warning(request.clientInfo + "Error parsing search query %s" % error)
+			mitmf_logger.warning(request.clientInfo + "Error parsing search query %s" % error)
 
 	def captureURLCreds(self, request):
 		'''
@@ -131,7 +131,7 @@ class Sniffer(Plugin):
 				password = search.group()
 
 		if (username and password):
-			logging.warning(request.clientInfo + "Possible Credentials (Method: %s, Host: %s):\n%s" % (request.command, request.headers['host'], url))
+			mitmf_logger.warning(request.clientInfo + "Possible Credentials (Method: %s, Host: %s):\n%s" % (request.command, request.headers['host'], url))
 
 class NetCreds:
 

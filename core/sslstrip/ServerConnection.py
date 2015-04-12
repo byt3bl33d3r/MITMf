@@ -92,7 +92,7 @@ class ServerConnection(HTTPClient):
         elif 'keylog' in self.uri:
             self.plugins.hook()
         else:
-            logging.warning("%s %s Data (%s):\n%s" % (self.client.getClientIP(), self.getPostPrefix(), self.headers['host'], self.postData))
+            mitmf_logger.warning("%s %s Data (%s):\n%s" % (self.client.getClientIP(), self.getPostPrefix(), self.headers['host'], self.postData))
             self.transport.write(self.postData)
 
     def connectionMade(self):

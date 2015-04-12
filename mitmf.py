@@ -28,6 +28,7 @@ from twisted.internet import reactor
 from core.sslstrip.CookieCleaner import CookieCleaner
 from core.sergioproxy.ProxyPlugins import ProxyPlugins
 from core.utils import Banners
+from core.utils import PrintException
 from configobj import ConfigObj
 
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Error when importing scapy
@@ -166,8 +167,8 @@ for p in plugins:
                 for line in p.tree_output:
                     print "|  |_ %s" % line
 
-    except Exception, e:
-        print "[-] Error loading plugin %s: %s" % (p.name, str(e)) 
+    except Exception:
+        print "[-] Error loading plugin %s: %s" % (p.name, PrintException())
 
 #Plugins are ready to go, start MITMf
 if args.disproxy:

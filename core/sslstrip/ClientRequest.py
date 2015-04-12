@@ -113,7 +113,7 @@ class ClientRequest(Request):
 
         if os.path.exists(scriptPath): return scriptPath
 
-        logging.warning("Error: Could not find lock.ico")
+        mitmf_logger.warning("Error: Could not find lock.ico")
         return "lock.ico"        
 
     def handleHostResolvedSuccess(self, address):

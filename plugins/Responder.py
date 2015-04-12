@@ -23,7 +23,7 @@ import os
 import threading
 
 from plugins.plugin import Plugin
-from libs.responder.Responder import start_responder
+from libs.responder.Responder import ResponderMITMf
 from core.sslstrip.DnsCache import DnsCache
 from twisted.internet import reactor
 
@@ -48,7 +48,16 @@ class Responder(Plugin):
         if options.Analyse:
             self.tree_output.append("Responder is in analyze mode. No NBT-NS, LLMNR, MDNS requests will be poisoned")
 
-        start_responder(options, config)
+        resp = ResponderMITMf()
+        resp.setCoreVars(options, config)
+
+        result = resp.AnalyzeICMPRedirect()
+        if result:
+            for line in result:
+                self.tree_output.append(line)
+
+        resp.printDebugInfo()
+        resp.start()
 
     def plugin_reactor(self, strippingFactory):
         reactor.listenTCP(3141, strippingFactory)
