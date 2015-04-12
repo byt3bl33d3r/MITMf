@@ -18,7 +18,7 @@ Installation
 If MITMf is not in your distros repo or you just want the latest version:
 - clone this repository 
 - run the ```setup.sh``` script
-- install all python dependencies in the ```requirements.txt``` file by running the command ```pip install -r requirements.txt```
+- run the command ```pip install -r requirements.txt``` to install all python dependencies
 
 Availible plugins
 =================
