@@ -45,25 +45,25 @@ class Responder(Plugin):
         except Exception, e:
             sys.exit('[-] Error parsing config for Responder: ' + str(e))
 
-        if options.Analyse:
+        if options.Analyze:
             self.tree_output.append("Responder is in analyze mode. No NBT-NS, LLMNR, MDNS requests will be poisoned")
 
-        resp = ResponderMITMf()
-        resp.setCoreVars(options, config)
+        resp = ResponderMITMf(options, config)
+        #resp.setCoreVars(options, config)
 
-        result = resp.AnalyzeICMPRedirect()
+        result = resp.AnalyzeICMPRedirect(options.Analyze)
         if result:
             for line in result:
                 self.tree_output.append(line)
 
-        resp.printDebugInfo()
+        #resp.printDebugInfo()
         resp.start()
 
     def plugin_reactor(self, strippingFactory):
         reactor.listenTCP(3141, strippingFactory)
 
     def add_options(self, options):
-        options.add_argument('--analyze', dest="Analyse", action="store_true", help="Allows you to see NBT-NS, BROWSER, LLMNR requests from which workstation to which workstation without poisoning")
+        options.add_argument('--analyze', dest="Analyze", action="store_true", help="Allows you to see NBT-NS, BROWSER, LLMNR requests from which workstation to which workstation without poisoning")
         options.add_argument('--basic', dest="Basic", default=False, action="store_true", help="Set this if you want to return a Basic HTTP authentication. If not set, an NTLM authentication will be returned")
         options.add_argument('--wredir', dest="Wredirect", default=False, action="store_true", help="Set this to enable answers for netbios wredir suffix queries. Answering to wredir will likely break stuff on the network (like classics 'nbns spoofer' would). Default value is therefore set to False")
         options.add_argument('--nbtns', dest="NBTNSDomain", default=False, action="store_true", help="Set this to enable answers for netbios domain suffix queries. Answering to domain suffixes will likely break stuff on the network (like a classic 'nbns spoofer' would). Default value is therefore set to False")
