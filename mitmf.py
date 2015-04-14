@@ -149,26 +149,22 @@ print "[*] MITMf v%s online... initializing plugins" % mitmf_version
 load = []
 
 for p in plugins:
-    try:
 
-        if vars(args)[p.optname] is True:
-            print "|_ %s v%s" % (p.name, p.version)
-            if hasattr(p, 'tree_output') and p.tree_output:
-                for line in p.tree_output:
-                    print "|  |_ %s" % line
-                    p.tree_output.remove(line)
+    if vars(args)[p.optname] is True:
+        print "|_ %s v%s" % (p.name, p.version)
+        if hasattr(p, 'tree_output') and p.tree_output:
+            for line in p.tree_output:
+                print "|  |_ %s" % line
+                p.tree_output.remove(line)
 
-        if getattr(args, p.optname):
-            p.initialize(args)
-            load.append(p)
+    if getattr(args, p.optname):
+        p.initialize(args)
+        load.append(p)
 
-        if vars(args)[p.optname] is True:
-            if hasattr(p, 'tree_output') and p.tree_output:
-                for line in p.tree_output:
-                    print "|  |_ %s" % line
-
-    except Exception:
-        print "[-] Error loading plugin %s: %s" % (p.name, PrintException())
+    if vars(args)[p.optname] is True:
+        if hasattr(p, 'tree_output') and p.tree_output:
+            for line in p.tree_output:
+                print "|  |_ %s" % line
 
 #Plugins are ready to go, start MITMf
 if args.disproxy:
