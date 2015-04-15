@@ -189,7 +189,7 @@ class ClientRequest(Request):
         address = self.dnsCache.getCachedAddress(host)
 
         if address != None:
-            mitmf_logger.debug("[ClientRequest] Host cached: {} {}".format(host, str(address)))
+            mitmf_logger.debug("[ClientRequest] Host cached: {} {}".format(host, address))
             return defer.succeed(address)
         else:
             

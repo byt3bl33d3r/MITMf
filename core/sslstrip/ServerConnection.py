@@ -75,6 +75,7 @@ class ServerConnection(HTTPClient):
                 self.clientInfo = "{} ".format(self.client.getClientIP())
 
             mitmf_logger.info(self.clientInfo + "Sending Request: {}".format(self.headers['host']))
+            mitmf_logger.debug("[ServerConnection] Full request: {}{}".format(self.headers['host'], self.uri))
 
         self.plugins.hook()
         self.sendCommand(self.command, self.uri)
@@ -105,7 +106,7 @@ class ServerConnection(HTTPClient):
             self.sendPostData()
 
     def handleStatus(self, version, code, message):
-        mitmf_logger.debug("[ServerConnection] Got server response: {0} {1} {2}".format(version, code, message))
+        mitmf_logger.debug("[ServerConnection] Server response: {0} {1} {2}".format(version, code, message))
         self.client.setResponseCode(int(code), message)
 
     def handleHeader(self, key, value):
@@ -167,8 +168,10 @@ class ServerConnection(HTTPClient):
             mitmf_logger.debug("[ServerConnection] Decompressing content...")
             data = gzip.GzipFile('', 'rb', 9, StringIO.StringIO(data)).read()
             
-        #mitmf_logger.debug("Read from server:\n" + data)
-        mitmf_logger.debug("[ServerConnection] Read from server {} bytes of data".format(len(data)))
+        if len(data) < 1500:
+            mitmf_logger.debug("[ServerConnection] Read from server {} bytes of data:\n{}".format(len(data), data))
+        else:
+            mitmf_logger.debug("[ServerConnection] Read from server {} bytes of data".format(len(data)))
 
         data = self.replaceSecureLinks(data)
         res = self.plugins.hook()
