@@ -18,13 +18,13 @@
 # USA
 #
 
-import core.msfrpc as msfrpc
 import string
 import random
 import threading
 import sys
 import logging
 
+from core.msfrpc import Msfrpc
 from plugins.plugin import Plugin
 from plugins.BrowserProfiler import BrowserProfiler
 from time import sleep
@@ -71,7 +71,7 @@ class JavaPwn(BrowserProfiler, Plugin):
         self.black_ips = []
 
         try:
-            msf = msfrpc.Msfrpc({"host": self.rpcip})  #create an instance of msfrpc libarary
+            msf = Msfrpc({"host": self.rpcip})  #create an instance of msfrpc libarary
             msf.login('msf', self.rpcpass)
             version = msf.call('core.version')['version']
             self.tree_output.append("Connected to Metasploit v%s" % version)
@@ -233,20 +233,3 @@ class JavaPwn(BrowserProfiler, Plugin):
                         self.send_command(cmd, msf, vic_ip)
                         self.injectWait(msf, rand_url, vic_ip)
             sleep(1)
-
-    def finish(self):
-        '''This will be called when shutting down'''
-        msf = msfrpc.Msfrpc({"host": self.rpcip})
-        msf.login('msf', self.rpcpass)
-
-        jobs = msf.call('job.list')
-        if len(jobs) > 0:
-            print '\n[*] Stopping all running metasploit jobs'
-            for k, v in jobs.iteritems():
-                msf.call('job.stop', [k])
-
-        consoles = msf.call('console.list')['consoles']
-        if len(consoles) > 0:
-            print "[*] Closing all virtual consoles"
-            for console in consoles:
-                msf.call('console.destroy', [console['id']])

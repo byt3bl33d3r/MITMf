@@ -52,7 +52,7 @@ Banners().printBanner()
 if os.geteuid() != 0:
     sys.exit("[-] When man-in-the-middle you want, run as r00t you will, hmm?")
 
-parser = argparse.ArgumentParser(description="MITMf v%s - Framework for MITM attacks" % mitmf_version, version=mitmf_version, usage='', epilog="Use wisely, young Padawan.",fromfile_prefix_chars='@')
+parser = argparse.ArgumentParser(description="MITMf v{} - Framework for MITM attacks".format(mitmf_version), version=mitmf_version, usage='', epilog="Use wisely, young Padawan.",fromfile_prefix_chars='@')
 #add MITMf options
 mgroup = parser.add_argument_group("MITMf", "Options for MITMf")
 mgroup.add_argument("--log-level", type=str,choices=['debug', 'info'], default="info", help="Specify a log level [default: info]")
@@ -80,29 +80,29 @@ try:
     for p in plugin_classes:
         plugins.append(p())
 except:
-    print "Failed to load plugin class %s" % str(p)
+    print "Failed to load plugin class {}".format(p)
 
 #Give subgroup to each plugin with options
 try:
     for p in plugins:
         if p.desc == "":
-            sgroup = parser.add_argument_group("%s" % p.name,"Options for %s." % p.name)
+            sgroup = parser.add_argument_group(p.name,"Options for {}.".format(p.name))
         else:
-            sgroup = parser.add_argument_group("%s" % p.name, p.desc)
+            sgroup = parser.add_argument_group(p.name, p.desc)
 
-        sgroup.add_argument("--%s" % p.optname, action="store_true",help="Load plugin %s" % p.name)
+        sgroup.add_argument("--{}".format(p.optname), action="store_true",help="Load plugin {}".format(p.name))
 
         if p.has_opts:
             p.add_options(sgroup)
 except NotImplementedError:
-    sys.exit("[-] %s plugin claimed option support, but didn't have it." % p.name)
+    sys.exit("[-] {} plugin claimed option support, but didn't have it.".format(p.name))
 
 args = parser.parse_args()
 
 try:
     configfile = ConfigObj(args.configfile)
 except Exception, e:
-    sys.exit("[-] Error parsing config file: " + str(e))
+    sys.exit("[-] Error parsing config file: {}".format(e))
 
 config_args = configfile['MITMf']['args']
 if config_args:
@@ -117,14 +117,14 @@ if config_args:
 try:
     args.ip_address = get_if_addr(args.interface)
     if (args.ip_address == "0.0.0.0") or (args.ip_address is None):
-        sys.exit("[-] Interface %s does not have an assigned IP address" % args.interface)
+        sys.exit("[-] Interface {} does not have an assigned IP address".format(args.interface))
 except Exception, e:
-    sys.exit("[-] Error retrieving interface IP address: %s" % e)
+    sys.exit("[-] Error retrieving interface IP address: {}".format(e))
 
 try:
     args.mac_address = get_if_hwaddr(args.interface)
 except Exception, e:
-    sys.exit("[-] Error retrieving interface MAC address: %s" % e)
+    sys.exit("[-] Error retrieving interface MAC address: {}".format(e))
 
 args.configfile = configfile #so we can pass the configobj down to all the plugins
 
@@ -144,17 +144,18 @@ mitmf_logger.addHandler(fileHandler)
 #####################################################################################################
 
 #All our options should be loaded now, pass them onto plugins
-print "[*] MITMf v%s online... initializing plugins" % mitmf_version
+print "[*] MITMf v{} online... initializing plugins".format(mitmf_version)
 
 load = []
 
 for p in plugins:
 
     if vars(args)[p.optname] is True:
-        print "|_ %s v%s" % (p.name, p.version)
+
+        print "|_ {} v{}".format(p.name, p.version)
         if hasattr(p, 'tree_output') and p.tree_output:
             for line in p.tree_output:
-                print "|  |_ %s" % line
+                print "|  |_ {}".format(line)
                 p.tree_output.remove(line)
 
     if getattr(args, p.optname):
@@ -164,7 +165,7 @@ for p in plugins:
     if vars(args)[p.optname] is True:
         if hasattr(p, 'tree_output') and p.tree_output:
             for line in p.tree_output:
-                print "|  |_ %s" % line
+                print "|  |_ {}".format(line)
 
 #Plugins are ready to go, start MITMf
 if args.disproxy:
@@ -200,9 +201,9 @@ else:
                 p.plugin_reactor(strippingFactory) #we pass the default strippingFactory, so the plugins can use it
 
     print "|"
-    print "|_ Sergio-Proxy v%s online" % sergio_version
-    print "|_ SSLstrip v%s by Moxie Marlinspike online" % sslstrip_version
-    print "|_ DNSChef v%s online\n" % dnschef_version
+    print "|_ Sergio-Proxy v{} online".format(sergio_version)
+    print "|_ SSLstrip v{} by Moxie Marlinspike online".format(sslstrip_version)
+    print "|_ DNSChef v{} online\n".format(dnschef_version)
 
 reactor.run()
 

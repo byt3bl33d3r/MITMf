@@ -72,7 +72,7 @@ class ClientRequest(Request):
             if 'referer' in headers:
                 real = self.urlMonitor.real
                 if len(real) > 0:
-                    dregex = re.compile("(%s)" % "|".join(map(re.escape, real.keys())))
+                    dregex = re.compile("({})".format("|".join(map(re.escape, real.keys()))))
                     headers['referer'] = dregex.sub(lambda x: str(real[x.string[x.start() :x.end()]]), headers['referer'])
 
             if 'if-none-match' in headers:
@@ -80,13 +80,13 @@ class ClientRequest(Request):
 
             if 'host' in headers:
                 host = self.urlMonitor.URLgetRealHost(str(headers['host']))
-                mitmf_logger.debug("[ClientRequest][HSTS] Modifing HOST header: %s -> %s" % (headers['host'], host))
+                mitmf_logger.debug("[ClientRequest][HSTS] Modifing HOST header: {} -> {}".format(headers['host'], host))
                 headers['host'] = host
                 self.setHeader('Host', host)
 
         if 'accept-encoding' in headers:
              del headers['accept-encoding']
-             mitmf_logger.debug("Zapped encoding")
+             mitmf_logger.debug("[ClientRequest] Zapped encoding")
 
         if 'if-modified-since' in headers:
             del headers['if-modified-since']
@@ -117,7 +117,7 @@ class ClientRequest(Request):
         return "lock.ico"        
 
     def handleHostResolvedSuccess(self, address):
-        mitmf_logger.debug("[ClientRequest] Resolved host successfully: %s -> %s" % (self.getHeader('host'), address))
+        mitmf_logger.debug("[ClientRequest] Resolved host successfully: {} -> {}".format(self.getHeader('host'), address))
         host              = self.getHeader("host")
         headers           = self.cleanHeaders()
         client            = self.getClientIP()
@@ -138,13 +138,13 @@ class ClientRequest(Request):
             url       = 'http://' + host + path
             self.uri  = url # set URI to absolute
 
-            if len(real) > 0:
-                dregex = re.compile("(%s)" % "|".join(map(re.escape, real.keys())))
+            if real:
+                dregex = re.compile("({})".format("|".join(map(re.escape, real.keys()))))
                 path = dregex.sub(lambda x: str(real[x.string[x.start() :x.end()]]), path)
                 postData = dregex.sub(lambda x: str(real[x.string[x.start() :x.end()]]), postData)
                 
-                if len(patchDict) > 0:
-                    dregex = re.compile("(%s)" % "|".join(map(re.escape, patchDict.keys())))
+                if patchDict:
+                    dregex = re.compile("({})".format("|".join(map(re.escape, patchDict.keys()))))
                     postData = dregex.sub(lambda x: str(patchDict[x.string[x.start() :x.end()]]), postData)
 
             
@@ -155,22 +155,22 @@ class ClientRequest(Request):
         self.dnsCache.cacheResolution(hostparts[0], address)
 
         if (not self.cookieCleaner.isClean(self.method, client, host, headers)):
-            mitmf_logger.debug("Sending expired cookies...")
+            mitmf_logger.debug("[ClientRequest] Sending expired cookies")
             self.sendExpiredCookies(host, path, self.cookieCleaner.getExpireHeaders(self.method, client, host, headers, path))
         
         elif (self.urlMonitor.isSecureFavicon(client, path)):
-            mitmf_logger.debug("Sending spoofed favicon response...")
+            mitmf_logger.debug("[ClientRequest] Sending spoofed favicon response")
             self.sendSpoofedFaviconResponse()
 
         elif (self.urlMonitor.isSecureLink(client, url) or ('securelink' in headers)):
             if 'securelink' in headers:
                 del headers['securelink']
             
-            mitmf_logger.debug("Sending request via SSL...(%s %s)" % (client,url))
+            mitmf_logger.debug("[ClientRequest] Sending request via SSL ({})".format((client,url)))
             self.proxyViaSSL(address, self.method, path, postData, headers, self.urlMonitor.getSecurePort(client, url))
         
         else:
-            mitmf_logger.debug("Sending request via HTTP...")
+            mitmf_logger.debug("[ClientRequest] Sending request via HTTP")
             #self.proxyViaHTTP(address, self.method, path, postData, headers)
             port = 80
             if len(hostparts) > 1:
@@ -189,7 +189,7 @@ class ClientRequest(Request):
         address = self.dnsCache.getCachedAddress(host)
 
         if address != None:
-            mitmf_logger.debug("[ClientRequest] Host cached: %s %s" % (host, str(address)))
+            mitmf_logger.debug("[ClientRequest] Host cached: {} {}".format(host, str(address)))
             return defer.succeed(address)
         else:
             
@@ -197,20 +197,22 @@ class ClientRequest(Request):
             
             if self.resolver == 'dnschef':
                 try:
+                    mitmf_logger.debug("[ClientRequest] Resolving with DNSChef")
                     address = str(self.customResolver.query(host)[0].address)
                     return defer.succeed(address)
                 except Exception:
-                    return defer.fail()
-            
+                    mitmf_logger.debug("[ClientRequest] Exception occured, falling back to reactor.resolve()")
+                    return reactor.resolve(host)
+
             elif self.resolver == 'twisted':
                 return reactor.resolve(host)
 
     def process(self):
-        mitmf_logger.debug("[ClientRequest] Resolving host: %s" % (self.getHeader('host')))
+        mitmf_logger.debug("[ClientRequest] Resolving host: {}".format(self.getHeader('host')))
         host = self.getHeader('host').split(":")[0]
 
         if self.hsts:
-            host = self.urlMonitor.URLgetRealHost("%s"%host)                 
+            host = self.urlMonitor.URLgetRealHost(str(host))                
 
         deferred = self.resolveHost(host)
         deferred.addCallback(self.handleHostResolvedSuccess)

