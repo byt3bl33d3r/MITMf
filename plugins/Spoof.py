@@ -120,7 +120,8 @@ class Spoof(Plugin):
 
 	def finish(self):
 		for protocol in self.protocolInstances:
-			protocol.stop()
+			if hasattr(protocol, 'stop'):
+				protocol.stop()
 
 		if not self.manualiptables:
 			IpTables.getInstance().Flush()
