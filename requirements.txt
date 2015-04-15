@@ -10,3 +10,4 @@ pyyaml
 ua-parser
 Pillow
 pefile
+pypcap
