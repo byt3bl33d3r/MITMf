@@ -48,15 +48,15 @@ class Responder(Plugin):
         if options.Analyze:
             self.tree_output.append("Responder is in analyze mode. No NBT-NS, LLMNR, MDNS requests will be poisoned")
 
-        resp = ResponderMITMf(options, config)
-        #resp.setCoreVars(options, config)
+        resp = ResponderMITMf()
+        resp.setCoreVars(options, config)
 
-        result = resp.AnalyzeICMPRedirect(options.Analyze)
+        result = resp.AnalyzeICMPRedirect()
         if result:
             for line in result:
                 self.tree_output.append(line)
 
-        #resp.printDebugInfo()
+        resp.printDebugInfo()
         resp.start()
 
     def plugin_reactor(self, strippingFactory):
