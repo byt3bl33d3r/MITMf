@@ -11,4 +11,6 @@ ua-parser
 Pillow
 pefile
 ipy
+pyopenssl
+service_identity
 pypcap
