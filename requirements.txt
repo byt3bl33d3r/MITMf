@@ -13,4 +13,5 @@ pefile
 ipy
 pyopenssl
 service_identity
+capstone
 pypcap

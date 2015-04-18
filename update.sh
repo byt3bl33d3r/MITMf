@@ -9,4 +9,3 @@ git pull
 echo 'Updating the-backdoor-factory'
 cd libs/bdfactory/
 git pull origin master
-./update.sh
