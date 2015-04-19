@@ -11,10 +11,6 @@ class Plugin(object):
     implements = []
     has_opts   = False
 
-    def __init__(self):
-        '''Called on plugin instantiation. Probably don't need this'''
-        pass
-
     def initialize(self, options):
         '''Called if plugin is enabled, passed the options namespace'''
         self.options = options

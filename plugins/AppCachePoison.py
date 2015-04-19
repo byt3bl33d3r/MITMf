@@ -29,6 +29,7 @@ import sys
 from plugins.plugin import Plugin
 from datetime import date
 from core.sslstrip.URLMonitor import URLMonitor
+from core.configwatcher import ConfigWatcher
 
 mitmf_logger = logging.getLogger('mitmf')
 
@@ -47,17 +48,15 @@ class AppCachePlugin(Plugin):
 
         self.urlMonitor.setAppCachePoisoning()
 
-        try:
-            self.config = options.configfile['AppCachePoison']
-        except Exception, e:
-            sys.exit("[-] Error parsing config file for AppCachePoison: " + str(e))
-
     def handleResponse(self, request, data):
 
+        self.config = ConfigWatcher.getInstance().getConfig()['AppCachePoison'] # so we reload the config on each request
         url = request.client.uri
         req_headers = request.client.getAllHeaders()
         headers = request.client.responseHeaders
         ip = request.client.getClientIP()
+
+        #########################################################################
 
         if "enable_only_in_useragents" in self.config:
             regexp = self.config["enable_only_in_useragents"]

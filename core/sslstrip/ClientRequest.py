@@ -49,17 +49,15 @@ class ClientRequest(Request):
         Request.__init__(self, channel, queued)
         self.reactor       = reactor
         self.urlMonitor    = URLMonitor.getInstance()
-        self.hsts          = URLMonitor.getInstance().isHstsBypass()
+        self.hsts          = URLMonitor.getInstance().hsts
         self.cookieCleaner = CookieCleaner.getInstance()
         self.dnsCache      = DnsCache.getInstance()
         self.plugins       = ProxyPlugins.getInstance()
         #self.uniqueId      = random.randint(0, 10000)
         
         #Use are own DNS server instead of reactor.resolve()
-        self.resolver       = URLMonitor.getInstance().getResolver()
         self.customResolver = dns.resolver.Resolver()    
         self.customResolver.nameservers  = ['127.0.0.1']
-        self.customResolver.port = URLMonitor.getInstance().getResolverPort()
 
     def cleanHeaders(self):
         headers = self.getAllHeaders().copy()
@@ -70,7 +68,7 @@ class ClientRequest(Request):
         if self.hsts:
 
             if 'referer' in headers:
-                real = self.urlMonitor.real
+                real = self.urlMonitor.getHstsConfig()[0]
                 if len(real) > 0:
                     dregex = re.compile("({})".format("|".join(map(re.escape, real.keys()))))
                     headers['referer'] = dregex.sub(lambda x: str(real[x.string[x.start() :x.end()]]), headers['referer'])
@@ -133,7 +131,7 @@ class ClientRequest(Request):
         if self.hsts:
 
             host      = self.urlMonitor.URLgetRealHost(str(host))
-            real      = self.urlMonitor.real
+            real      = self.urlMonitor.getHstsConfig()[0]
             patchDict = self.urlMonitor.patchDict
             url       = 'http://' + host + path
             self.uri  = url # set URI to absolute
@@ -179,7 +177,7 @@ class ClientRequest(Request):
             self.proxyViaHTTP(address, self.method, path, postData, headers, port)
 
     def handleHostResolvedError(self, error):
-        mitmf_logger.debug("[ClientRequest] Host resolution error: " + str(error))
+        mitmf_logger.debug("[ClientRequest] Host resolution error: {}".format(error))
         try:
             self.finish()
         except:
@@ -195,16 +193,20 @@ class ClientRequest(Request):
             
             mitmf_logger.debug("[ClientRequest] Host not cached.")
             
-            if self.resolver == 'dnschef':
+            if self.urlMonitor.getResolver() == 'dnschef':
+
+                self.customResolver.port = self.urlMonitor.getResolverPort()
+
                 try:
                     mitmf_logger.debug("[ClientRequest] Resolving with DNSChef")
                     address = str(self.customResolver.query(host)[0].address)
                     return defer.succeed(address)
                 except Exception:
-                    mitmf_logger.debug("[ClientRequest] Exception occured, falling back to reactor.resolve()")
+                    mitmf_logger.debug("[ClientRequest] Exception occured, falling back to Twisted")
                     return reactor.resolve(host)
 
-            elif self.resolver == 'twisted':
+            elif self.urlMonitor.getResolver() == 'twisted':
+                mitmf_logger.debug("[ClientRequest] Resolving with Twisted")
                 return reactor.resolve(host)
 
     def process(self):

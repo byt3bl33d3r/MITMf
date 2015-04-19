@@ -19,12 +19,15 @@
 #
 
 import logging
-logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Error when importing scapy
-from scapy.all import get_if_addr
 import time
 import re
 import sys
 import argparse
+
+logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Error when importing scapy
+from scapy.all import get_if_addr
+
+from core.utils import SystemConfig
 from plugins.plugin import Plugin
 from plugins.CacheKill import CacheKill
 
@@ -42,7 +45,7 @@ class Inject(CacheKill, Plugin):
     def initialize(self, options):
         '''Called if plugin is enabled, passed the options namespace'''
         self.options      = options
-        self.proxyip      = options.ip_address
+        self.proxyip      = SystemConfig.getIP(options.interface)
         self.html_src     = options.html_url
         self.js_src       = options.js_url
         self.rate_limit   = options.rate_limit

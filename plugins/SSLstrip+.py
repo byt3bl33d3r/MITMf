@@ -24,7 +24,7 @@ import logging
 from plugins.plugin import Plugin
 from core.utils import IpTables
 from core.sslstrip.URLMonitor import URLMonitor
-from libs.dnschef.dnschef import DNSChef
+from core.dnschef.dnschef import DNSChef
 
 class HSTSbypass(Plugin):
 	name     = 'SSLstrip+'

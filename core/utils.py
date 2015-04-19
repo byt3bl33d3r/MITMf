@@ -20,58 +20,71 @@
 #
 
 import os
-import random
-import linecache
 import sys
+import random
+import logging
 
-def PrintException():
-    exc_type, exc_obj, tb = sys.exc_info()
-    f = tb.tb_frame
-    lineno = tb.tb_lineno
-    filename = f.f_code.co_filename
-    linecache.checkcache(filename)
-    line = linecache.getline(filename, lineno, f.f_globals)
-    return '({}, LINE {} "{}"): {}'.format(filename, lineno, line.strip(), exc_obj)
+logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Error when importing scapy
+from scapy.all import get_if_addr, get_if_hwaddr
 
 class SystemConfig:
 
-	@staticmethod
-	def setIpForwarding(value):
-		with open('/proc/sys/net/ipv4/ip_forward', 'w') as file:
-			file.write(str(value))
-			file.close()
+    @staticmethod
+    def setIpForwarding(value):
+        with open('/proc/sys/net/ipv4/ip_forward', 'w') as file:
+            file.write(str(value))
+            file.close()
+    
+    @staticmethod
+    def getIP(interface):
+        try:
+            ip_address = get_if_addr(interface)
+            if (ip_address == "0.0.0.0") or (ip_address is None):
+                sys.exit("[-] Interface {} does not have an assigned IP address".format(interface))
+
+            return ip_address
+        except Exception, e:
+            sys.exit("[-] Error retrieving IP address from {}: {}".format(interface, e))
+    
+    @staticmethod
+    def getMAC(interface):
+        try:
+            mac_address = get_if_hwaddr(interface)
+            return mac_address
+        except Exception, e:
+            sys.exit("[-] Error retrieving MAC address from {}: {}".format(interface, e))
 
 class IpTables:
 
-	_instance = None
+    _instance = None
 
-	def __init__(self):
-		self.dns   = False
-		self.http  = False
+    def __init__(self):
+        self.dns   = False
+        self.http  = False
 
-	@staticmethod
-	def getInstance():
-		if IpTables._instance == None:
-			IpTables._instance = IpTables()
+    @staticmethod
+    def getInstance():
+        if IpTables._instance == None:
+            IpTables._instance = IpTables()
 
-		return IpTables._instance
+        return IpTables._instance
 
-	def Flush(self):
-		os.system('iptables -F && iptables -X && iptables -t nat -F && iptables -t nat -X')
-		self.dns  = False
-		self.http = False
+    def Flush(self):
+        os.system('iptables -F && iptables -X && iptables -t nat -F && iptables -t nat -X')
+        self.dns  = False
+        self.http = False
 
-	def HTTP(self, http_redir_port):
-		os.system('iptables -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port %s' % http_redir_port)
-		self.http = True
+    def HTTP(self, http_redir_port):
+        os.system('iptables -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port {}'.format(http_redir_port))
+        self.http = True
 
-	def DNS(self, ip, port):
-		os.system('iptables -t nat -A PREROUTING -p udp --dport 53 -j DNAT --to %s:%s' % (ip, port))
-		self.dns = True
+    def DNS(self, ip, port):
+        os.system('iptables -t nat -A PREROUTING -p udp --dport 53 -j DNAT --to {}:{}'.format(ip, port))
+        self.dns = True
 
 class Banners:
 
-	banner1 = """                                                    
+    banner1 = """                                                    
  __  __   ___   .--.          __  __   ___              
 |  |/  `.'   `. |__|         |  |/  `.'   `.      _.._  
 |   .-.  .-.   '.--.     .|  |   .-.  .-.   '   .' .._| 
@@ -85,7 +98,7 @@ class Banners:
                        `'-'                     |_|
 """
 
-	banner2= """
+    banner2= """
  ███▄ ▄███▓ ██▓▄▄▄█████▓ ███▄ ▄███▓  █████▒
 ▓██▒▀█▀ ██▒▓██▒▓  ██▒ ▓▒▓██▒▀█▀ ██▒▓██   ▒ 
 ▓██    ▓██░▒██▒▒ ▓██░ ▒░▓██    ▓██░▒████ ░ 
@@ -97,7 +110,7 @@ class Banners:
        ░    ░                  ░                                                     
 """
 
-	banner3 = """
+    banner3 = """
    ▄▄▄▄███▄▄▄▄    ▄█      ███       ▄▄▄▄███▄▄▄▄      ▄████████ 
  ▄██▀▀▀███▀▀▀██▄ ███  ▀█████████▄ ▄██▀▀▀███▀▀▀██▄   ███    ███ 
  ███   ███   ███ ███▌    ▀███▀▀██ ███   ███   ███   ███    █▀  
@@ -108,7 +121,7 @@ class Banners:
   ▀█   ███   █▀  █▀      ▄████▀    ▀█   ███   █▀    ███        
 """
 
-	banner4 = """
+    banner4 = """
       ___                                     ___           ___     
      /\  \                                   /\  \         /\__\    
     |::\  \       ___           ___         |::\  \       /:/ _/_   
@@ -121,7 +134,16 @@ class Banners:
     \:\__\         /:/  /       \:\__\      \:\__\        \:\__\    
      \/__/         \/__/         \/__/       \/__/         \/__/    
 """
-
-	def printBanner(self):
-		banners = [self.banner1, self.banner2, self.banner3, self.banner4]
-		print random.choice(banners)
+    
+    banner5 = """
+███╗   ███╗██╗████████╗███╗   ███╗███████╗
+████╗ ████║██║╚══██╔══╝████╗ ████║██╔════╝
+██╔████╔██║██║   ██║   ██╔████╔██║█████╗  
+██║╚██╔╝██║██║   ██║   ██║╚██╔╝██║██╔══╝  
+██║ ╚═╝ ██║██║   ██║   ██║ ╚═╝ ██║██║     
+╚═╝     ╚═╝╚═╝   ╚═╝   ╚═╝     ╚═╝╚═╝     
+"""
+    
+    def printBanner(self):
+        banners = [self.banner1, self.banner2, self.banner3, self.banner4, self.banner5]
+        print random.choice(banners)

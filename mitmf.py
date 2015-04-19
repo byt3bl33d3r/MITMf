@@ -28,21 +28,16 @@ from twisted.internet import reactor
 from core.sslstrip.CookieCleaner import CookieCleaner
 from core.sergioproxy.ProxyPlugins import ProxyPlugins
 from core.utils import Banners
-from core.utils import PrintException
-from configobj import ConfigObj
-
-logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Error when importing scapy
-from scapy.all import get_if_addr, get_if_hwaddr
+from core.configwatcher import ConfigWatcher
 
 from plugins import *
-plugin_classes = plugin.Plugin.__subclasses__()
 
 try:
     import user_agents
 except ImportError:
     print "[-] user_agents library missing! User-Agent parsing will be disabled!"
 
-mitmf_version = "0.9.6"
+mitmf_version = "0.9.6-dev"
 sslstrip_version = "0.9"
 sergio_version = "0.2.1"
 dnschef_version = "0.4"
@@ -75,6 +70,8 @@ sgroup.add_argument("-f", "--favicon", action="store_true", help="Substitute a l
 sgroup.add_argument("-k", "--killsessions", action="store_true", help="Kill sessions in progress.")
 
 #Initialize plugins
+plugin_classes = plugin.Plugin.__subclasses__()
+
 plugins = []
 try:
     for p in plugin_classes:
@@ -98,37 +95,6 @@ except NotImplementedError:
     sys.exit("[-] {} plugin claimed option support, but didn't have it.".format(p.name))
 
 args = parser.parse_args()
-
-try:
-    configfile = ConfigObj(args.configfile)
-except Exception, e:
-    sys.exit("[-] Error parsing config file: {}".format(e))
-
-config_args = configfile['MITMf']['args']
-if config_args:
-    print "[*] Loading arguments from config file"
-    for arg in config_args.split(' '):
-        sys.argv.append(arg)
-    args = parser.parse_args()
-
-####################################################################################################
-
-# Here we check for some variables that are very commonly used, and pass them down to the plugins
-try:
-    args.ip_address = get_if_addr(args.interface)
-    if (args.ip_address == "0.0.0.0") or (args.ip_address is None):
-        sys.exit("[-] Interface {} does not have an assigned IP address".format(args.interface))
-except Exception, e:
-    sys.exit("[-] Error retrieving interface IP address: {}".format(e))
-
-try:
-    args.mac_address = get_if_hwaddr(args.interface)
-except Exception, e:
-    sys.exit("[-] Error retrieving interface MAC address: {}".format(e))
-
-args.configfile = configfile #so we can pass the configobj down to all the plugins
-
-####################################################################################################
 
 log_level = logging.__dict__[args.log_level.upper()]
 
@@ -158,11 +124,9 @@ for p in plugins:
                 print "|  |_ {}".format(line)
                 p.tree_output.remove(line)
 
-    if getattr(args, p.optname):
         p.initialize(args)
         load.append(p)
 
-    if vars(args)[p.optname] is True:
         if hasattr(p, 'tree_output') and p.tree_output:
             for line in p.tree_output:
                 print "|  |_ {}".format(line)
@@ -170,21 +134,15 @@ for p in plugins:
 #Plugins are ready to go, start MITMf
 if args.disproxy:
     ProxyPlugins.getInstance().setPlugins(load)
+    DNSChef.getInstance().start()
 else:
-    
     from core.sslstrip.StrippingProxy import StrippingProxy
     from core.sslstrip.URLMonitor import URLMonitor
-    from libs.dnschef.dnschef import DNSChef
+    from core.dnschef.dnschef import DNSChef
 
     URLMonitor.getInstance().setFaviconSpoofing(args.favicon)
-    URLMonitor.getInstance().setResolver(args.configfile['MITMf']['DNS']['resolver'])
-    URLMonitor.getInstance().setResolverPort(args.configfile['MITMf']['DNS']['port'])
     
-    DNSChef.getInstance().setCoreVars(args.configfile['MITMf']['DNS'])
-    if args.configfile['MITMf']['DNS']['tcp'].lower() == 'on':
-        DNSChef.getInstance().startTCP()
-    else:
-        DNSChef.getInstance().startUDP()
+    DNSChef.getInstance().start()
 
     CookieCleaner.getInstance().setEnabled(args.killsessions)
     ProxyPlugins.getInstance().setPlugins(load)
@@ -195,10 +153,12 @@ else:
     reactor.listenTCP(args.listen, strippingFactory)
 
     #load custom reactor options for plugins that have the 'plugin_reactor' attribute
-    for p in plugins:
-        if getattr(args, p.optname):
-            if hasattr(p, 'plugin_reactor'):
-                p.plugin_reactor(strippingFactory) #we pass the default strippingFactory, so the plugins can use it
+    for p in load:
+        if hasattr(p, 'plugin_reactor'):
+            p.plugin_reactor(strippingFactory) #we pass the default strippingFactory, so the plugins can use it
+
+        if hasattr(p, 'startConfigWatch'):
+            p.startConfigWatch()
 
     print "|"
     print "|_ Sergio-Proxy v{} online".format(sergio_version)

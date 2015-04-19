@@ -13,5 +13,6 @@ pefile
 ipy
 pyopenssl
 service_identity
+watchdog
 capstone
 pypcap

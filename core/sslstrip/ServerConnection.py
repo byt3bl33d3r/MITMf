@@ -55,8 +55,8 @@ class ServerConnection(HTTPClient):
         self.client           = client
         self.clientInfo       = None
         self.urlMonitor       = URLMonitor.getInstance()
-        self.hsts             = URLMonitor.getInstance().isHstsBypass()
-        self.app              = URLMonitor.getInstance().isAppCachePoisoning()
+        self.hsts             = URLMonitor.getInstance().hsts
+        self.app              = URLMonitor.getInstance().app
         self.plugins          = ProxyPlugins.getInstance()
         self.isImageRequest   = False
         self.isCompressed     = False
@@ -70,7 +70,7 @@ class ServerConnection(HTTPClient):
         if self.command == 'GET':
             try:
                 user_agent = parse(self.headers['user-agent'])
-                self.clientInfo = "{0} [type:{1}-{2} os:{3}] ".format(self.client.getClientIP(), user_agent.browser.family, user_agent.browser.version[0], user_agent.os.family)
+                self.clientInfo = "{} [type:{}-{} os:{}] ".format(self.client.getClientIP(), user_agent.browser.family, user_agent.browser.version[0], user_agent.os.family)
             except:
                 self.clientInfo = "{} ".format(self.client.getClientIP())
 
@@ -93,7 +93,7 @@ class ServerConnection(HTTPClient):
         elif 'keylog' in self.uri:
             self.plugins.hook()
         else:
-            mitmf_logger.warning("{0} {1} Data ({2}):\n{3}".format(self.client.getClientIP(), self.getPostPrefix(), self.headers['host'], self.postData))
+            mitmf_logger.warning("{} {} Data ({}):\n{}".format(self.client.getClientIP(), self.getPostPrefix(), self.headers['host'], self.postData))
             self.transport.write(self.postData)
 
     def connectionMade(self):
@@ -106,7 +106,7 @@ class ServerConnection(HTTPClient):
             self.sendPostData()
 
     def handleStatus(self, version, code, message):
-        mitmf_logger.debug("[ServerConnection] Server response: {0} {1} {2}".format(version, code, message))
+        mitmf_logger.debug("[ServerConnection] Server response: {} {} {}".format(version, code, message))
         self.client.setResponseCode(int(code), message)
 
     def handleHeader(self, key, value):

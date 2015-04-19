@@ -13,6 +13,13 @@ This tool is based on [sergio-proxy](https://github.com/supernothing/sergio-prox
 ============================
 As of v0.9.6, the fork of the ```python-netfilterqueue``` library is no longer required.
 
+How to install on Kali
+======================
+
+```apt-get install mitmf```
+
+**Currently Kali has a very old version of MITMf in it's repos, please read the [Installation](#installation) section to get the latest version**
+
 Installation
 ============
 If MITMf is not in your distros repo or you just want the latest version:
@@ -79,8 +86,3 @@ If you find a *bug* please open an issue and include at least the following in t
 - OS your using
 
 Also remember: Github markdown is your friend!
-
-How to install on Kali
-======================
-
-```apt-get install mitmf```

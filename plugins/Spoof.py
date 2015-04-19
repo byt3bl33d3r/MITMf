@@ -25,7 +25,7 @@ from core.utils import SystemConfig, IpTables
 from core.sslstrip.DnsCache import DnsCache
 from core.wrappers.protocols import _ARP, _DHCP, _ICMP
 from plugins.plugin import Plugin
-from libs.dnschef.dnschef import DNSChef
+from core.dnschef.dnschef import DNSChef
 
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Error when importing scapy
 from scapy.all import *
