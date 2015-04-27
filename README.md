@@ -1,4 +1,4 @@
-MITMf V0.9.6
+MITMf V0.9.7
 ============
 
 Framework for Man-In-The-Middle attacks
