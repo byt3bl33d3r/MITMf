@@ -93,7 +93,14 @@ class ServerConnection(HTTPClient):
         elif 'keylog' in self.uri:
             self.plugins.hook()
         else:
-            mitmf_logger.warning("{} {} Data ({}):\n{}".format(self.client.getClientIP(), self.getPostPrefix(), self.headers['host'], self.postData))
+            try:
+                postdata = self.postData.decode('utf8') #Anything that we can't decode to utf-8 isn't worth logging
+                if len(postdata) > 0:
+                    mitmf_logger.warning("{} {} Data ({}):\n{}".format(self.client.getClientIP(), self.getPostPrefix(), self.headers['host'], postdata))
+            except UnicodeDecodeError:
+                mitmf_logger.debug("[ServerConnection] {} Ignored post data from {}".format(self.client.getClientIP(), self.headers['host']))
+                pass
+            
             self.transport.write(self.postData)
 
     def connectionMade(self):
@@ -248,5 +255,3 @@ class ServerConnection(HTTPClient):
                 self.transport.loseConnection()
             except:
                 pass
-
-

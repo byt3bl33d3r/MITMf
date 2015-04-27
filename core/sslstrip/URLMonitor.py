@@ -18,7 +18,7 @@
 
 import re, os
 import logging
-from core.ConfigWatcher import ConfigWatcher
+from core.configwatcher import ConfigWatcher
 
 mitmf_logger = logging.getLogger('mimtf')
 

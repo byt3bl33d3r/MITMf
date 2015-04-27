@@ -7,7 +7,7 @@ Quick tutorials, examples and dev updates at http://sign0f4.blogspot.it
 
 This tool is based on [sergio-proxy](https://github.com/supernothing/sergio-proxy) and is an attempt to revive and update the project.
 
-**Before submitting issues please read the appropriate [section](#submitting-issues).**
+**Before submitting issues please read the [FAQ](#faq) and the appropriate [section](#submitting-issues).**
 
 (Another) Dependency change!
 ============================
@@ -18,7 +18,7 @@ How to install on Kali
 
 ```apt-get install mitmf```
 
-**Currently Kali has a very old version of MITMf in it's repos, please read the [Installation](#installation) section to get the latest version**
+**Currently Kali has a very old version of MITMf in it's repos so if you find bugs its normal, don't open an issue! Read the [Installation](#installation) section to get the latest version**
 
 Installation
 ============
@@ -27,7 +27,7 @@ If MITMf is not in your distros repo or you just want the latest version:
 - run the ```setup.sh``` script
 - run the command ```pip install -r requirements.txt``` to install all python dependencies
 
-On Kali Linux, if you get an error while installing the pypcap package or when starting MITMf you see: ```ImportError: no module named pcap``` run ```apt-get install python-pycap``` to fix it.
+On Kali Linux, if you get an error while installing the pypcap package or when starting MITMf you see: ```ImportError: no module named pcap``` run ```apt-get install python-pypcap``` to fix it.
 
 Availible plugins
 =================
@@ -86,3 +86,20 @@ If you find a *bug* please open an issue and include at least the following in t
 - OS your using
 
 Also remember: Github markdown is your friend!
+
+FAQ
+===
+- **Is Windows supported?**
+- No, I'm not masochistic and I actually want things to work.
+
+- **I can't install package X because of an error!**
+- Try installing the module via ```pip``` or your distros package manager. This *isn't* a problem with MITMf.
+
+- **How do I install package X?**
+- Please read the [installation](#installation) guide.
+
+- **I get an ImportError when launching MITMf!**
+- Please read the [installation](#installation) guide.
+
+- **Dude, no documentation/video tutorials?**
+- Currently no, once the framework hits 1.0 I'll probably start writing/making some.

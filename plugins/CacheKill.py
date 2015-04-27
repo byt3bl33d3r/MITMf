@@ -20,7 +20,6 @@
 
 from plugins.plugin import Plugin
 
-
 class CacheKill(Plugin):
     name        = "CacheKill"
     optname     = "cachekill"

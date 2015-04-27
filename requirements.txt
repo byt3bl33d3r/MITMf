@@ -14,5 +14,6 @@ ipy
 pyopenssl
 service_identity
 watchdog
+impacket
 capstone
 pypcap

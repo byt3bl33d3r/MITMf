@@ -24,14 +24,9 @@ import re
 import sys
 import argparse
 
-logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Error when importing scapy
-from scapy.all import get_if_addr
-
 from core.utils import SystemConfig
 from plugins.plugin import Plugin
 from plugins.CacheKill import CacheKill
-
-mitmf_logger = logging.getLogger('mitmf')
 
 class Inject(CacheKill, Plugin):
     name       = "Inject"

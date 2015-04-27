@@ -1,9 +1,3 @@
 [submodule "libs/bdfactory"]
 	path = libs/bdfactory
 	url = https://github.com/secretsquirrel/the-backdoor-factory
-[submodule "libs/responder"]
-	path = libs/responder
-	url = https://github.com/byt3bl33d3r/Responder-MITMf
-[submodule "core/beefapi"]
-	path = core/beefapi
-	url = https://github.com/byt3bl33d3r/beefapi
