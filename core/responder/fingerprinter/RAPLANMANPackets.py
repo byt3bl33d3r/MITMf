@@ -1,24 +1,10 @@
 import struct
-from odict import OrderedDict
+from core.responder.odict import OrderedDict
+from core.responder.packet import Packet
 
 def longueur(payload):
     length = struct.pack(">i", len(''.join(payload)))
     return length
-
-class Packet():
-    fields = OrderedDict([
-        ("data", ""),
-    ])
-    def __init__(self, **kw):
-        self.fields = OrderedDict(self.__class__.fields)
-        for k,v in kw.items():
-            if callable(v):
-                self.fields[k] = v(self.fields[k])
-            else:
-                self.fields[k] = v
-    def __str__(self):
-        return "".join(map(str, self.fields.values()))
-
 
 class SMBHeader(Packet):
     fields = OrderedDict([

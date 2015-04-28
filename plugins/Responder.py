@@ -24,9 +24,12 @@ import threading
 
 from plugins.plugin import Plugin
 from twisted.internet import reactor
-from core.responder.wpad.WPADPoisoner import WPADPoisoner
-from core.responder.llmnr.LLMNRPoisoner import LLMNRPoisoner
 from core.utils import SystemConfig
+from core.responder.llmnr.LLMNRPoisoner import LLMNRPoisoner
+from core.responder.wpad.WPADPoisoner import WPADPoisoner
+from core.responder.mdns.MDNSPoisoner import MDNSPoisoner
+from core.responder.nbtns.NBTNSPoisoner import NBTNSPoisoner
+from core.responder.fingerprinter.LANFingerprinter import LANFingerprinter
 
 class Responder(Plugin):
     name        = "Responder"
@@ -48,6 +51,9 @@ class Responder(Plugin):
             sys.exit('[-] Error parsing config for Responder: ' + str(e))
 
         LLMNRPoisoner().start(options, self.ourip)
+        MDNSPoisoner().start(options, self.ourip)
+        NBTNSPoisoner().start(options, self.ourip)
+        LANFingerprinter().start(options)
 
         if options.wpad:
             WPADPoisoner().start()
