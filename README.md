@@ -9,26 +9,6 @@ This tool is based on [sergio-proxy](https://github.com/supernothing/sergio-prox
 
 **Before submitting issues please read the [FAQ](#faq) and the appropriate [section](#submitting-issues).**
 
-(Another) Dependency change!
-============================
-As of v0.9.6, the fork of the ```python-netfilterqueue``` library is no longer required.
-
-How to install on Kali
-======================
-
-```apt-get install mitmf```
-
-**Currently Kali has a very old version of MITMf in it's repos so if you find bugs its normal, don't open an issue! Read the [Installation](#installation) section to get the latest version**
-
-Installation
-============
-If MITMf is not in your distros repo or you just want the latest version:
-- clone this repository 
-- run the ```setup.sh``` script
-- run the command ```pip install -r requirements.txt``` to install all python dependencies
-
-On Kali Linux, if you get an error while installing the pypcap package or when starting MITMf you see: ```ImportError: no module named pcap``` run ```apt-get install python-pypcap``` to fix it.
-
 Availible plugins
 =================
 - Responder - LLMNR, NBT-NS and MDNS poisoner
@@ -75,6 +55,22 @@ Changelog
 - Added [beefapi.py](https://github.com/byt3bl33d3r/beefapi) for interfacing with BeEF's RESTfulAPI
 
 - Addition of the app-cache poisoning attack by [Krzysztof Kotowicz](https://github.com/koto/sslstrip) (blogpost explaining the attack here http://blog.kotowicz.net/2010/12/squid-imposter-phishing-websites.html)
+
+Installation
+============
+If MITMf is not in your distros repo or you just want the latest version:
+- clone this repository 
+- run the ```setup.sh``` script
+- run the command ```pip install -r requirements.txt``` to install all python dependencies
+
+On Kali Linux, if you get an error while installing the pypcap package or when starting MITMf you see: ```ImportError: no module named pcap``` run ```apt-get install python-pypcap``` to fix it.
+
+How to install on Kali
+======================
+
+```apt-get install mitmf```
+
+**Currently Kali has a very old version of MITMf in it's repos so if you find bugs its normal, don't open an issue! Read the [Installation](#installation) section to get the latest version**
 
 Submitting Issues
 =================
