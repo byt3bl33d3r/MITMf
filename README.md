@@ -20,7 +20,7 @@ Availible plugins
 - SessionHijacking - Performs session hijacking attacks, and stores cookies in a firefox profile
 - BrowserProfiler - Attempts to enumerate all browser plugins of connected clients
 - CacheKill - Kills page caching by modifying headers
-- FilePwn - Backdoor executables being sent over http using bdfactory
+- FilePwn - Backdoor executables being sent over http using Backdoor Factory and BDFProxy
 - Inject - Inject arbitrary content into HTML content
 - JavaPwn - Performs drive-by attacks on clients with out-of-date java browser plugins
 - jskeylogger - Injects a javascript keylogger into clients webpages
