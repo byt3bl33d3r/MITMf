@@ -23,7 +23,6 @@ import sys
 import os
 import logging
 import threading
-import user_agents
 
 from twisted.web import http
 from twisted.internet import reactor
@@ -69,7 +68,7 @@ plugins = []
 try:
     for p in plugin_classes:
         plugins.append(p())
-except Exception, e:
+except Exception as e:
     print "[-] Failed to load plugin class {}: {}".format(p, e)
 
 #Give subgroup to each plugin with options
@@ -148,7 +147,7 @@ strippingFactory.protocol     = StrippingProxy
 reactor.listenTCP(args.listen, strippingFactory)
 
 for p in load:
-    
+
     p.pluginReactor(strippingFactory) #we pass the default strippingFactory, so the plugins can use it
     p.startConfigWatch()
 
@@ -165,12 +164,15 @@ from core.netcreds.NetCreds import NetCreds
 NetCreds().start(args.interface, myip)
 print "|_ Net-Creds v{} online".format(netcreds_version)
 
-#Start all servers!
+#Start DNSChef
 from core.dnschef.DNSchef import DNSChef
 DNSChef.getInstance().start()
-print "|_ DNSChef v{} online\n".format(dnschef_version)
+print "|_ DNSChef v{} online".format(dnschef_version)
 
+#start the SMB server
 from core.protocols.smb.SMBserver import SMBserver
+from impacket import version
+print "|_ SMBserver online (Impacket {})\n".format(version.VER_MINOR)
 SMBserver().start()
 
 #start the reactor

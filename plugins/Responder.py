@@ -18,13 +18,12 @@
 # USA
 #
 
-import sys
-import os
 import threading
 
 from plugins.plugin import Plugin
 from twisted.internet import reactor
 from core.utils import SystemConfig
+
 from core.responder.llmnr.LLMNRPoisoner import LLMNRPoisoner
 from core.responder.wpad.WPADPoisoner import WPADPoisoner
 from core.responder.mdns.MDNSPoisoner import MDNSPoisoner
@@ -57,9 +56,9 @@ class Responder(Plugin):
         KERBServer().start()
         NBTNSPoisoner().start(options, self.ourip)
         LLMNRPoisoner().start(options, self.ourip)
-        
+
         if options.wpad:
-            WPADPoisoner().start()
+            WPADPoisoner().start(options)
 
         if options.analyze:
             self.tree_output.append("Responder is in analyze mode. No NBT-NS, LLMNR, MDNS requests will be poisoned")
@@ -69,10 +68,10 @@ class Responder(Plugin):
 
     def add_options(self, options):
         options.add_argument('--analyze', dest="analyze", action="store_true", help="Allows you to see NBT-NS, BROWSER, LLMNR requests from which workstation to which workstation without poisoning")
-        options.add_argument('--basic', dest="basic", default=False, action="store_true", help="Set this if you want to return a Basic HTTP authentication. If not set, an NTLM authentication will be returned")
-        options.add_argument('--wredir', dest="wredir", default=False, action="store_true", help="Set this to enable answers for netbios wredir suffix queries. Answering to wredir will likely break stuff on the network (like classics 'nbns spoofer' would). Default value is therefore set to False")
-        options.add_argument('--nbtns', dest="nbtns", default=False, action="store_true", help="Set this to enable answers for netbios domain suffix queries. Answering to domain suffixes will likely break stuff on the network (like a classic 'nbns spoofer' would). Default value is therefore set to False")
-        options.add_argument('--fingerprint', dest="finger", default=False, action="store_true", help = "This option allows you to fingerprint a host that issued an NBT-NS or LLMNR query")
-        options.add_argument('--wpad', dest="wpad", default=False, action="store_true", help = "Set this to start the WPAD rogue proxy server. Default value is False")
-        options.add_argument('--forcewpadauth', dest="forceWpadAuth", default=False, action="store_true", help = "Set this if you want to force NTLM/Basic authentication on wpad.dat file retrieval. This might cause a login prompt in some specific cases. Therefore, default value is False")
-        options.add_argument('--lm', dest="lm", default=False, action="store_true", help="Set this if you want to force LM hashing downgrade for Windows XP/2003 and earlier. Default value is False")
+        options.add_argument('--wredir', dest="wredir", default=False, action="store_true", help="Enables answers for netbios wredir suffix queries")
+        options.add_argument('--nbtns', dest="nbtns", default=False, action="store_true", help="Enables answers for netbios domain suffix queries")
+        options.add_argument('--fingerprint', dest="finger", default=False, action="store_true", help = "Fingerprint hosts that issued an NBT-NS or LLMNR query")
+        options.add_argument('--lm', dest="lm", default=False, action="store_true", help="Force LM hashing downgrade for Windows XP/2003 and earlier")
+        options.add_argument('--wpad', dest="wpad", default=False, action="store_true", help = "Start the WPAD rogue proxy server")
+        #options.add_argument('--forcewpadauth', dest="forceWpadAuth", default=False, action="store_true", help = "Set this if you want to force NTLM/Basic authentication on wpad.dat file retrieval. This might cause a login prompt in some specific cases. Therefore, default value is False")
+        #options.add_argument('--basic', dest="basic", default=False, action="store_true", help="Set this if you want to return a Basic HTTP authentication. If not set, an NTLM authentication will be returned")

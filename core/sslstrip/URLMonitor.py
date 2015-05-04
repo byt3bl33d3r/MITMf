@@ -54,10 +54,6 @@ class URLMonitor:
         return URLMonitor._instance
     
     #This is here because I'm lazy
-    def getResolver(self):
-        return ConfigWatcher.getInstance().getConfig()['MITMf']['DNS']['resolver'].lower()
-    
-    #This is here because I'm lazy
     def getResolverPort(self):
         return int(ConfigWatcher.getInstance().getConfig()['MITMf']['DNS']['port'])
 

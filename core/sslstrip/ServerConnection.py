@@ -71,7 +71,8 @@ class ServerConnection(HTTPClient):
             try:
                 user_agent = parse(self.headers['user-agent'])
                 self.clientInfo = "{} [type:{}-{} os:{}] ".format(self.client.getClientIP(), user_agent.browser.family, user_agent.browser.version[0], user_agent.os.family)
-            except:
+            except Exception as e:
+                mitmf_logger.debug("[ServerConnection] Failed to parse client UA: {}".format(e))
                 self.clientInfo = "{} ".format(self.client.getClientIP())
 
             mitmf_logger.info(self.clientInfo + "Sending Request: {}".format(self.headers['host']))
@@ -135,7 +136,7 @@ class ServerConnection(HTTPClient):
                 self.isCompressed = True
 
         elif (key.lower()== 'strict-transport-security'):
-            mitmf_logger.info("{} Zapped a strict-trasport-security header".format(self.client.getClientIP()))
+            mitmf_logger.info("{} Zapped a strict-trasport-security header".format(self.clientInfo))
 
         elif (key.lower() == 'content-length'):
             self.contentLength = value
@@ -181,7 +182,7 @@ class ServerConnection(HTTPClient):
             mitmf_logger.debug("[ServerConnection] Read from server {} bytes of data".format(len(data)))
 
         data = self.replaceSecureLinks(data)
-        res = self.plugins.hook()
+        res  = self.plugins.hook()
         data = res['data']
 
         if (self.contentLength != None):

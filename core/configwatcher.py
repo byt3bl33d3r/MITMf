@@ -44,5 +44,6 @@ class ConfigWatcher(FileSystemEventHandler):
     def reloadConfig(self):
         try:
             self.config = ConfigObj("./config/mitmf.conf")
-        except Exception, e:
+        except Exception as e:
             mitmf_logger.warning("Error reloading config file: {}".format(e))
+            pass

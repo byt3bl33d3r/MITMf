@@ -192,21 +192,14 @@ class ClientRequest(Request):
         else:
             
             mitmf_logger.debug("[ClientRequest] Host not cached.")
-            
-            if self.urlMonitor.getResolver() == 'dnschef':
+            self.customResolver.port = self.urlMonitor.getResolverPort()
 
-                self.customResolver.port = self.urlMonitor.getResolverPort()
-
-                try:
-                    mitmf_logger.debug("[ClientRequest] Resolving with DNSChef")
-                    address = str(self.customResolver.query(host)[0].address)
-                    return defer.succeed(address)
-                except Exception:
-                    mitmf_logger.debug("[ClientRequest] Exception occured, falling back to Twisted")
-                    return reactor.resolve(host)
-
-            elif self.urlMonitor.getResolver() == 'twisted':
-                mitmf_logger.debug("[ClientRequest] Resolving with Twisted")
+            try:
+                mitmf_logger.debug("[ClientRequest] Resolving with DNSChef")
+                address = str(self.customResolver.query(host)[0].address)
+                return defer.succeed(address)
+            except Exception:
+                mitmf_logger.debug("[ClientRequest] Exception occured, falling back to Twisted")
                 return reactor.resolve(host)
 
     def process(self):

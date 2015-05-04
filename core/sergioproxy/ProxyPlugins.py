@@ -17,7 +17,10 @@
 #
 
 import sys
+import logging
 import inspect
+
+mitmf_logger = logging.getLogger("mitmf")
 
 class ProxyPlugins:
     '''
