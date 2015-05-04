@@ -19,6 +19,7 @@
 import sys
 import logging
 import inspect
+import traceback
 
 mitmf_logger = logging.getLogger("mitmf")
 
@@ -59,9 +60,12 @@ class ProxyPlugins:
         for p in plugins:
             self.addPlugin(p)
 
+        mitmf_logger.debug("[ProxyPlugins] Loaded {} plugin/s".format(len(self.plist)))
+
     def addPlugin(self,p):
         '''Load a plugin'''
         self.plist.append(p)
+        mitmf_logger.debug("[ProxyPlugins] Adding {} plugin".format(p.name))
         for mthd in p.implements:
             try:
                 self.pmthds[mthd].append(getattr(p,mthd))
@@ -71,6 +75,7 @@ class ProxyPlugins:
     def removePlugin(self,p):
         '''Unload a plugin'''
         self.plist.remove(p)
+        mitmf_logger.debug("[ProxyPlugins] Removing {} plugin".format(p.name))
         for mthd in p.implements:
             self.pmthds[mthd].remove(p)
 
@@ -95,8 +100,12 @@ class ProxyPlugins:
             for f in self.pmthds[fname]:
                 a = f(**args)
                 if a != None: args = a
-        except KeyError:
+        except KeyError as e:
             pass
+        except Exception as e:
+            #This is needed because errors in hooked functions won't raise an Exception + Tracback (which can be infuriating)
+            mitmf_logger.error("[ProxyPlugins] Exception occurred in hooked function")
+            traceback.print_exc()
 
         #pass our changes to the locals back down
         return args

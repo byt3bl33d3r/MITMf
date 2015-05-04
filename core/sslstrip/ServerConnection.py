@@ -189,7 +189,7 @@ class ServerConnection(HTTPClient):
             self.client.setHeader('Content-Length', len(data))
         
         try:
-            self.client.write(data) #Gets rid of some generic errors
+            self.client.write(data)
         except:
             pass
 

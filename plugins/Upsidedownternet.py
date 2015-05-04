@@ -66,4 +66,5 @@ class Upsidedownternet(Plugin):
                 mitmf_logger.info("{} Flipped image".format(request.client.getClientIP()))
             except Exception as e:
                 mitmf_logger.info("{} Error: {}".format(request.client.getClientIP(), e))
+        
         return {'request': request, 'data': data}

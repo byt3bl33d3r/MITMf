@@ -28,6 +28,8 @@ from core.utils import SystemConfig
 from plugins.plugin import Plugin
 from plugins.CacheKill import CacheKill
 
+mitmf_logger = logging.getLogger("mitmf")
+
 class Inject(CacheKill, Plugin):
     name       = "Inject"
     optname    = "inject"
