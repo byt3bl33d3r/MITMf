@@ -1,6 +1,6 @@
 #common functions that are used throughout the Responder's code
 
-
+import os
 import re
 
 #Function used to write captured hashs to a file.

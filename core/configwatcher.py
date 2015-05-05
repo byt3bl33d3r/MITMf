@@ -13,9 +13,7 @@ class ConfigWatcher(FileSystemEventHandler):
 
     _instance = None
 
-    def __init__(self):
-
-        self.config = ConfigObj("./config/mitmf.conf")
+    config = ConfigObj("./config/mitmf.conf")
 
     @staticmethod
     def getInstance():

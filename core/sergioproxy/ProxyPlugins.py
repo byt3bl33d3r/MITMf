@@ -103,7 +103,7 @@ class ProxyPlugins:
         except KeyError as e:
             pass
         except Exception as e:
-            #This is needed because errors in hooked functions won't raise an Exception + Tracback (which can be infuriating)
+            #This is needed because errors in hooked functions won't raise an Exception + Traceback (which can be infuriating)
             mitmf_logger.error("[ProxyPlugins] Exception occurred in hooked function")
             traceback.print_exc()
 

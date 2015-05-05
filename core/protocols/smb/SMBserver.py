@@ -1,7 +1,8 @@
 import logging
 import sys
 import threading
-from impacket import smbserver, LOG
+from impacket import version, smbserver, LOG
+from core.configwatcher import ConfigWatcher
 
 LOG.setLevel(logging.INFO)
 LOG.propagate = False
@@ -16,11 +17,14 @@ streamHandler.setFormatter(formatter)
 LOG.addHandler(fileHandler)
 LOG.addHandler(streamHandler)
 
-class SMBserver:
+class SMBserver(ConfigWatcher):
+
+    impacket_ver = version.VER_MINOR
 
     def __init__(self, listenAddress = '0.0.0.0', listenPort=445, configFile=''):
 
         self.server = smbserver.SimpleSMBServer(listenAddress, listenPort, configFile)
+        self.server.setSMBChallenge(self.config["MITMf"]["SMB"]["Challenge"])
 
     def start(self):
         t = threading.Thread(name='SMBserver', target=self.server.start)

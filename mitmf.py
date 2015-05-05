@@ -39,8 +39,6 @@ if os.geteuid() != 0:
 mitmf_version = "0.9.7"
 sslstrip_version = "0.9"
 sergio_version = "0.2.1"
-dnschef_version = "0.4"
-netcreds_version = "1.0"
 
 parser = argparse.ArgumentParser(description="MITMf v{} - Framework for MITM attacks".format(mitmf_version), version=mitmf_version, usage='mitmf.py -i interface [mitmf options] [plugin name] [plugin options]', epilog="Use wisely, young Padawan.",fromfile_prefix_chars='@')
 
@@ -162,17 +160,16 @@ print "|_ SSLstrip v{} by Moxie Marlinspike online".format(sslstrip_version)
 #Start Net-Creds
 from core.netcreds.NetCreds import NetCreds
 NetCreds().start(args.interface, myip)
-print "|_ Net-Creds v{} online".format(netcreds_version)
+print "|_ Net-Creds v{} online".format(NetCreds.version)
 
 #Start DNSChef
 from core.dnschef.DNSchef import DNSChef
 DNSChef.getInstance().start()
-print "|_ DNSChef v{} online".format(dnschef_version)
+print "|_ DNSChef v{} online".format(DNSChef.version)
 
 #start the SMB server
 from core.protocols.smb.SMBserver import SMBserver
-from impacket import version
-print "|_ SMBserver online (Impacket {})\n".format(version.VER_MINOR)
+print "|_ SMBserver online (Impacket {})\n".format(SMBserver.impacket_ver)
 SMBserver().start()
 
 #start the reactor

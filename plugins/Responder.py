@@ -19,18 +19,17 @@
 #
 
 import threading
+import sys
 
 from plugins.plugin import Plugin
 from twisted.internet import reactor
 from core.utils import SystemConfig
 
 from core.responder.llmnr.LLMNRPoisoner import LLMNRPoisoner
-from core.responder.wpad.WPADPoisoner import WPADPoisoner
 from core.responder.mdns.MDNSPoisoner import MDNSPoisoner
 from core.responder.nbtns.NBTNSPoisoner import NBTNSPoisoner
 from core.responder.fingerprinter.LANFingerprinter import LANFingerprinter
 from core.responder.wpad.WPADPoisoner import WPADPoisoner
-from core.responder.kerberos.KERBServer import KERBServer
 
 class Responder(Plugin):
     name        = "Responder"
@@ -48,17 +47,46 @@ class Responder(Plugin):
 
         try:
             config = self.config['Responder']
+            smbChal = self.config['MITMf']['SMB']['Challenge']
         except Exception, e:
             sys.exit('[-] Error parsing config for Responder: ' + str(e))
 
         LANFingerprinter().start(options)
         MDNSPoisoner().start(options, self.ourip)
-        KERBServer().start()
         NBTNSPoisoner().start(options, self.ourip)
         LLMNRPoisoner().start(options, self.ourip)
 
         if options.wpad:
+            from core.responder.wpad.WPADPoisoner import WPADPoisoner
             WPADPoisoner().start(options)
+
+        if self.config["Responder"]["MSSQL"].lower() == "on":
+            from core.responder.mssql.MSSQLServer import MSSQLServer
+            MSSQLServer().start(smbChal)
+
+        if self.config["Responder"]["Kerberos"].lower() == "on":
+            from core.responder.kerberos.KERBServer import KERBServer
+            KERBServer().start()
+
+        if self.config["Responder"]["FTP"].lower() == "on":
+            from core.responder.ftp.FTPServer import FTPServer
+            FTPServer().start()
+
+        if self.config["Responder"]["POP"].lower() == "on":
+            from core.responder.pop3.POP3Server import POP3Server
+            POP3Server().start()
+
+        if self.config["Responder"]["SMTP"].lower() == "on":
+            from core.responder.smtp.SMTPServer import SMTPServer
+            SMTPServer().start()
+
+        if self.config["Responder"]["IMAP"].lower() == "on":
+            from core.responder.imap.IMAPServer import IMAPServer
+            IMAPServer().start()
+
+        if self.config["Responder"]["LDAP"].lower() == "on":
+            from core.responder.ldap.LDAPServer import LDAPServer
+            LDAPServer().start(smbChal)
 
         if options.analyze:
             self.tree_output.append("Responder is in analyze mode. No NBT-NS, LLMNR, MDNS requests will be poisoned")

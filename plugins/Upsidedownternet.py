@@ -23,6 +23,8 @@ from cStringIO import StringIO
 from plugins.plugin import Plugin
 from PIL import Image
 
+mitmf_logger = logging.getLogger("mitmf")
+
 class Upsidedownternet(Plugin):
     name       = "Upsidedownternet"
     optname    = "upsidedownternet"

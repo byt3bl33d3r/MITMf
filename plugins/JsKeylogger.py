@@ -17,10 +17,12 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
 #
+import logging
 
 from plugins.plugin import Plugin
 from plugins.Inject import Inject
-import logging
+
+mitmf_logger = logging.getLogger("mitmf")
 
 class jskeylogger(Inject, Plugin):
     name       = "Javascript Keylogger"

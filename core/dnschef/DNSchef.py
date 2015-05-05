@@ -416,6 +416,7 @@ class ThreadedTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
 class DNSChef(ConfigWatcher):
 
     _instance = None
+    version = "0.4"
 
     tcp            = False
     ipv6           = False

@@ -18,8 +18,6 @@
 # USA
 #
 
-import logging
-
 from sys import exit
 from core.utils import SystemConfig, IpTables
 from core.protocols.arp.ARPpoisoner import ARPpoisoner

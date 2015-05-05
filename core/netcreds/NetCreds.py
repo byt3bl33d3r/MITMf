@@ -45,6 +45,8 @@ http_search_re = '((search|query|&q|\?q|search\?p|searchterm|keywords|keyword|co
 
 class NetCreds:
 
+    version = "1.0"
+
     def sniffer(self, myip, interface):
         #set the filter to our ip to prevent capturing traffic coming/going from our box
         sniff(iface=interface, prn=pkt_parser, filter="not host {}".format(myip), store=0)
