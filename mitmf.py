@@ -69,6 +69,9 @@ try:
 except Exception as e:
     print "[-] Failed to load plugin class {}: {}".format(p, e)
 
+
+arg_dict = dict() #dict containing a plugin's optname with it's relative options
+
 #Give subgroup to each plugin with options
 try:
     for p in plugins:
@@ -81,6 +84,9 @@ try:
 
         if p.has_opts:
             p.add_options(sgroup)
+
+        arg_dict[p.optname] = vars(sgroup)['_group_actions']
+
 except NotImplementedError:
     sys.exit("[-] {} plugin claimed option support, but didn't have it.".format(p.name))
 
@@ -90,11 +96,19 @@ if len(sys.argv) is 1:
 
 args = parser.parse_args()
 
+# Definitely a better way to do this, will need to clean this up in the future
+# Checks to see if we called a plugin's options without first invoking the actual plugin
+for plugin, options in arg_dict.iteritems():
+    if vars(args)[plugin] is False:
+        for option in options:
+            if vars(args)[option.dest] is True:
+                sys.exit("[-] Called plugin options without invoking --{}".format(plugin))
+
 #first check to see if we supplied a valid interface
 myip  = SystemConfig.getIP(args.interface)
 mymac = SystemConfig.getMAC(args.interface)
 
-#Start logging 
+#Start logging
 log_level = logging.__dict__[args.log_level.upper()]
 
 logging.basicConfig(level=log_level, format="%(asctime)s %(message)s", datefmt="%Y-%m-%d %H:%M:%S")

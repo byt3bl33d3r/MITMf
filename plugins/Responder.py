@@ -48,7 +48,7 @@ class Responder(Plugin):
         try:
             config = self.config['Responder']
             smbChal = self.config['MITMf']['SMB']['Challenge']
-        except Exception, e:
+        except Exception as e:
             sys.exit('[-] Error parsing config for Responder: ' + str(e))
 
         LANFingerprinter().start(options)

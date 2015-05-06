@@ -16,7 +16,7 @@ class IMAPServer():
 			t = threading.Thread(name="IMAPServer", target=server.serve_forever)
 			t.setDaemon(True)
 			t.start()
-		except Exception, e:
+		except Exception as e:
 			mitmf_logger.error("[IMAPServer] Error starting on port {}: {}".format(143, e))
 
 class ThreadingTCPServer(ThreadingMixIn, TCPServer):

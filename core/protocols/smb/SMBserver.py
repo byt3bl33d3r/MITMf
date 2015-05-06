@@ -1,6 +1,7 @@
 import logging
 import sys
 import threading
+from socket import error as socketerror
 from impacket import version, smbserver, LOG
 from core.configwatcher import ConfigWatcher
 
@@ -22,9 +23,13 @@ class SMBserver(ConfigWatcher):
     impacket_ver = version.VER_MINOR
 
     def __init__(self, listenAddress = '0.0.0.0', listenPort=445, configFile=''):
-
-        self.server = smbserver.SimpleSMBServer(listenAddress, listenPort, configFile)
-        self.server.setSMBChallenge(self.config["MITMf"]["SMB"]["Challenge"])
+        
+        try:
+            self.server = smbserver.SimpleSMBServer(listenAddress, listenPort, configFile)
+            self.server.setSMBChallenge(self.config["MITMf"]["SMB"]["Challenge"])
+        except socketerror as e:
+            if "Address already in use" in e:
+                sys.exit("\n[-] Unable to start SMB server on port 445: port already in use")
 
     def start(self):
         t = threading.Thread(name='SMBserver', target=self.server.start)

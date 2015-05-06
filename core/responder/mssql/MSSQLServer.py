@@ -12,14 +12,14 @@ class MSSQLServer():
 
     def start(self, chal):
         global Challenge; Challenge = chal
-        
+
         try:
             mitmf_logger.debug("[MSSQLServer] online")
             server = ThreadingTCPServer(("0.0.0.0", 1433), MSSQL)
             t = threading.Thread(name="MSSQLServer", target=server.serve_forever)
             t.setDaemon(True)
             t.start()
-        except Exception, e:
+        except Exception as e:
             mitmf_logger.error("[MSSQLServer] Error starting on port {}: {}".format(1433, e))
 
 class ThreadingTCPServer(ThreadingMixIn, TCPServer):

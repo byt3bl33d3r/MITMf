@@ -22,7 +22,7 @@ import sys
 import logging
 
 from plugins.plugin import Plugin
-from core.utils import IpTables
+from core.utils import IpTables, SystemConfig
 from core.sslstrip.URLMonitor import URLMonitor
 from core.dnschef.DNSchef import DNSChef
 
@@ -37,10 +37,11 @@ class HSTSbypass(Plugin):
     def initialize(self, options):
         self.options = options
         self.manualiptables = options.manualiptables
+        ip_address = SystemConfig.getIP(options.interface)
 
         if not options.manualiptables:
             if IpTables.getInstance().dns is False:
-                IpTables.getInstance().DNS(options.ip_address, self.config['MITMf']['DNS']['port'])
+                IpTables.getInstance().DNS(ip_address, self.config['MITMf']['DNS']['port'])
 
         URLMonitor.getInstance().setHstsBypass()
         DNSChef.getInstance().setHstsBypass()

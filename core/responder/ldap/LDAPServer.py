@@ -20,7 +20,7 @@ class LDAPServer():
 			t = threading.Thread(name="LDAPServer", target=server.serve_forever)
 			t.setDaemon(True)
 			t.start()
-		except Exception, e:
+		except Exception as e:
 			mitmf_logger.error("[LDAPServer] Error starting on port {}: {}".format(389, e))
 
 class ThreadingTCPServer(ThreadingMixIn, TCPServer):
