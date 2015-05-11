@@ -16,21 +16,21 @@ Contact me at:
 
 Available plugins
 =================
-- Responder - LLMNR, NBT-NS, WPAD and MDNS poisoner
-- SSLstrip+ - Partially bypass HSTS
-- Spoof - Redirect traffic using ARP Spoofing, ICMP Redirects or DHCP Spoofing
-- BeEFAutorun - Autoruns BeEF modules based on clients OS or browser type
-- AppCachePoison - Perform App cache poisoning attacks 
-- Ferret-NG - Transparently hijacks sessions
-- BrowserProfiler - Attempts to enumerate all browser plugins of connected clients
-- CacheKill - Kills page caching by modifying headers
-- FilePwn - Backdoor executables being sent over HTTP using the Backdoor Factory and BDFProxy
-- Inject - Inject arbitrary content into HTML content
-- BrowserPwn - Performs drive-by attacks on clients with out-of-date browser plugins
-- jskeylogger - Injects a javascript keylogger into clients webpages
-- Replace - Replace arbitary content in HTML content
-- SMBAuth - Evoke SMB challenge-response auth attempts
-- Upsidedownternet - Flips images 180 degrees
+- ```Responder``` - LLMNR, NBT-NS, WPAD and MDNS poisoner
+- ```SSLstrip+``` - Partially bypass HSTS
+- ```Spoof``` - Redirect traffic using ARP Spoofing, ICMP Redirects or DHCP Spoofing
+- ```BeEFAutorun``` - Autoruns BeEF modules based on clients OS or browser type
+- ```AppCachePoison``` - Perform App cache poisoning attacks 
+- ```Ferret-NG``` - Transparently hijacks sessions
+- ```BrowserProfiler``` - Attempts to enumerate all browser plugins of connected clients
+- ```CacheKill``` - Kills page caching by modifying headers
+- ```FilePwn``` - Backdoor executables being sent over HTTP using the Backdoor Factory and BDFProxy
+- ```Inject``` - Inject arbitrary content into HTML content
+- ```BrowserPwn``` - Performs drive-by attacks on clients with out-of-date browser plugins
+- ```jskeylogger``` - Injects a javascript keylogger into clients webpages
+- ```Replace``` - Replace arbitary content in HTML content
+- ```SMBAuth``` - Evoke SMB challenge-response auth attempts
+- ```Upsidedownternet``` - Flips images 180 degrees
 
 Changelog
 =========
@@ -46,15 +46,15 @@ Changelog
 
 - Integrated [SSLstrip+](https://github.com/LeonardoNve/sslstrip2) by Leonardo Nve to partially bypass HSTS as demonstrated at BlackHat Asia 2014 
 
-- Addition of the SessionHijacking plugin, which uses code from [FireLamb](https://github.com/sensepost/mana/tree/master/firelamb) to store cookies in a Firefox profile 
+- Addition of the ```Ferret-NG``` plugin, which uses code from [FireLamb](https://github.com/sensepost/mana/tree/master/firelamb) to store cookies in a Firefox profile 
 
-- Spoof plugin can now exploit the 'ShellShock' bug when DHCP spoofing! 
+- ```Spoof``` plugin can now exploit the 'ShellShock' bug when DHCP spoofing! 
 
-- Spoof plugin now supports ICMP, ARP and DHCP spoofing
+- ```Spoof``` plugin now supports ICMP, ARP and DHCP spoofing
 
 - Usage of third party tools has been completely removed (e.g. ettercap)
 
-- FilePwn plugin re-written to backdoor executables and zip files on the fly by using [the-backdoor-factory](https://github.com/secretsquirrel/the-backdoor-factory) and code from [BDFProxy](https://github.com/secretsquirrel/BDFProxy)
+- ```FilePwn```plugin re-written to backdoor executables zip and tar files on the fly by using [the-backdoor-factory](https://github.com/secretsquirrel/the-backdoor-factory) and code from [BDFProxy](https://github.com/secretsquirrel/BDFProxy)
 
 - Added [msfrpc.py](https://github.com/byt3bl33d3r/msfrpc/blob/master/python-msfrpc/msfrpc.py) for interfacing with Metasploits rpc server
 
