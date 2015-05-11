@@ -7,22 +7,26 @@ Quick tutorials, examples and dev updates at http://sign0f4.blogspot.it
 
 This tool is based on [sergio-proxy](https://github.com/supernothing/sergio-proxy) and is an attempt to revive and update the project.
 
+Contact me at:
+- Twitter: @byt3bl33d3r
+- IRC on Freenode: #MITMf
+- Email: byt3bl33d3r@gmail.com
+
 **Before submitting issues please read the [FAQ](#faq) and the appropriate [section](#submitting-issues).**
 
 Availible plugins
 =================
 - Responder - LLMNR, NBT-NS and MDNS poisoner
 - SSLstrip+ - Partially bypass HSTS
-- Spoof - Redirect traffic using ARP Spoofing, ICMP Redirects or DHCP Spoofing and modify DNS queries
-- Sniffer - Sniffs for various protocol login and auth attempts
+- Spoof - Redirect traffic using ARP Spoofing, ICMP Redirects or DHCP Spoofing
 - BeEFAutorun - Autoruns BeEF modules based on clients OS or browser type
-- AppCachePoison - Perform app cache poison attacks 
-- SessionHijacking - Performs session hijacking attacks, and stores cookies in a firefox profile
+- AppCachePoison - Perform App cache poisoning attacks 
+- Ferret-NG - Transperently hijacks sessions
 - BrowserProfiler - Attempts to enumerate all browser plugins of connected clients
 - CacheKill - Kills page caching by modifying headers
-- FilePwn - Backdoor executables being sent over http using Backdoor Factory and BDFProxy
+- FilePwn - Backdoor executables being sent over http using the Backdoor Factory and BDFProxy
 - Inject - Inject arbitrary content into HTML content
-- JavaPwn - Performs drive-by attacks on clients with out-of-date java browser plugins
+- BrowserPwn - Performs drive-by attacks on clients with out-of-date browser plugins
 - jskeylogger - Injects a javascript keylogger into clients webpages
 - Replace - Replace arbitary content in HTML content
 - SMBAuth - Evoke SMB challenge-response auth attempts
@@ -31,9 +35,11 @@ Availible plugins
 Changelog
 =========
 
+- Addition of a fully functional SMB server using the Impacket library
+
 - Addition of [DNSChef](https://github.com/iphelix/dnschef), the framework is now a IPv4/IPv6 (TCP & UDP) DNS server ! Supported queries are: 'A', 'AAAA', 'MX', 'PTR', 'NS', 'CNAME', 'TXT', 'SOA', 'NAPTR', 'SRV', 'DNSKEY' and 'RRSIG'
 
-- Addition of the Sniffer plugin which integrates [Net-Creds](https://github.com/DanMcInerney/net-creds) currently supported protocols are:
+- Integrated [Net-Creds](https://github.com/DanMcInerney/net-creds) currently supported protocols are:
   FTP, IRC, POP, IMAP, Telnet, SMTP, SNMP (community strings), NTLMv1/v2 (all supported protocols like HTTP, SMB, LDAP etc..) and Kerberos
 
 - Integrated [Responder](https://github.com/SpiderLabs/Responder) to poison LLMNR, NBT-NS and MDNS, and act as a WPAD rogue server.
@@ -63,7 +69,7 @@ If MITMf is not in your distros repo or you just want the latest version:
 - run the ```setup.sh``` script
 - run the command ```pip install -r requirements.txt``` to install all python dependencies
 
-On Kali Linux, if you get an error while installing the pypcap package or when starting MITMf you see: ```ImportError: no module named pcap``` run ```apt-get install python-pypcap``` to fix it.
+On Kali Linux, if you get an error while installing the ```pypcap``` package or when starting MITMf you see: ```ImportError: no module named pcap``` run ```apt-get install python-pypcap``` to fix it.
 
 How to install on Kali
 ======================
@@ -86,7 +92,10 @@ Also remember: Github markdown is your friend!
 FAQ
 ===
 - **Is Windows supported?**
-- No, I'm not masochistic and I actually want things to work.
+- No
+
+- **Is OSX supported?**
+- Currently no, although with some tweaking (which I'll probably get around to in the near future) it should be able to run perfectly on OSX
 
 - **I can't install package X because of an error!**
 - Try installing the module via ```pip``` or your distros package manager. This *isn't* a problem with MITMf.
