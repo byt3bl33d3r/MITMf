@@ -16,15 +16,15 @@ Contact me at:
 
 Availible plugins
 =================
-- Responder - LLMNR, NBT-NS and MDNS poisoner
+- Responder - LLMNR, NBT-NS, WPAD and MDNS poisoner
 - SSLstrip+ - Partially bypass HSTS
 - Spoof - Redirect traffic using ARP Spoofing, ICMP Redirects or DHCP Spoofing
 - BeEFAutorun - Autoruns BeEF modules based on clients OS or browser type
 - AppCachePoison - Perform App cache poisoning attacks 
-- Ferret-NG - Transperently hijacks sessions
+- Ferret-NG - Transparently hijacks sessions
 - BrowserProfiler - Attempts to enumerate all browser plugins of connected clients
 - CacheKill - Kills page caching by modifying headers
-- FilePwn - Backdoor executables being sent over http using the Backdoor Factory and BDFProxy
+- FilePwn - Backdoor executables being sent over HTTP using the Backdoor Factory and BDFProxy
 - Inject - Inject arbitrary content into HTML content
 - BrowserPwn - Performs drive-by attacks on clients with out-of-date browser plugins
 - jskeylogger - Injects a javascript keylogger into clients webpages
@@ -35,7 +35,7 @@ Availible plugins
 Changelog
 =========
 
-- Addition of a fully functional SMB server using the Impacket library
+- Addition of a fully functional SMB server using the [Impacket](https://github.com/CoreSecurity/impacket) library
 
 - Addition of [DNSChef](https://github.com/iphelix/dnschef), the framework is now a IPv4/IPv6 (TCP & UDP) DNS server ! Supported queries are: 'A', 'AAAA', 'MX', 'PTR', 'NS', 'CNAME', 'TXT', 'SOA', 'NAPTR', 'SRV', 'DNSKEY' and 'RRSIG'
 
@@ -94,17 +94,22 @@ FAQ
 - **Is Windows supported?**
 - No
 
+
 - **Is OSX supported?**
 - Currently no, although with some tweaking (which I'll probably get around to in the near future) it should be able to run perfectly on OSX
+
 
 - **I can't install package X because of an error!**
 - Try installing the module via ```pip``` or your distros package manager. This *isn't* a problem with MITMf.
 
+
 - **How do I install package X?**
 - Please read the [installation](#installation) guide.
 
+
 - **I get an ImportError when launching MITMf!**
 - Please read the [installation](#installation) guide.
+
 
 - **Dude, no documentation/video tutorials?**
 - Currently no, once the framework hits 1.0 I'll probably start writing/making some.
