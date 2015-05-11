@@ -14,7 +14,7 @@ Contact me at:
 
 **Before submitting issues please read the [FAQ](#faq) and the appropriate [section](#submitting-issues).**
 
-Availible plugins
+Available plugins
 =================
 - Responder - LLMNR, NBT-NS, WPAD and MDNS poisoner
 - SSLstrip+ - Partially bypass HSTS
@@ -62,6 +62,13 @@ Changelog
 
 - Addition of the app-cache poisoning attack by [Krzysztof Kotowicz](https://github.com/koto/sslstrip) (blogpost explaining the attack here http://blog.kotowicz.net/2010/12/squid-imposter-phishing-websites.html)
 
+How to install on Kali
+======================
+
+```apt-get install mitmf```
+
+**Currently Kali has a very old version of MITMf in it's repos, read the [Installation](#installation) section to get the latest version**
+
 Installation
 ============
 If MITMf is not in your distros repo or you just want the latest version:
@@ -71,21 +78,17 @@ If MITMf is not in your distros repo or you just want the latest version:
 
 On Kali Linux, if you get an error while installing the ```pypcap``` package or when starting MITMf you see: ```ImportError: no module named pcap``` run ```apt-get install python-pypcap``` to fix it.
 
-How to install on Kali
-======================
-
-```apt-get install mitmf```
-
-**Currently Kali has a very old version of MITMf in it's repos so if you find bugs its normal, don't open an issue! Read the [Installation](#installation) section to get the latest version**
-
 Submitting Issues
 =================
 If you have *questions* regarding the framework please email me at byt3bl33d3r@gmail.com
 
-If you find a *bug* please open an issue and include at least the following in the description:
+**Only submit issues if you find a bug in the latest version of the framework.**
+
+When inevitably you do come across sed *bug*, please open an issue and include at least the following in the description:
 
 - Full command string you used
 - OS your using
+- Full error traceback (If any)
 
 Also remember: Github markdown is your friend!
 
@@ -94,22 +97,17 @@ FAQ
 - **Is Windows supported?**
 - No
 
-
 - **Is OSX supported?**
 - Currently no, although with some tweaking (which I'll probably get around to in the near future) it should be able to run perfectly on OSX
 
-
 - **I can't install package X because of an error!**
-- Try installing the module via ```pip``` or your distros package manager. This *isn't* a problem with MITMf.
-
+- Try installing the package via ```pip``` or your distros package manager. This *isn't* a problem with MITMf.
 
 - **How do I install package X?**
 - Please read the [installation](#installation) guide.
 
-
 - **I get an ImportError when launching MITMf!**
 - Please read the [installation](#installation) guide.
-
 
 - **Dude, no documentation/video tutorials?**
 - Currently no, once the framework hits 1.0 I'll probably start writing/making some.
