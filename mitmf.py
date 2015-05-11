@@ -83,7 +83,7 @@ try:
         sgroup.add_argument("--{}".format(p.optname), action="store_true",help="Load plugin {}".format(p.name))
 
         if p.has_opts:
-            p.add_options(sgroup)
+            p.pluginOptions(sgroup)
 
         arg_dict[p.optname] = vars(sgroup)['_group_actions']
 
@@ -101,10 +101,10 @@ args = parser.parse_args()
 for plugin, options in arg_dict.iteritems():
     if vars(args)[plugin] is False:
         for option in options:
-            if vars(args)[option.dest] is True:
-                sys.exit("[-] Called plugin options without invoking --{}".format(plugin))
+            if vars(args)[option.dest]:
+                sys.exit("[-] Called plugin options without invoking the actual plugin (--{})".format(plugin))
 
-#first check to see if we supplied a valid interface
+#check to see if we supplied a valid interface
 myip  = SystemConfig.getIP(args.interface)
 mymac = SystemConfig.getMAC(args.interface)
 
@@ -181,7 +181,7 @@ from core.dnschef.DNSchef import DNSChef
 DNSChef.getInstance().start()
 print "|_ DNSChef v{} online".format(DNSChef.version)
 
-#start the SMB server
+#Start the SMB server
 from core.protocols.smb.SMBserver import SMBserver
 print "|_ SMBserver online (Impacket {})\n".format(SMBserver.impacket_ver)
 SMBserver().start()

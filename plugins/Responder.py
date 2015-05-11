@@ -18,7 +18,6 @@
 # USA
 #
 
-import threading
 import sys
 
 from plugins.plugin import Plugin
@@ -94,7 +93,7 @@ class Responder(Plugin):
     def pluginReactor(self, strippingFactory):
         reactor.listenTCP(3141, strippingFactory)
 
-    def add_options(self, options):
+    def pluginOptions(self, options):
         options.add_argument('--analyze', dest="analyze", action="store_true", help="Allows you to see NBT-NS, BROWSER, LLMNR requests from which workstation to which workstation without poisoning")
         options.add_argument('--wredir', dest="wredir", default=False, action="store_true", help="Enables answers for netbios wredir suffix queries")
         options.add_argument('--nbtns', dest="nbtns", default=False, action="store_true", help="Enables answers for netbios domain suffix queries")

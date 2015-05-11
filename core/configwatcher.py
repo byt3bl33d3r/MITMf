@@ -12,7 +12,6 @@ mitmf_logger = logging.getLogger('mitmf')
 class ConfigWatcher(FileSystemEventHandler):
 
     _instance = None
-
     config = ConfigObj("./config/mitmf.conf")
 
     @staticmethod
@@ -43,5 +42,5 @@ class ConfigWatcher(FileSystemEventHandler):
         try:
             self.config = ConfigObj("./config/mitmf.conf")
         except Exception as e:
-            mitmf_logger.warning("Error reloading config file: {}".format(e))
+            mitmf_logger.error("Error reloading config file: {}".format(e))
             pass

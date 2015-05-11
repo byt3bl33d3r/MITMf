@@ -32,7 +32,7 @@ from plugins.BrowserProfiler import BrowserProfiler
 
 mitmf_logger = logging.getLogger("mitmf")
 
-class JavaPwn(BrowserProfiler, Plugin):
+class JavaPwn(Plugin):
     name        = "JavaPwn"
     optname     = "javapwn"
     desc        = "Performs drive-by attacks on clients with out-of-date java browser plugins"

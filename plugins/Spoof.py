@@ -42,6 +42,7 @@ class Spoof(Plugin):
         self.dnscfg            = self.config['MITMf']['DNS']
         self.dhcpcfg           = self.config['Spoof']['DHCP']
         self.targets           = options.targets
+        self.arpmode           = 'rep' or options.arpmode
         self.manualiptables    = options.manualiptables
         self.mymac             = SystemConfig.getMAC(options.interface)
         self.myip              = SystemConfig.getIP(options.interface)
@@ -66,7 +67,7 @@ class Spoof(Plugin):
                 self.protocolInstances.append(arpwatch)
 
             arp = ARPpoisoner(options.gateway, options.interface, self.mymac, options.targets)
-            arp.arpmode = options.arpmode
+            arp.arpmode = self.arpmode
             arp.debug = debug
 
             self.protocolInstances.append(arp)
@@ -116,7 +117,7 @@ class Spoof(Plugin):
         for protocol in self.protocolInstances:
             protocol.start()
 
-    def add_options(self, options):
+    def pluginOptions(self, options):
         group = options.add_mutually_exclusive_group(required=False)
         group.add_argument('--arp', dest='arp', action='store_true', default=False, help='Redirect traffic using ARP spoofing')
         group.add_argument('--icmp', dest='icmp', action='store_true', default=False, help='Redirect traffic using ICMP redirects')
@@ -125,7 +126,7 @@ class Spoof(Plugin):
         options.add_argument('--shellshock', type=str, metavar='PAYLOAD', dest='shellshock', default=None, help='Trigger the Shellshock vuln when spoofing DHCP, and execute specified command')
         options.add_argument('--gateway', dest='gateway', help='Specify the gateway IP')
         options.add_argument('--targets', dest='targets', default=None, help='Specify host/s to poison [if ommited will default to subnet]')
-        options.add_argument('--arpmode',type=str, dest='arpmode', default='rep', choices=["rep", "req"], help=' ARP Spoofing mode: replies (rep) or requests (req) [default: rep]')
+        options.add_argument('--arpmode',type=str, dest='arpmode', default=None, choices=["rep", "req"], help=' ARP Spoofing mode: replies (rep) or requests (req) [default: rep]')
 
     def finish(self):
         for protocol in self.protocolInstances:

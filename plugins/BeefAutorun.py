@@ -27,15 +27,15 @@ from core.beefapi import BeefAPI
 from core.utils import SystemConfig
 from plugins.plugin import Plugin
 from plugins.Inject import Inject
+from core.sergioproxy.ProxyPlugins import ProxyPlugins
 
 mitmf_logger = logging.getLogger("mitmf")
 
-class BeefAutorun(Inject, Plugin):
+class BeefAutorun(Plugin):
 	name        = "BeEFAutorun"
 	optname     = "beefauto"
 	desc        = "Injects BeEF hooks & autoruns modules based on Browser and/or OS type"
 	tree_output = []
-	depends     = ["Inject"]
 	version     = "0.3"
 	has_opts    = False
 

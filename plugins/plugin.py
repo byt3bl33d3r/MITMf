@@ -11,7 +11,6 @@ class Plugin(ConfigWatcher, object):
     name       = "Generic plugin"
     optname    = "generic"
     desc       = ""
-    implements = []
     has_opts   = False
 
     def initialize(self, options):
@@ -19,31 +18,41 @@ class Plugin(ConfigWatcher, object):
         self.options = options
 
     def startThread(self, options):
-        '''Anything that will subclass this function will be a thread'''
+        '''Anything that will subclass this function will be a thread, passed the options namespace'''
         return
 
-    def add_options(options):
-        '''Add your options to the options parser'''
-        raise NotImplementedError
+    def clientRequest(self, request):
+        '''
+            Handles all outgoing requests, hooks connectionMade()
+            request object has the following attributes:
 
-    def handleHeader(self, request, key, value):
-        '''Handles all response headers'''
-        raise NotImplementedError
-
-    def connectionMade(self, request):
-        '''Handles outgoing request'''
-        raise NotImplementedError
-
-    def pluginReactor(self, strippingFactory):
-        '''This sets up another instance of the reactor on a diffrent port'''
+            request.headers => headers in dict format
+            request.commad  => HTTP method
+            request.post    => POST data
+            request.uri     => full URL
+            request.path    => path
+        '''
         pass
 
-    def handleResponse(self, request, data):
+    def serverHeaders(self, response, request):
         '''
-            Handles all non-image responses by default. See Upsidedownternet
-            for how to get images   
+            Handles all response headers, hooks handleEndHeaders()
         '''
-        raise NotImplementedError
+        pass
+
+    def serverResponse(self, response, request, data):
+        '''
+            Handles all non-image responses by default, hooks handleResponse() (See Upsidedownternet for how to get images)  
+        '''
+        return {'response': response, 'request':request, 'data': data}
+
+    def pluginOptions(self, options):
+        '''Add your options to the options parser'''
+        pass
+
+    def pluginReactor(self, strippingFactory):
+        '''This sets up another instance of the reactor on a diffrent port, passed the default factory'''
+        pass
 
     def finish(self):
         '''This will be called when shutting down'''

@@ -42,6 +42,10 @@ class ProxyPlugins:
     in handleResponse, but is still annoying.
     '''
     _instance = None
+    
+    plist = []
+    mthdDict = {"connectionMade": "clientRequest", "handleResponse": "serverResponse", "handleHeader": "serverHeaders", "handleEndHeaders":"serverHeaders"}
+    pmthds = {}
 
     @staticmethod
     def getInstance():
@@ -50,13 +54,9 @@ class ProxyPlugins:
 
         return ProxyPlugins._instance
 
-    def setPlugins(self,plugins):
+    def setPlugins(self, plugins):
         '''Set the plugins in use'''
-        self.plist = []
-   
-        #build a lookup list
-        #need to clean up in future
-        self.pmthds = {}
+
         for p in plugins:
             self.addPlugin(p)
 
@@ -66,17 +66,17 @@ class ProxyPlugins:
         '''Load a plugin'''
         self.plist.append(p)
         mitmf_logger.debug("[ProxyPlugins] Adding {} plugin".format(p.name))
-        for mthd in p.implements:
+        for mthd,pmthd in self.mthdDict.iteritems():
             try:
-                self.pmthds[mthd].append(getattr(p,mthd))
+                self.pmthds[mthd].append(getattr(p,pmthd))
             except KeyError:
-                self.pmthds[mthd] = [getattr(p,mthd)]
+                self.pmthds[mthd] = [getattr(p,pmthd)]
 
     def removePlugin(self,p):
         '''Unload a plugin'''
         self.plist.remove(p)
         mitmf_logger.debug("[ProxyPlugins] Removing {} plugin".format(p.name))
-        for mthd in p.implements:
+        for mthd,pmthd in self.mthdDict.iteritems():
             self.pmthds[mthd].remove(p)
 
     def hook(self):
@@ -92,9 +92,15 @@ class ProxyPlugins:
             args[key] = values[key]
     
         #prevent self conflict
-        args['request'] = args['self']
+        if (fname == "handleResponse") or (fname == "handleHeader") or (fname == "handleEndHeaders"):
+            args['request']  = args['self']
+            args['response'] = args['self'].client
+        else:
+            args['request'] = args['self']
+
         del args['self']
 
+        mitmf_logger.debug("[ProxyPlugins] hooking {}()".format(fname))
         #calls any plugin that has this hook
         try:
             for f in self.pmthds[fname]:
