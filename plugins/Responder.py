@@ -34,7 +34,7 @@ class Responder(Plugin):
     name        = "Responder"
     optname     = "responder"
     desc        = "Poison LLMNR, NBT-NS and MDNS requests"
-    tree_output = ["NBT-NS, LLMNR & MDNS Responder v2.1.2 by Laurent Gaffie online"]
+    tree_info   = ["NBT-NS, LLMNR & MDNS Responder v2.1.2 by Laurent Gaffie online"]
     version     = "0.2"
     has_opts    = True
 
@@ -88,7 +88,32 @@ class Responder(Plugin):
             LDAPServer().start(smbChal)
 
         if options.analyze:
-            self.tree_output.append("Responder is in analyze mode. No NBT-NS, LLMNR, MDNS requests will be poisoned")
+            self.tree_info.append("Responder is in analyze mode. No NBT-NS, LLMNR, MDNS requests will be poisoned")
+            self.IsICMPRedirectPlausible(self.ourip)
+    
+    def IsICMPRedirectPlausible(self, IP):
+        result = []
+        dnsip = []
+        for line in file('/etc/resolv.conf', 'r'): 
+            ip = line.split()
+            if len(ip) < 2:
+               continue
+            if ip[0] == 'nameserver':
+                dnsip.extend(ip[1:])
+        
+        for x in dnsip:
+            if x !="127.0.0.1" and self.IsOnTheSameSubnet(x,IP) == False:
+                self.tree_info.append("You can ICMP Redirect on this network. This workstation ({}) is not on the same subnet than the DNS server ({})".format(IP, x))
+            else:
+                pass
+
+    def IsOnTheSameSubnet(self, ip, net):
+        net = net+'/24'
+        ipaddr = int(''.join([ '%02x' % int(x) for x in ip.split('.') ]), 16)
+        netstr, bits = net.split('/')
+        netaddr = int(''.join([ '%02x' % int(x) for x in netstr.split('.') ]), 16)
+        mask = (0xffffffff << (32 - int(bits))) & 0xffffffff
+        return (ipaddr & mask) == (netaddr & mask)
 
     def pluginReactor(self, strippingFactory):
         reactor.listenTCP(3141, strippingFactory)
@@ -100,5 +125,6 @@ class Responder(Plugin):
         options.add_argument('--fingerprint', dest="finger", default=False, action="store_true", help = "Fingerprint hosts that issued an NBT-NS or LLMNR query")
         options.add_argument('--lm', dest="lm", default=False, action="store_true", help="Force LM hashing downgrade for Windows XP/2003 and earlier")
         options.add_argument('--wpad', dest="wpad", default=False, action="store_true", help = "Start the WPAD rogue proxy server")
+        # Removed these options until I find a better way of implementing them
         #options.add_argument('--forcewpadauth', dest="forceWpadAuth", default=False, action="store_true", help = "Set this if you want to force NTLM/Basic authentication on wpad.dat file retrieval. This might cause a login prompt in some specific cases. Therefore, default value is False")
         #options.add_argument('--basic', dest="basic", default=False, action="store_true", help="Set this if you want to return a Basic HTTP authentication. If not set, an NTLM authentication will be returned")

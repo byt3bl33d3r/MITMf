@@ -32,7 +32,6 @@ class Spoof(Plugin):
     name        = "Spoof"
     optname     = "spoof"
     desc        = "Redirect/Modify traffic using ICMP, ARP, DHCP or DNS"
-    tree_output = list()
     version     = "0.6"
     has_opts    = True
 
@@ -63,7 +62,7 @@ class Spoof(Plugin):
                 arpwatch = ARPWatch(options.gateway, self.myip, options.interface)
                 arpwatch.debug = debug
 
-                self.tree_output.append("ARPWatch online")
+                self.tree_info.append("ARPWatch online")
                 self.protocolInstances.append(arpwatch)
 
             arp = ARPpoisoner(options.gateway, options.interface, self.mymac, options.targets)

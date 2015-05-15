@@ -4,10 +4,7 @@ scapy
 msgpack-python
 dnspython
 dnslib
-user-agents
 configobj
-pyyaml
-ua-parser
 Pillow
 pefile
 ipy

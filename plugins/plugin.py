@@ -8,10 +8,11 @@ import logging
 mitmf_logger = logging.getLogger('mitmf')
 
 class Plugin(ConfigWatcher, object):
-    name       = "Generic plugin"
-    optname    = "generic"
-    desc       = ""
-    has_opts   = False
+    name        = "Generic plugin"
+    optname     = "generic"
+    tree_info   = list()
+    desc        = ""
+    has_opts    = False
 
     def initialize(self, options):
         '''Called if plugin is enabled, passed the options namespace'''

