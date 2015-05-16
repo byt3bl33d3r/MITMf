@@ -27,8 +27,14 @@ import sys
 
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Error when importing scapy
 from scapy.all import get_if_addr, get_if_hwaddr
+from core.sergioproxy.ProxyPlugins import ProxyPlugins
 
 mitmf_logger = logging.getLogger('mitmf')
+
+def shutdown(message=None):
+    for plugin in ProxyPlugins.getInstance().plist:
+        plugin.finish()
+    sys.exit(message)
 
 class SystemConfig:
 
@@ -44,11 +50,11 @@ class SystemConfig:
         try:
             ip_address = get_if_addr(interface)
             if (ip_address == "0.0.0.0") or (ip_address is None):
-                exit("[Utils] Interface {} does not have an assigned IP address".format(interface))
+                shutdown("[Utils] Interface {} does not have an assigned IP address".format(interface))
 
             return ip_address
         except Exception, e:
-            exit("[Utils] Error retrieving IP address from {}: {}".format(interface, e))
+            shutdown("[Utils] Error retrieving IP address from {}: {}".format(interface, e))
     
     @staticmethod
     def getMAC(interface):
@@ -56,7 +62,7 @@ class SystemConfig:
             mac_address = get_if_hwaddr(interface)
             return mac_address
         except Exception, e:
-            exit("[Utils] Error retrieving MAC address from {}: {}".format(interface, e))
+            shutdown("[Utils] Error retrieving MAC address from {}: {}".format(interface, e))
 
 class IpTables:
 

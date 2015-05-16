@@ -71,9 +71,14 @@ class ClientRequest(Request):
             del headers['cache-control']
 
         if 'host' in headers:
-            if headers['host'] in self.urlMonitor.cookies:
-                mitmf_logger.info("[Ferret-NG] Hijacking session for host: {}".format(headers['host']))
-                headers['cookie'] = self.urlMonitor.cookies[headers['host']]
+            try:
+                for entry in self.urlMonitor.cookies[self.urlMonitor.hijack_client]:
+                    if headers['host'] == entry['host']:
+                        mitmf_logger.info("[Ferret-NG] Hijacking session for host: {}".format(headers['host']))
+                        headers['cookie'] = entry['cookie']
+            except KeyError:
+                mitmf_logger.error("[Ferret-NG] No captured sessions (yet) from {}".format(self.urlMonitor.hijack_client))
+                pass
 
         return headers
 

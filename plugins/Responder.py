@@ -18,11 +18,9 @@
 # USA
 #
 
-import sys
-
 from plugins.plugin import Plugin
 from twisted.internet import reactor
-from core.utils import SystemConfig
+from core.utils import SystemConfig, shutdown
 
 from core.responder.llmnr.LLMNRPoisoner import LLMNRPoisoner
 from core.responder.mdns.MDNSPoisoner import MDNSPoisoner
@@ -48,7 +46,7 @@ class Responder(Plugin):
             config = self.config['Responder']
             smbChal = self.config['MITMf']['SMB']['Challenge']
         except Exception as e:
-            sys.exit('[-] Error parsing config for Responder: ' + str(e))
+            shutdown('[-] Error parsing config for Responder: ' + str(e))
 
         LANFingerprinter().start(options)
         MDNSPoisoner().start(options, self.ourip)

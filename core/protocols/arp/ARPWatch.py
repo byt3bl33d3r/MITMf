@@ -4,6 +4,7 @@ import sys
 import threading
 
 from scapy.all import *
+from core.utils import shutdown
 
 mitmf_logger = logging.getLogger('mitmf')
 
@@ -21,9 +22,9 @@ class ARPWatch:
         try:
             self.gatewaymac = getmacbyip(self.gatewayip)
             if self.gatewaymac is None:
-                sys.exit("[ARPWatch] Error: Could not resolve gateway's MAC address")
+                shutdown("[ARPWatch] Error: Could not resolve gateway's MAC address")
         except Exception, e:
-            sys.exit("[ARPWatch] Exception occured while resolving gateway's MAC address: {}".format(e))
+            shutdown("[ARPWatch] Exception occured while resolving gateway's MAC address: {}".format(e))
 
         mitmf_logger.debug("[ARPWatch] gatewayip  => {}".format(self.gatewayip))
         mitmf_logger.debug("[ARPWatch] gatewaymac => {}".format(self.gatewaymac))

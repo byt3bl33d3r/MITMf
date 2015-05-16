@@ -20,12 +20,11 @@
 
 import string
 import random
-import sys
 import logging
 
 from time import sleep
 from core.msfrpc import Msfrpc
-from core.utils import SystemConfig
+from core.utils import SystemConfig, shutdown
 from plugins.plugin import Plugin
 from plugins.BrowserProfiler import BrowserProfiler
 
@@ -56,7 +55,7 @@ class BrowserSniper(BrowserProfiler, Plugin):
             version = self.msf.call('core.version')['version']
             self.tree_info.append("Connected to Metasploit v{}".format(version))
         except Exception:
-            sys.exit("[-] Error connecting to MSF! Make sure you started Metasploit and it's MSGRPC server")
+            shutdown("[-] Error connecting to MSF! Make sure you started Metasploit and it's MSGRPC server")
 
     def startThread(self, options):
         self.snipe()

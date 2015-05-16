@@ -28,7 +28,7 @@ from twisted.web import http
 from twisted.internet import reactor
 from core.sslstrip.CookieCleaner import CookieCleaner
 from core.sergioproxy.ProxyPlugins import ProxyPlugins
-from core.utils import Banners, SystemConfig
+from core.utils import Banners, SystemConfig, shutdown
 from plugins import *
 
 Banners().printBanner()
@@ -123,8 +123,6 @@ mitmf_logger.addHandler(fileHandler)
 #All our options should be loaded now, initialize the plugins
 print "[*] MITMf v{} online... initializing plugins".format(mitmf_version)
 
-load = []
-
 for p in plugins:
 
     #load only the plugins that have been called at the command line
@@ -132,32 +130,30 @@ for p in plugins:
 
         print "|_ {} v{}".format(p.name, p.version)
         if p.tree_info:
-            for line in p.tree_info:
+            for line in xrange(0, len(p.tree_info)):
                 print "|  |_ {}".format(p.tree_info.pop())
 
         p.initialize(args)
 
         if p.tree_info:
-            for line in p.tree_info:
+            for line in xrange(0, len(p.tree_info)):
                 print "|  |_ {}".format(p.tree_info.pop())
 
-        load.append(p)
+        ProxyPlugins.getInstance().addPlugin(p)
 
 #Plugins are ready to go, let's rock & roll
 from core.sslstrip.StrippingProxy import StrippingProxy
 from core.sslstrip.URLMonitor import URLMonitor
 
 URLMonitor.getInstance().setFaviconSpoofing(args.favicon)
-
 CookieCleaner.getInstance().setEnabled(args.killsessions)
-ProxyPlugins.getInstance().setPlugins(load)
 
 strippingFactory          = http.HTTPFactory(timeout=10)
 strippingFactory.protocol = StrippingProxy
 
 reactor.listenTCP(args.listen, strippingFactory)
 
-for p in load:
+for p in ProxyPlugins.getInstance().plist:
 
     p.pluginReactor(strippingFactory) #we pass the default strippingFactory, so the plugins can use it
     p.startConfigWatch()
@@ -189,6 +185,4 @@ SMBserver().start()
 reactor.run()
 
 print "\n"
-#run each plugins finish() on exit
-for p in load:
-    p.finish()
+shutdown()

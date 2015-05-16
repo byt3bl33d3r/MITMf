@@ -18,8 +18,7 @@
 # USA
 #
 
-from sys import exit
-from core.utils import SystemConfig, IpTables
+from core.utils import SystemConfig, IpTables, shutdown
 from core.protocols.arp.ARPpoisoner import ARPpoisoner
 from core.protocols.arp.ARPWatch import ARPWatch
 from core.dnschef.DNSchef import DNSChef
@@ -55,7 +54,7 @@ class Spoof(Plugin):
         if options.arp:
 
             if not options.gateway:
-                exit("[-] --arp argument requires --gateway")
+                shutdown("[-] --arp argument requires --gateway")
 
             if options.targets is None:
                 #if were poisoning whole subnet, start ARP-Watch
@@ -75,10 +74,10 @@ class Spoof(Plugin):
         elif options.icmp:
 
             if not options.gateway:
-                exit("[-] --icmp argument requires --gateway")
+                shutdown("[-] --icmp argument requires --gateway")
 
             if not options.targets:
-                exit("[-] --icmp argument requires --targets")
+                shutdown("[-] --icmp argument requires --targets")
 
             icmp = ICMPpoisoner(options.interface, options.targets, options.gateway, options.ip_address)
             icmp.debug = debug
@@ -88,7 +87,7 @@ class Spoof(Plugin):
         elif options.dhcp:
 
             if options.targets:
-                exit("[-] --targets argument invalid when DCHP spoofing")
+                shutdown("[-] --targets argument invalid when DCHP spoofing")
 
             dhcp = DHCPServer(options.interface, self.dhcpcfg, options.ip_address, options.mac_address)
             dhcp.shellshock = options.shellshock
@@ -104,7 +103,7 @@ class Spoof(Plugin):
             DNSChef.getInstance().loadRecords(self.dnscfg)
 
         if not options.arp and not options.icmp and not options.dhcp and not options.dns:
-            exit("[-] Spoof plugin requires --arp, --icmp, --dhcp or --dns")
+            shutdown("[-] Spoof plugin requires --arp, --icmp, --dhcp or --dns")
 
         SystemConfig.setIpForwarding(1)
 

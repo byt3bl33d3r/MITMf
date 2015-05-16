@@ -24,7 +24,7 @@ import json
 
 from time import sleep
 from core.beefapi import BeefAPI
-from core.utils import SystemConfig
+from core.utils import SystemConfig, shutdown
 from plugins.plugin import Plugin
 from plugins.Inject import Inject
 
@@ -54,7 +54,7 @@ class BeefAutorun(Inject, Plugin):
 
 		self.beef = BeefAPI({"host": beefconfig['beefip'], "port": beefconfig['beefport']})
 		if not self.beef.login(beefconfig['user'], beefconfig['pass']):
-			sys.exit("[-] Error logging in to BeEF!")
+			shutdown("[-] Error logging in to BeEF!")
 
 	def startThread(self, options):
 		self.autorun()

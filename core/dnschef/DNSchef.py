@@ -41,6 +41,7 @@ import logging
 
 from configobj import ConfigObj
 from core.configwatcher import ConfigWatcher
+from core.utils import shutdown
 
 from dnslib import *
 from IPy import IP
@@ -481,7 +482,7 @@ class DNSChef(ConfigWatcher):
                 self.startUDP()
         except socket.error as e:
             if "Address already in use" in e:
-                sys.exit("\n[-] Unable to start DNS server on port {}: port already in use".format(self.config['MITMf']['DNS']['port']))
+                shutdown("\n[-] Unable to start DNS server on port {}: port already in use".format(self.config['MITMf']['DNS']['port']))
 
     # Initialize and start the DNS Server        
     def startUDP(self):

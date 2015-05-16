@@ -32,6 +32,7 @@ class URLMonitor:
     # Start the arms race, and end up here...
     javascriptTrickery = [re.compile("http://.+\.etrade\.com/javascript/omntr/tc_targeting\.html")]
     cookies            = dict()
+    hijack_client      = ''
     _instance          = None
 
     def __init__(self):

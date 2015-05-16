@@ -1,6 +1,7 @@
 import logging
 import threading
 from time import sleep
+from core.utils import shutdown
 from scapy.all import *
 
 mitmf_logger = logging.getLogger('mitmf')
@@ -42,7 +43,7 @@ class ARPpoisoner():
 
     def start(self):
         if self.gatewaymac is None:
-            sys.exit("[ARPpoisoner] Error: Could not resolve gateway's MAC address")
+            shutdown("[ARPpoisoner] Error: Could not resolve gateway's MAC address")
 
         mitmf_logger.debug("[ARPpoisoner] gatewayip  => {}".format(self.gatewayip))
         mitmf_logger.debug("[ARPpoisoner] gatewaymac => {}".format(self.gatewaymac))

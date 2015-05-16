@@ -69,6 +69,7 @@ from libs.bdfactory import pebin
 from libs.bdfactory import elfbin
 from libs.bdfactory import machobin
 from core.msfrpc import Msfrpc
+from core.utils import shutdown
 from plugins.plugin import Plugin
 from tempfile import mkstemp
 from configobj import ConfigObj
@@ -140,7 +141,7 @@ class FilePwn(Plugin):
             t.setDaemon(True)
             t.start()
         except Exception:
-            sys.exit("[-] Error connecting to MSF! Make sure you started Metasploit and its MSGRPC server")
+            shutdown("[-] Error connecting to MSF! Make sure you started Metasploit and its MSGRPC server")
 
     def setupMSF(self, msf):
         
