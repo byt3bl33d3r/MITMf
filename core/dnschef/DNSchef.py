@@ -71,7 +71,7 @@ class DNSHandler():
             d = DNSRecord.parse(data)
 
         except Exception, e:
-            dnschef_logger.info("{} ERROR: invalid DNS request".format(self.client_address[0]))
+            dnschef_logger.info("{} [DNSChef] Error: invalid DNS request".format(self.client_address[0]))
 
         else:        
             # Only Process DNS Queries
@@ -115,7 +115,7 @@ class DNSHandler():
                     # Create a custom response to the query
                     response = DNSRecord(DNSHeader(id=d.header.id, bitmap=d.header.bitmap, qr=1, aa=1, ra=1), q=d.q)
 
-                    dnschef_logger.info("{} cooking the response of type '{}' for {} to {}".format(self.client_address[0], qtype, qname, fake_record))
+                    dnschef_logger.info("{} [DNSChef] Cooking the response of type '{}' for {} to {}".format(self.client_address[0], qtype, qname, fake_record))
 
                     # IPv6 needs additional work before inclusion:
                     if qtype == "AAAA":
@@ -184,7 +184,7 @@ class DNSHandler():
                     response = response.pack()
 
                 elif qtype == "*" and not None in fake_records.values():
-                    dnschef_logger.info("{} cooking the response of type '{}' for {} with {}".format(self.client_address[0], "ANY", qname, "all known fake records."))
+                    dnschef_logger.info("{} [DNSChef] Cooking the response of type '{}' for {} with {}".format(self.client_address[0], "ANY", qname, "all known fake records."))
 
                     response = DNSRecord(DNSHeader(id=d.header.id, bitmap=d.header.bitmap,qr=1, aa=1, ra=1), q=d.q)
 
@@ -259,7 +259,7 @@ class DNSHandler():
 
                 # Proxy the request
                 else:
-                    dnschef_logger.debug("[DNSChef] {} proxying the response of type '{}' for {}".format(self.client_address[0], qtype, qname))
+                    dnschef_logger.debug("{} [DNSChef] Proxying the response of type '{}' for {}".format(self.client_address[0], qtype, qname))
 
                     nameserver_tuple = random.choice(nameservers).split('#')               
                     response = self.proxyrequest(data, *nameserver_tuple)
@@ -339,13 +339,13 @@ class DNSHandler():
                 sock.close()
 
         except Exception, e:
-            dnschef_logger.warning("could not proxy request: {}".format(e))
+            dnschef_logger.warning("[DNSChef] Could not proxy request: {}".format(e))
         else:
             return reply
 
     def hstsbypass(self, real_domain, fake_domain, nameservers, d):
 
-        dnschef_logger.info("{} resolving '{}' to '{}' for HSTS bypass".format(self.client_address[0], fake_domain, real_domain))
+        dnschef_logger.info("{} [DNSChef] Resolving '{}' to '{}' for HSTS bypass".format(self.client_address[0], fake_domain, real_domain))
 
         response = DNSRecord(DNSHeader(id=d.header.id, bitmap=d.header.bitmap, qr=1, aa=1, ra=1), q=d.q)
 
@@ -482,7 +482,7 @@ class DNSChef(ConfigWatcher):
                 self.startUDP()
         except socket.error as e:
             if "Address already in use" in e:
-                shutdown("\n[-] Unable to start DNS server on port {}: port already in use".format(self.config['MITMf']['DNS']['port']))
+                shutdown("\n[DNSChef] Unable to start DNS server on port {}: port already in use".format(self.config['MITMf']['DNS']['port']))
 
     # Initialize and start the DNS Server        
     def startUDP(self):

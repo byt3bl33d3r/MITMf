@@ -37,7 +37,7 @@ class ScreenShotter(Inject, Plugin):
 	has_opts = True
 
 	def initialize(self, options):
-		self.interval = options.interval
+		self.interval = 10 or options.interval
 		Inject.initialize(self, options)
 		self.html_payload = self.get_payload()
 
@@ -60,4 +60,4 @@ class ScreenShotter(Inject, Plugin):
 		return '<script type="text/javascript">' + canvas + '</script>'
 
 	def pluginOptions(self, options):
-		options.add_argument("--interval", dest="interval", type=int, metavar="SECONDS", default=10, help="Interval at which screenshots will be taken (default 10 seconds)")
+		options.add_argument("--interval", dest="interval", type=int, metavar="SECONDS", default=None, help="Interval at which screenshots will be taken (default 10 seconds)")

@@ -105,7 +105,13 @@ class ServerConnection(HTTPClient):
 
     def connectionMade(self):
         mitmf_logger.debug("[ServerConnection] HTTP connection made.")
-        self.clientInfo = hap.simple_detect(self.headers['user-agent'])
+        try:
+            self.clientInfo = hap.simple_detect(self.headers['user-agent'])
+        except KeyError as e:
+            mitmf_logger.debug("[ServerConnection] Client didn't send UA with request")
+            self.clientInfo = None
+            pass
+
         self.plugins.hook()
         self.sendRequest()
         self.sendHeaders()
@@ -214,9 +220,7 @@ class ServerConnection(HTTPClient):
                 nuevaurl=self.urlMonitor.addSecureLink(self.client.getClientIP(), url)
                 mitmf_logger.debug("[ServerConnection][HSTS] Replacing {} => {}".format(url,nuevaurl))
                 sustitucion[url] = nuevaurl
-                #data.replace(url,nuevaurl)
 
-            #data = self.urlMonitor.DataReemplazo(data)
             if len(sustitucion)>0:
                 dregex = re.compile("({})".format("|".join(map(re.escape, sustitucion.keys()))))
                 data = dregex.sub(lambda x: str(sustitucion[x.string[x.start() :x.end()]]), data)

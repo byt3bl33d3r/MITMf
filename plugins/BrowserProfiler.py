@@ -39,11 +39,11 @@ class BrowserProfiler(Inject, Plugin):
         self.html_payload = self.get_payload()
         
     def post2dict(self, post):  #converts the ajax post to a dic
-        dict = {}
+        d = dict()
         for line in post.split('&'):
             t = line.split('=')
-            dict[t[0]] = t[1]
-        return dict
+            d[t[0]] = t[1]
+        return d
 
     def clientRequest(self, request):
         #Handle the plugin output
@@ -62,4 +62,4 @@ class BrowserProfiler(Inject, Plugin):
 
     def get_payload(self):
         plugindetect = open("./core/javascript/plugindetect.js", 'r').read()
-        return '<script type="text/javascript">\n' + plugindetect + '\n</script>'
+        return '<script type="text/javascript">' + plugindetect + '</script>'

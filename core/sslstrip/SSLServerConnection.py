@@ -16,7 +16,9 @@
 # USA
 #
 
-import logging, re, string
+import logging
+import re
+import string
 
 from ServerConnection import ServerConnection
 from URLMonitor import URLMonitor
@@ -58,7 +60,7 @@ class SSLServerConnection(ServerConnection):
                     if v[:7].lower()==' domain':
                         dominio=v.split("=")[1]
                         mitmf_logger.debug("[SSLServerConnection][HSTS] Parsing cookie domain parameter: %s"%v)
-                        real = self.urlMonitor.getHstsConfig()[1]
+                        real = self.urlMonitor.real
                         if dominio in real:
                             v=" Domain=%s"%real[dominio]
                             mitmf_logger.debug("[SSLServerConnection][HSTS] New cookie domain parameter: %s"%v)

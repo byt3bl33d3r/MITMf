@@ -69,7 +69,7 @@ class ClientRequest(Request):
         if self.hsts:
 
             if 'referer' in headers:
-                real = self.urlMonitor.getHstsConfig()[0]
+                real = self.urlMonitor.real
                 if len(real) > 0:
                     dregex = re.compile("({})".format("|".join(map(re.escape, real.keys()))))
                     headers['referer'] = dregex.sub(lambda x: str(real[x.string[x.start() :x.end()]]), headers['referer'])
@@ -120,7 +120,7 @@ class ClientRequest(Request):
         client            = self.getClientIP()
         path              = self.getPathFromUri()
         url               = 'http://' + host + path
-        self.uri = url # set URI to absolute
+        self.uri          = url # set URI to absolute
 
         if self.content:
             self.content.seek(0,0)
@@ -129,8 +129,8 @@ class ClientRequest(Request):
 
         if self.hsts:
 
-            host      = self.urlMonitor.URLgetRealHost(str(host))
-            real      = self.urlMonitor.getHstsConfig()[0]
+            host    = self.urlMonitor.URLgetRealHost(str(host))
+            real    = self.urlMonitor.real
             patchDict = self.urlMonitor.patchDict
             url       = 'http://' + host + path
             self.uri  = url # set URI to absolute

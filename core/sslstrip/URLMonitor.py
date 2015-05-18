@@ -32,6 +32,8 @@ class URLMonitor:
     # Start the arms race, and end up here...
     javascriptTrickery = [re.compile("http://.+\.etrade\.com/javascript/omntr/tc_targeting\.html")]
     _instance          = None
+    sustitucion        = dict()
+    real               = dict()
     patchDict          = {
                           'https:\/\/fbstatic-a.akamaihd.net':'http:\/\/webfbstatic-a.akamaihd.net',
                           'https:\/\/www.facebook.com':'http:\/\/social.facebook.com',
@@ -107,23 +109,24 @@ class URLMonitor:
                 port = 443
 
         if self.hsts:
-            if not self.getHstsConfig[1].has_key(host):
+            self.updateHstsConfig()
+
+            if not self.sustitucion.has_key(host):
                 lhost = host[:4]
                 if lhost=="www.":
-                    self.getHstsConfig[1][host] = "w"+host
-                    self.getHstsConfig[0]["w"+host] = host
+                    self.sustitucion[host] = "w"+host
+                    self.real["w"+host] = host
                 else:
-                    self.getHstsConfig[1][host] = "web"+host
-                    self.getHstsConfig[0]["web"+host] = host
-                mitmf_logger.debug("[URLMonitor][HSTS] SSL host ({}) tokenized ({})".format(host, self.getHstsConfig[1][host]))
+                    self.sustitucion[host] = "web"+host
+                    self.real["web"+host] = host
+                mitmf_logger.debug("[URLMonitor][HSTS] SSL host ({}) tokenized ({})".format(host, self.sustitucion[host]))
                     
             url = 'http://' + host + path
-            #mitmf_logger.debug("HSTS stripped URL: %s %s"%(client, url))
 
             self.strippedURLs.add((client, url))
             self.strippedURLPorts[(client, url)] = int(port)
             
-            return 'http://'+ self.getHstsConfig[1][host] + path
+            return 'http://'+ self.sustitucion[host] + path
 
         else:
             url = method + host + path
@@ -134,15 +137,10 @@ class URLMonitor:
     def setFaviconSpoofing(self, faviconSpoofing):
         self.faviconSpoofing = faviconSpoofing
 
-    def getHstsConfig(self):
-        sustitucion = dict()
-        real = dict()
-
-        for k,v in ConfigWatcher.getInstance().getConfig()['SSLstrip+']:
-            sustitucion[k] = v
-            real[v] = k
-
-        return (real, sustitucion)
+    def updateHstsConfig(self):
+        for k,v in ConfigWatcher.getInstance().config['SSLstrip+'].iteritems():
+            self.sustitucion[k] = v
+            self.real[v] = k
 
     def setHstsBypass(self):
         self.hsts = True
@@ -158,10 +156,12 @@ class URLMonitor:
     
     def URLgetRealHost(self, host):
         mitmf_logger.debug("[URLMonitor][HSTS] Parsing host: {}".format(host))
-        
-        if self.getHstsConfig()[0].has_key(host):
-            mitmf_logger.debug("[URLMonitor][HSTS] Found host in list: {}".format(self.getHstsConfig()[0][host]))
-            return self.getHstsConfig()[0][host]
+
+        self.updateHstsConfig()
+
+        if self.real.has_key(host):
+            mitmf_logger.debug("[URLMonitor][HSTS] Found host in list: {}".format(self.real[host]))
+            return self.real[host]
 
         else:
             mitmf_logger.debug("[URLMonitor][HSTS] Host not in list: {}".format(host))

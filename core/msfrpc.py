@@ -24,6 +24,9 @@ import msgpack
 import logging
 import requests
 
+from core.configwatcher import ConfigWatcher
+from core.utils import shutdown
+
 logging.getLogger("requests").setLevel(logging.WARNING)  #Disables "Starting new HTTP Connection (1)" log message
 
 class Msfrpc:
@@ -83,6 +86,55 @@ class Msfrpc:
                 return True
         except:
             raise self.MsfAuthError("MsfRPC: Authentication failed")
+
+class Msf:
+    '''
+     This is just a wrapper around the Msfrpc class,
+     prevents a lot of code re-use throught the framework
+
+    '''
+    def __init__(self):
+        try:
+            self.msf = Msfrpc({"host": ConfigWatcher.config['MITMf']['Metasploit']['rpcip']})
+            self.msf.login('msf', ConfigWatcher.config['MITMf']['Metasploit']['rpcpass'])
+        except Exception as e:
+            shutdown("[Msfrpc] Error connecting to Metasploit: {}".format(e))
+
+    def version(self):
+        return self.msf.call('core.version')['version']
+
+    def jobs(self):
+        return self.msf.call('job.list')
+
+    def jobinfo(self, pid):
+        return self.msf.call('job.info', [pid])
+
+    def killjob(self, pid):
+        return self.msf.call('job.kill', [pid])
+
+    def findpid(self, name):
+        jobs = self.jobs()
+        for pid, jobname in jobs.iteritems():
+            if name in jobname:
+                return pid
+        return None
+
+    def sessions(self):
+        return self.msf.call('session.list')
+
+    def sessionsfrompeer(self, peer):
+        sessions = self.sessions()
+        for n, v in sessions.iteritems():
+            if peer in v['tunnel_peer']:
+                return n
+        return None
+
+    def sendcommand(self, cmd):
+        #Create a virtual console
+        console_id = self.msf.call('console.create')['id']
+
+        #write the cmd to the newly created console
+        self.msf.call('console.write', [console_id, cmd])
 
 if __name__ == '__main__':
   

