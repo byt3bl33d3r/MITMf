@@ -36,6 +36,8 @@ Available plugins
 Changelog
 =========
 
+- Config file now updates on the fly!
+
 - ```SessionHijacker``` is replaced with ```Ferret-NG```,  captures cookies and starts a proxy that will feed them to connected clients
 
 - Addition of the ```Screenshotter``` plugin, able to render screenshots of a clients browser at regular intervals
