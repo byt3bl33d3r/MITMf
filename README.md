@@ -16,12 +16,13 @@ Contact me at:
 
 Available plugins
 =================
+- ```Screenshotter``` -  Uses HTML5 Canvas to render an accurate screenshot of a clients browser
 - ```Responder``` - LLMNR, NBT-NS, WPAD and MDNS poisoner
 - ```SSLstrip+``` - Partially bypass HSTS
 - ```Spoof``` - Redirect traffic using ARP Spoofing, ICMP Redirects or DHCP Spoofing
 - ```BeEFAutorun``` - Autoruns BeEF modules based on clients OS or browser type
 - ```AppCachePoison``` - Perform App cache poisoning attacks 
-- ```Ferret-NG``` - Transparently hijacks sessions
+- ```Ferret-NG``` - Tranperently hijacks sessions
 - ```BrowserProfiler``` - Attempts to enumerate all browser plugins of connected clients
 - ```CacheKill``` - Kills page caching by modifying headers
 - ```FilePwn``` - Backdoor executables being sent over HTTP using the Backdoor Factory and BDFProxy
@@ -35,6 +36,10 @@ Available plugins
 Changelog
 =========
 
+- ```SessionHijacker``` is replaced with ```Ferret-NG```,  captures cookies and starts a proxy that will feed them to connected clients
+
+- Addition of the ```Screenshotter``` plugin, able to render screenshots of a clients browser at regular intervals
+
 - Addition of a fully functional SMB server using the [Impacket](https://github.com/CoreSecurity/impacket) library
 
 - Addition of [DNSChef](https://github.com/iphelix/dnschef), the framework is now a IPv4/IPv6 (TCP & UDP) DNS server ! Supported queries are: 'A', 'AAAA', 'MX', 'PTR', 'NS', 'CNAME', 'TXT', 'SOA', 'NAPTR', 'SRV', 'DNSKEY' and 'RRSIG'
@@ -45,8 +50,6 @@ Changelog
 - Integrated [Responder](https://github.com/SpiderLabs/Responder) to poison LLMNR, NBT-NS and MDNS, and act as a WPAD rogue server.
 
 - Integrated [SSLstrip+](https://github.com/LeonardoNve/sslstrip2) by Leonardo Nve to partially bypass HSTS as demonstrated at BlackHat Asia 2014 
-
-- Addition of the ```Ferret-NG``` plugin, which uses code from [FireLamb](https://github.com/sensepost/mana/tree/master/firelamb) to store cookies in a Firefox profile 
 
 - ```Spoof``` plugin can now exploit the 'ShellShock' bug when DHCP spoofing! 
 
