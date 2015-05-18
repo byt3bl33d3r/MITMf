@@ -18,69 +18,59 @@
 # USA
 #
 
-import sys
 import argparse
+import sys
 import os
 import logging
+import threading
 
 from twisted.web import http
 from twisted.internet import reactor
 from core.sslstrip.CookieCleaner import CookieCleaner
 from core.sergioproxy.ProxyPlugins import ProxyPlugins
-from core.utils import Banners
-from core.utils import PrintException
-from configobj import ConfigObj
-
-logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Error when importing scapy
-from scapy.all import get_if_addr, get_if_hwaddr
-
+from core.utils import Banners, SystemConfig, shutdown
 from plugins import *
-plugin_classes = plugin.Plugin.__subclasses__()
-
-try:
-    import user_agents
-except ImportError:
-    print "[-] user_agents library missing! User-Agent parsing will be disabled!"
-
-mitmf_version = "0.9.6"
-sslstrip_version = "0.9"
-sergio_version = "0.2.1"
-dnschef_version = "0.4"
 
 Banners().printBanner()
 
 if os.geteuid() != 0:
     sys.exit("[-] When man-in-the-middle you want, run as r00t you will, hmm?")
 
-parser = argparse.ArgumentParser(description="MITMf v{} - Framework for MITM attacks".format(mitmf_version), version=mitmf_version, usage='', epilog="Use wisely, young Padawan.",fromfile_prefix_chars='@')
+mitmf_version = "0.9.7"
+sslstrip_version = "0.9"
+sergio_version = "0.2.1"
+
+parser = argparse.ArgumentParser(description="MITMf v{} - Framework for MITM attacks".format(mitmf_version), version=mitmf_version, usage='mitmf.py -i interface [mitmf options] [plugin name] [plugin options]', epilog="Use wisely, young Padawan.",fromfile_prefix_chars='@')
+
 #add MITMf options
 mgroup = parser.add_argument_group("MITMf", "Options for MITMf")
 mgroup.add_argument("--log-level", type=str,choices=['debug', 'info'], default="info", help="Specify a log level [default: info]")
 mgroup.add_argument("-i", "--interface", required=True, type=str,  metavar="interface" ,help="Interface to listen on")
 mgroup.add_argument("-c", "--config-file", dest='configfile', type=str, default="./config/mitmf.conf", metavar='configfile', help="Specify config file to use")
-mgroup.add_argument('-d', '--disable-proxy', dest='disproxy', action='store_true', default=False, help='Only run plugins, disable all proxies')
-#added by alexander.georgiev@daloo.de
 mgroup.add_argument('-m', '--manual-iptables', dest='manualiptables', action='store_true', default=False, help='Do not setup iptables or flush them automatically')
 
 #add sslstrip options
 sgroup = parser.add_argument_group("SSLstrip", "Options for SSLstrip library")
-#sgroup.add_argument("-w", "--write", type=argparse.FileType('w'), metavar="filename", default=sys.stdout, help="Specify file to log to (stdout by default).")
 slogopts = sgroup.add_mutually_exclusive_group()
 slogopts.add_argument("-p", "--post", action="store_true",help="Log only SSL POSTs. (default)")
 slogopts.add_argument("-s", "--ssl", action="store_true", help="Log all SSL traffic to and from server.")
 slogopts.add_argument("-a", "--all", action="store_true", help="Log all SSL and HTTP traffic to and from server.")
-#slogopts.add_argument("-c", "--clients", action='store_true', default=False, help='Log each clients data in a seperate file') #not fully tested yet
 sgroup.add_argument("-l", "--listen", type=int, metavar="port", default=10000, help="Port to listen on (default 10000)")
 sgroup.add_argument("-f", "--favicon", action="store_true", help="Substitute a lock favicon on secure requests.")
 sgroup.add_argument("-k", "--killsessions", action="store_true", help="Kill sessions in progress.")
 
 #Initialize plugins
+plugin_classes = plugin.Plugin.__subclasses__()
+
 plugins = []
 try:
     for p in plugin_classes:
         plugins.append(p())
-except:
-    print "Failed to load plugin class {}".format(p)
+except Exception as e:
+    print "[-] Failed to load plugin class {}: {}".format(p, e)
+
+
+arg_dict = dict() #dict containing a plugin's optname with it's relative options
 
 #Give subgroup to each plugin with options
 try:
@@ -93,120 +83,106 @@ try:
         sgroup.add_argument("--{}".format(p.optname), action="store_true",help="Load plugin {}".format(p.name))
 
         if p.has_opts:
-            p.add_options(sgroup)
+            p.pluginOptions(sgroup)
+
+        arg_dict[p.optname] = vars(sgroup)['_group_actions']
+
 except NotImplementedError:
     sys.exit("[-] {} plugin claimed option support, but didn't have it.".format(p.name))
 
+if len(sys.argv) is 1:
+    parser.print_help()
+    sys.exit(1)
+
 args = parser.parse_args()
 
-try:
-    configfile = ConfigObj(args.configfile)
-except Exception, e:
-    sys.exit("[-] Error parsing config file: {}".format(e))
+# Definitely a better way to do this, will need to clean this up in the future
+# Checks to see if we called a plugin's options without first invoking the actual plugin
+for plugin, options in arg_dict.iteritems():
+    if vars(args)[plugin] is False:
+        for option in options:
+            if vars(args)[option.dest]:
+                sys.exit("[-] Called plugin options without invoking the actual plugin (--{})".format(plugin))
 
-config_args = configfile['MITMf']['args']
-if config_args:
-    print "[*] Loading arguments from config file"
-    for arg in config_args.split(' '):
-        sys.argv.append(arg)
-    args = parser.parse_args()
+#check to see if we supplied a valid interface
+myip  = SystemConfig.getIP(args.interface)
+mymac = SystemConfig.getMAC(args.interface)
 
-####################################################################################################
-
-# Here we check for some variables that are very commonly used, and pass them down to the plugins
-try:
-    args.ip_address = get_if_addr(args.interface)
-    if (args.ip_address == "0.0.0.0") or (args.ip_address is None):
-        sys.exit("[-] Interface {} does not have an assigned IP address".format(args.interface))
-except Exception, e:
-    sys.exit("[-] Error retrieving interface IP address: {}".format(e))
-
-try:
-    args.mac_address = get_if_hwaddr(args.interface)
-except Exception, e:
-    sys.exit("[-] Error retrieving interface MAC address: {}".format(e))
-
-args.configfile = configfile #so we can pass the configobj down to all the plugins
-
-####################################################################################################
-
+#Start logging
 log_level = logging.__dict__[args.log_level.upper()]
 
-#Start logging 
 logging.basicConfig(level=log_level, format="%(asctime)s %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 logFormatter = logging.Formatter("%(asctime)s %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 mitmf_logger = logging.getLogger('mitmf')
-
 fileHandler = logging.FileHandler("./logs/mitmf.log")
 fileHandler.setFormatter(logFormatter)
 mitmf_logger.addHandler(fileHandler)
 
 #####################################################################################################
 
-#All our options should be loaded now, pass them onto plugins
+#All our options should be loaded now, initialize the plugins
 print "[*] MITMf v{} online... initializing plugins".format(mitmf_version)
-
-load = []
 
 for p in plugins:
 
+    #load only the plugins that have been called at the command line
     if vars(args)[p.optname] is True:
 
         print "|_ {} v{}".format(p.name, p.version)
-        if hasattr(p, 'tree_output') and p.tree_output:
-            for line in p.tree_output:
-                print "|  |_ {}".format(line)
-                p.tree_output.remove(line)
+        if p.tree_info:
+            for line in xrange(0, len(p.tree_info)):
+                print "|  |_ {}".format(p.tree_info.pop())
 
-    if getattr(args, p.optname):
         p.initialize(args)
-        load.append(p)
 
-    if vars(args)[p.optname] is True:
-        if hasattr(p, 'tree_output') and p.tree_output:
-            for line in p.tree_output:
-                print "|  |_ {}".format(line)
+        if p.tree_info:
+            for line in xrange(0, len(p.tree_info)):
+                print "|  |_ {}".format(p.tree_info.pop())
 
-#Plugins are ready to go, start MITMf
-if args.disproxy:
-    ProxyPlugins.getInstance().setPlugins(load)
-else:
-    
-    from core.sslstrip.StrippingProxy import StrippingProxy
-    from core.sslstrip.URLMonitor import URLMonitor
-    from libs.dnschef.dnschef import DNSChef
+        ProxyPlugins.getInstance().addPlugin(p)
 
-    URLMonitor.getInstance().setFaviconSpoofing(args.favicon)
-    URLMonitor.getInstance().setResolver(args.configfile['MITMf']['DNS']['resolver'])
-    URLMonitor.getInstance().setResolverPort(args.configfile['MITMf']['DNS']['port'])
-    
-    DNSChef.getInstance().setCoreVars(args.configfile['MITMf']['DNS'])
-    if args.configfile['MITMf']['DNS']['tcp'].lower() == 'on':
-        DNSChef.getInstance().startTCP()
-    else:
-        DNSChef.getInstance().startUDP()
+#Plugins are ready to go, let's rock & roll
+from core.sslstrip.StrippingProxy import StrippingProxy
+from core.sslstrip.URLMonitor import URLMonitor
 
-    CookieCleaner.getInstance().setEnabled(args.killsessions)
-    ProxyPlugins.getInstance().setPlugins(load)
+URLMonitor.getInstance().setFaviconSpoofing(args.favicon)
+CookieCleaner.getInstance().setEnabled(args.killsessions)
 
-    strippingFactory              = http.HTTPFactory(timeout=10)
-    strippingFactory.protocol     = StrippingProxy
+strippingFactory          = http.HTTPFactory(timeout=10)
+strippingFactory.protocol = StrippingProxy
 
-    reactor.listenTCP(args.listen, strippingFactory)
+reactor.listenTCP(args.listen, strippingFactory)
 
-    #load custom reactor options for plugins that have the 'plugin_reactor' attribute
-    for p in plugins:
-        if getattr(args, p.optname):
-            if hasattr(p, 'plugin_reactor'):
-                p.plugin_reactor(strippingFactory) #we pass the default strippingFactory, so the plugins can use it
+for p in ProxyPlugins.getInstance().plist:
 
-    print "|"
-    print "|_ Sergio-Proxy v{} online".format(sergio_version)
-    print "|_ SSLstrip v{} by Moxie Marlinspike online".format(sslstrip_version)
-    print "|_ DNSChef v{} online\n".format(dnschef_version)
+    p.pluginReactor(strippingFactory) #we pass the default strippingFactory, so the plugins can use it
+    p.startConfigWatch()
 
+    t = threading.Thread(name='{}-thread'.format(p.name), target=p.startThread, args=(args,))
+    t.setDaemon(True)
+    t.start()
+
+print "|"
+print "|_ Sergio-Proxy v{} online".format(sergio_version)
+print "|_ SSLstrip v{} by Moxie Marlinspike online".format(sslstrip_version)
+
+#Start Net-Creds
+from core.netcreds.NetCreds import NetCreds
+NetCreds().start(args.interface, myip)
+print "|_ Net-Creds v{} online".format(NetCreds.version)
+
+#Start DNSChef
+from core.dnschef.DNSchef import DNSChef
+DNSChef.getInstance().start()
+print "|_ DNSChef v{} online".format(DNSChef.version)
+
+#Start the SMB server
+from core.protocols.smb.SMBserver import SMBserver
+print "|_ SMBserver online (Impacket {})\n".format(SMBserver.impacket_ver)
+SMBserver().start()
+
+#start the reactor
 reactor.run()
 
-#run each plugins finish() on exit
-for p in load:
-    p.finish()
+print "\n"
+shutdown()

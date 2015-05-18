@@ -4,14 +4,13 @@ scapy
 msgpack-python
 dnspython
 dnslib
-user-agents
 configobj
-pyyaml
-ua-parser
 Pillow
 pefile
 ipy
 pyopenssl
 service_identity
+watchdog
+impacket
 capstone
 pypcap

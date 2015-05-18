@@ -21,32 +21,30 @@
 import logging
 from cStringIO import StringIO
 from plugins.plugin import Plugin
-from PIL import Image
+from PIL import Image, ImageFile
 
-mitmf_logger = logging.getLogger('mitmf')
+mitmf_logger = logging.getLogger("mitmf")
 
 class Upsidedownternet(Plugin):
     name       = "Upsidedownternet"
     optname    = "upsidedownternet"
     desc       = 'Flips images 180 degrees'
-    implements = ["handleResponse", "handleHeader"]
     version    = "0.1"
     has_opts   = False
 
     def initialize(self, options):
-        from PIL import Image, ImageFile
         globals()['Image'] = Image
         globals()['ImageFile'] = ImageFile
         self.options = options
 
-    def handleHeader(self, request, key, value):
+    def serverHeaders(self, response, request):
         '''Kill the image skipping that's in place for speed reasons'''
         if request.isImageRequest:
             request.isImageRequest = False
             request.isImage = True
-            request.imageType = value.split("/")[1].upper()
+            self.imageType = response.headers['content-type'].split('/')[1].upper()
 
-    def handleResponse(self, request, data):
+    def serverResponse(self, response, request, data):
         try:
             isImage = getattr(request, 'isImage')
         except AttributeError:
@@ -54,7 +52,6 @@ class Upsidedownternet(Plugin):
         
         if isImage:
             try:
-                image_type = request.imageType
                 #For some reason more images get parsed using the parser
                 #rather than a file...PIL still needs some work I guess
                 p = ImageFile.Parser()
@@ -62,10 +59,11 @@ class Upsidedownternet(Plugin):
                 im = p.close()
                 im = im.transpose(Image.ROTATE_180)
                 output = StringIO()
-                im.save(output, format=image_type)
+                im.save(output, format=self.imageType)
                 data = output.getvalue()
                 output.close()
-                mitmf_logger.info("%s Flipped image" % request.client.getClientIP())
+                mitmf_logger.info("{} [Upsidedownternet] Flipped image".format(response.getClientIP()))
             except Exception as e:
-                mitmf_logger.info("%s Error: %s" % (request.client.getClientIP(), e))
-        return {'request': request, 'data': data}
+                mitmf_logger.info("{} [Upsidedownternet] Error: {}".format(response.getClientIP(), e))
+        
+        return {'response': response, 'request': request, 'data': data}

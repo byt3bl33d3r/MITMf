@@ -16,7 +16,13 @@
 # USA
 #
 
-import urlparse, logging, os, sys, random, re, dns.resolver
+import urlparse 
+import logging 
+import os 
+import sys 
+import random
+import re 
+import dns.resolver
 
 from twisted.web.http import Request
 from twisted.web.http import HTTPChannel
@@ -33,7 +39,6 @@ from SSLServerConnection import SSLServerConnection
 from URLMonitor import URLMonitor
 from CookieCleaner import CookieCleaner
 from DnsCache import DnsCache
-from core.sergioproxy.ProxyPlugins import ProxyPlugins
 
 mitmf_logger = logging.getLogger('mitmf')
 
@@ -49,24 +54,18 @@ class ClientRequest(Request):
         Request.__init__(self, channel, queued)
         self.reactor       = reactor
         self.urlMonitor    = URLMonitor.getInstance()
-        self.hsts          = URLMonitor.getInstance().isHstsBypass()
+        self.hsts          = URLMonitor.getInstance().hsts
         self.cookieCleaner = CookieCleaner.getInstance()
         self.dnsCache      = DnsCache.getInstance()
-        self.plugins       = ProxyPlugins.getInstance()
         #self.uniqueId      = random.randint(0, 10000)
         
         #Use are own DNS server instead of reactor.resolve()
-        self.resolver       = URLMonitor.getInstance().getResolver()
         self.customResolver = dns.resolver.Resolver()    
         self.customResolver.nameservers  = ['127.0.0.1']
-        self.customResolver.port = URLMonitor.getInstance().getResolverPort()
 
     def cleanHeaders(self):
         headers = self.getAllHeaders().copy()
 
-        #for k,v in headers.iteritems():
-        #    mitmf_logger.debug("[ClientRequest] Receiving headers: (%s => %s)" % (k, v))
-        
         if self.hsts:
 
             if 'referer' in headers:
@@ -94,8 +93,6 @@ class ClientRequest(Request):
         if 'cache-control' in headers:
             del headers['cache-control']
 
-        self.plugins.hook()
-
         return headers
 
     def getPathFromUri(self):
@@ -113,7 +110,7 @@ class ClientRequest(Request):
 
         if os.path.exists(scriptPath): return scriptPath
 
-        mitmf_logger.warning("Error: Could not find lock.ico")
+        mitmf_logger.warning("[ClientRequest] Error: Could not find lock.ico")
         return "lock.ico"        
 
     def handleHostResolvedSuccess(self, address):
@@ -123,7 +120,7 @@ class ClientRequest(Request):
         client            = self.getClientIP()
         path              = self.getPathFromUri()
         url               = 'http://' + host + path
-        self.uri = url # set URI to absolute
+        self.uri          = url # set URI to absolute
 
         if self.content:
             self.content.seek(0,0)
@@ -132,8 +129,8 @@ class ClientRequest(Request):
 
         if self.hsts:
 
-            host      = self.urlMonitor.URLgetRealHost(str(host))
-            real      = self.urlMonitor.real
+            host    = self.urlMonitor.URLgetRealHost(str(host))
+            real    = self.urlMonitor.real
             patchDict = self.urlMonitor.patchDict
             url       = 'http://' + host + path
             self.uri  = url # set URI to absolute
@@ -179,7 +176,7 @@ class ClientRequest(Request):
             self.proxyViaHTTP(address, self.method, path, postData, headers, port)
 
     def handleHostResolvedError(self, error):
-        mitmf_logger.debug("[ClientRequest] Host resolution error: " + str(error))
+        mitmf_logger.debug("[ClientRequest] Host resolution error: {}".format(error))
         try:
             self.finish()
         except:
@@ -194,17 +191,14 @@ class ClientRequest(Request):
         else:
             
             mitmf_logger.debug("[ClientRequest] Host not cached.")
-            
-            if self.resolver == 'dnschef':
-                try:
-                    mitmf_logger.debug("[ClientRequest] Resolving with DNSChef")
-                    address = str(self.customResolver.query(host)[0].address)
-                    return defer.succeed(address)
-                except Exception:
-                    mitmf_logger.debug("[ClientRequest] Exception occured, falling back to reactor.resolve()")
-                    return reactor.resolve(host)
+            self.customResolver.port = self.urlMonitor.getResolverPort()
 
-            elif self.resolver == 'twisted':
+            try:
+                mitmf_logger.debug("[ClientRequest] Resolving with DNSChef")
+                address = str(self.customResolver.query(host)[0].address)
+                return defer.succeed(address)
+            except Exception:
+                mitmf_logger.debug("[ClientRequest] Exception occured, falling back to Twisted")
                 return reactor.resolve(host)
 
     def process(self):

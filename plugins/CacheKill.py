@@ -18,29 +18,28 @@
 # USA
 #
 
+import logging
 from plugins.plugin import Plugin
 
+mitmf_logger = logging.getLogger("mitmf")
 
 class CacheKill(Plugin):
     name        = "CacheKill"
     optname     = "cachekill"
     desc        = "Kills page caching by modifying headers"
-    implements  = ["handleHeader", "connectionMade"]
-    bad_headers = ['if-none-match', 'if-modified-since']
     version     = "0.1"
-    has_opts    = True
 
-    def add_options(self, options):
-        options.add_argument("--preserve-cookies", action="store_true", help="Preserve cookies (will allow caching in some situations).")
+    def initialize(self, options):
+        self.bad_headers = ['if-none-match', 'if-modified-since']
 
-    def handleHeader(self, request, key, value):
+    def serverHeaders(self, response, request):
         '''Handles all response headers'''
-        request.client.headers['Expires'] = "0"
-        request.client.headers['Cache-Control'] = "no-cache"
+        response.headers['Expires'] = "0"
+        response.headers['Cache-Control'] = "no-cache"
 
-    def connectionMade(self, request):
+    def clientRequest(self, request):
         '''Handles outgoing request'''
-        request.headers['Pragma'] = 'no-cache'
-        for h in self.bad_headers:
-            if h in request.headers:
-                request.headers[h] = ""
+        request.headers['pragma'] = 'no-cache'
+        for header in self.bad_headers:
+            if header in request.headers:
+                del request.headers[header]

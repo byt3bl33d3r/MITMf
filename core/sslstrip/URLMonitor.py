@@ -18,6 +18,7 @@
 
 import re, os
 import logging
+from core.configwatcher import ConfigWatcher
 
 mitmf_logger = logging.getLogger('mimtf')
 
@@ -31,8 +32,8 @@ class URLMonitor:
     # Start the arms race, and end up here...
     javascriptTrickery = [re.compile("http://.+\.etrade\.com/javascript/omntr/tc_targeting\.html")]
     _instance          = None
-    sustitucion        = {} # LEO: diccionario host / sustitucion
-    real               = {} # LEO: diccionario host / real
+    sustitucion        = dict()
+    real               = dict()
     patchDict          = {
                           'https:\/\/fbstatic-a.akamaihd.net':'http:\/\/webfbstatic-a.akamaihd.net',
                           'https:\/\/www.facebook.com':'http:\/\/social.facebook.com',
@@ -46,9 +47,6 @@ class URLMonitor:
         self.faviconReplacement = False
         self.hsts               = False
         self.app                = False
-        self.hsts_config        = None
-        self.resolver           = 'dnschef'
-        self.resolverport       = 53
 
     @staticmethod
     def getInstance():
@@ -58,20 +56,8 @@ class URLMonitor:
         return URLMonitor._instance
     
     #This is here because I'm lazy
-    def setResolver(self, resolver):
-        self.resolver = str(resolver).lower()
-
-    #This is here because I'm lazy
-    def getResolver(self):
-        return self.resolver
-
-    #This is here because I'm lazy
-    def setResolverPort(self, port):
-        self.resolverport = int(port)
-    
-    #This is here because I'm lazy
     def getResolverPort(self):
-        return self.resolverport
+        return int(ConfigWatcher.getInstance().getConfig()['MITMf']['DNS']['port'])
 
     def isSecureLink(self, client, url):
         for expression in URLMonitor.javascriptTrickery:
@@ -92,7 +78,7 @@ class URLMonitor:
                 s.add(to_url)
                 return
         url_set = set([from_url, to_url])
-        mitmf_logger.debug("[URLMonitor][AppCachePoison] Set redirection: %s" % url_set)
+        mitmf_logger.debug("[URLMonitor][AppCachePoison] Set redirection: {}".format(url_set))
         self.redirects.append(url_set)
 
     def getRedirectionSet(self, url):
@@ -123,6 +109,8 @@ class URLMonitor:
                 port = 443
 
         if self.hsts:
+            self.updateHstsConfig()
+
             if not self.sustitucion.has_key(host):
                 lhost = host[:4]
                 if lhost=="www.":
@@ -131,10 +119,9 @@ class URLMonitor:
                 else:
                     self.sustitucion[host] = "web"+host
                     self.real["web"+host] = host
-                mitmf_logger.debug("[URLMonitor][HSTS] SSL host (%s) tokenized (%s)" % (host,self.sustitucion[host]) )
+                mitmf_logger.debug("[URLMonitor][HSTS] SSL host ({}) tokenized ({})".format(host, self.sustitucion[host]))
                     
             url = 'http://' + host + path
-            #mitmf_logger.debug("HSTS stripped URL: %s %s"%(client, url))
 
             self.strippedURLs.add((client, url))
             self.strippedURLPorts[(client, url)] = int(port)
@@ -150,40 +137,32 @@ class URLMonitor:
     def setFaviconSpoofing(self, faviconSpoofing):
         self.faviconSpoofing = faviconSpoofing
 
-    def setHstsBypass(self, hstsconfig):
-        self.hsts = True
-        self.hsts_config = hstsconfig
-
-        for k,v in self.hsts_config.iteritems():
+    def updateHstsConfig(self):
+        for k,v in ConfigWatcher.getInstance().config['SSLstrip+'].iteritems():
             self.sustitucion[k] = v
             self.real[v] = k
+
+    def setHstsBypass(self):
+        self.hsts = True
 
     def setAppCachePoisoning(self):
         self.app = True
 
-    def setClientLogging(self, clientLogging):
-        self.clientLogging = clientLogging
-
     def isFaviconSpoofing(self):
         return self.faviconSpoofing
-
-    def isClientLogging(self):
-        return self.clientLogging
-
-    def isHstsBypass(self):
-        return self.hsts
-
-    def isAppCachePoisoning(self):
-        return self.app
 
     def isSecureFavicon(self, client, url):
         return ((self.faviconSpoofing == True) and (url.find("favicon-x-favicon-x.ico") != -1))
     
     def URLgetRealHost(self, host):
-        mitmf_logger.debug("[URLMonitor][HSTS] Parsing host: %s"% host)
+        mitmf_logger.debug("[URLMonitor][HSTS] Parsing host: {}".format(host))
+
+        self.updateHstsConfig()
+
         if self.real.has_key(host):
-            mitmf_logger.debug("[URLMonitor][HSTS] Found host in list: %s"% self.real[host])
+            mitmf_logger.debug("[URLMonitor][HSTS] Found host in list: {}".format(self.real[host]))
             return self.real[host]
+
         else:
-            mitmf_logger.debug("[URLMonitor][HSTS] Host not in list: %s"% host)
+            mitmf_logger.debug("[URLMonitor][HSTS] Host not in list: {}".format(host))
             return host

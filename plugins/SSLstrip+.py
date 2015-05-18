@@ -22,35 +22,31 @@ import sys
 import logging
 
 from plugins.plugin import Plugin
-from core.utils import IpTables
+from core.utils import IpTables, SystemConfig
 from core.sslstrip.URLMonitor import URLMonitor
-from libs.dnschef.dnschef import DNSChef
+from core.dnschef.DNSchef import DNSChef
 
 class HSTSbypass(Plugin):
-	name     = 'SSLstrip+'
-	optname  = 'hsts'
-	desc     = 'Enables SSLstrip+ for partial HSTS bypass'
-	version  = "0.4"
-	tree_output   = ["SSLstrip+ by Leonardo Nve running"]
-	has_opts = False
+    name      = 'SSLstrip+'
+    optname   = 'hsts'
+    desc      = 'Enables SSLstrip+ for partial HSTS bypass'
+    version   = "0.4"
+    tree_info = ["SSLstrip+ by Leonardo Nve running"]
+    has_opts  = False
 
-	def initialize(self, options):
-		self.options = options
-		self.manualiptables = options.manualiptables
+    def initialize(self, options):
+        self.options = options
+        self.manualiptables = options.manualiptables
+        ip_address = SystemConfig.getIP(options.interface)
 
-		try:
-			hstsconfig = options.configfile['SSLstrip+']
-		except Exception, e:
-			sys.exit("[-] Error parsing config for SSLstrip+: " + str(e))
+        if not options.manualiptables:
+            if IpTables.getInstance().dns is False:
+                IpTables.getInstance().DNS(ip_address, self.config['MITMf']['DNS']['port'])
 
-		if not options.manualiptables:
-			if IpTables.getInstance().dns is False:
-				IpTables.getInstance().DNS(options.ip_address, options.configfile['MITMf']['DNS']['port'])
+        URLMonitor.getInstance().setHstsBypass()
+        DNSChef.getInstance().setHstsBypass()
 
-		URLMonitor.getInstance().setHstsBypass(hstsconfig)
-		DNSChef.getInstance().setHstsBypass(hstsconfig)
-
-	def finish(self):
-		if not self.manualiptables:
-			if IpTables.getInstance().dns is True:
-				IpTables.getInstance().Flush()
+    def finish(self):
+        if not self.manualiptables:
+            if IpTables.getInstance().dns is True:
+                IpTables.getInstance().Flush()

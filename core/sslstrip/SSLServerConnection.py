@@ -16,7 +16,9 @@
 # USA
 #
 
-import logging, re, string
+import logging
+import re
+import string
 
 from ServerConnection import ServerConnection
 from URLMonitor import URLMonitor
@@ -40,7 +42,7 @@ class SSLServerConnection(ServerConnection):
     def __init__(self, command, uri, postData, headers, client):
         ServerConnection.__init__(self, command, uri, postData, headers, client)
         self.urlMonitor = URLMonitor.getInstance()
-        self.hsts       = URLMonitor.getInstance().isHstsBypass()
+        self.hsts       = URLMonitor.getInstance().hsts
 
     def getLogLevel(self):
         return logging.INFO
@@ -58,7 +60,7 @@ class SSLServerConnection(ServerConnection):
                     if v[:7].lower()==' domain':
                         dominio=v.split("=")[1]
                         mitmf_logger.debug("[SSLServerConnection][HSTS] Parsing cookie domain parameter: %s"%v)
-                        real = self.urlMonitor.sustitucion
+                        real = self.urlMonitor.real
                         if dominio in real:
                             v=" Domain=%s"%real[dominio]
                             mitmf_logger.debug("[SSLServerConnection][HSTS] New cookie domain parameter: %s"%v)
@@ -85,13 +87,13 @@ class SSLServerConnection(ServerConnection):
         if ((not link.startswith('http')) and (not link.startswith('/'))):                
             absoluteLink = "http://"+self.headers['host']+self.stripFileFromPath(self.uri)+'/'+link
 
-            mitmf_logger.debug("Found path-relative link in secure transmission: " + link)
-            mitmf_logger.debug("New Absolute path-relative link: " + absoluteLink)                
+            mitmf_logger.debug("[SSLServerConnection] Found path-relative link in secure transmission: " + link)
+            mitmf_logger.debug("[SSLServerConnection] New Absolute path-relative link: " + absoluteLink)                
         elif not link.startswith('http'):
             absoluteLink = "http://"+self.headers['host']+link
 
-            mitmf_logger.debug("Found relative link in secure transmission: " + link)
-            mitmf_logger.debug("New Absolute link: " + absoluteLink)                            
+            mitmf_logger.debug("[SSLServerConnection] Found relative link in secure transmission: " + link)
+            mitmf_logger.debug("[SSLServerConnection] New Absolute link: " + absoluteLink)                            
 
         if not absoluteLink == "":                
             absoluteLink = absoluteLink.replace('&amp;', '&')

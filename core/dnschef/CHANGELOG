@@ -1,0 +1,29 @@
+Version 0.3
+
+* Added support for the latest version of the dnslib library - 0.9.3
+* Added support for logging. (idea by kafeine)
+* Added support for SRV, DNSKEY, and RRSIG records. (idea by mubix)
+* Added support for TCP remote nameserver connections. (idea by mubix)
+* DNS name matching is now case insensitive.
+* Various small bug fixes and performance tweaks.
+* Python libraries are no longer bundled with the distribution, but
+  compiled in the Windows binary.
+
+Version 0.2.1
+
+* Fixed a Python 2.6 compatibility issue. (thanks Mehran Goudarzi)
+
+Version 0.2
+
+* Added IPv6 support.
+* Added AAAA, MX, CNAME, NS, SOA and NAPTR support.
+* Added support for ANY queries (returns all known fake records).
+* Changed file format to support more DNS record types.
+* Added alternative DNS port support (contributed by fnv).
+* Added alternative listening port support for the server (contributed by Mark Straver).
+* Updated bundled dnslib library to the latest version - 0.8.2.
+* Included IPy library for IPv6 support.
+
+Version 0.1
+
+* First public release

