@@ -22,12 +22,12 @@ Available plugins
 - ```Spoof``` - Redirect traffic using ARP Spoofing, ICMP Redirects or DHCP Spoofing
 - ```BeEFAutorun``` - Autoruns BeEF modules based on clients OS or browser type
 - ```AppCachePoison``` - Perform App cache poisoning attacks 
-- ```Ferret-NG``` - Tranperently hijacks sessions
+- ```Ferret-NG``` - Transperently hijacks sessions
 - ```BrowserProfiler``` - Attempts to enumerate all browser plugins of connected clients
 - ```CacheKill``` - Kills page caching by modifying headers
 - ```FilePwn``` - Backdoor executables being sent over HTTP using the Backdoor Factory and BDFProxy
 - ```Inject``` - Inject arbitrary content into HTML content
-- ```BrowserPwn``` - Performs drive-by attacks on clients with out-of-date browser plugins
+- ```BrowserSniper``` - Performs drive-by attacks on clients with out-of-date browser plugins
 - ```jskeylogger``` - Injects a javascript keylogger into clients webpages
 - ```Replace``` - Replace arbitary content in HTML content
 - ```SMBAuth``` - Evoke SMB challenge-response auth attempts
@@ -39,6 +39,8 @@ Changelog
 - Config file now updates on the fly!
 
 - ```SessionHijacker``` is replaced with ```Ferret-NG```,  captures cookies and starts a proxy that will feed them to connected clients
+
+- ```JavaPwn``` plugin replced with ```BrowserSniper```, now supports java, flash and browser exploits
 
 - Addition of the ```Screenshotter``` plugin, able to render screenshots of a clients browser at regular intervals
 
