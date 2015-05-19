@@ -172,12 +172,17 @@ NetCreds().start(args.interface, myip)
 print "|_ Net-Creds v{} online".format(NetCreds.version)
 
 #Start DNSChef
-from core.dnschef.DNSchef import DNSChef
+from core.servers.dns.DNSchef import DNSChef
 DNSChef.getInstance().start()
 print "|_ DNSChef v{} online".format(DNSChef.version)
 
+#Start the HTTP Server
+from core.servers.http.HTTPServer import HTTPServer
+HTTPServer.getInstance().start()
+print "|_ HTTPserver online"
+
 #Start the SMB server
-from core.protocols.smb.SMBserver import SMBserver
+from core.servers.smb.SMBserver import SMBserver
 print "|_ SMBserver online (Impacket {})\n".format(SMBserver.impacket_ver)
 SMBserver().start()
 
