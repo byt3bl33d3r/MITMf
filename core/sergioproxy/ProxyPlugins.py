@@ -44,7 +44,7 @@ class ProxyPlugins:
     _instance = None
     
     plist = []
-    mthdDict = {"connectionMade": "clientRequest", "handleResponse": "serverResponse", "handleHeader": "serverHeaders", "handleEndHeaders":"serverHeaders"}
+    mthdDict = {"connectionMade": "clientRequest", "handleStatus": "serverResponseStatus", "handleResponse": "serverResponse", "handleHeader": "serverHeaders", "handleEndHeaders":"serverHeaders"}
     pmthds = {}
 
     @staticmethod

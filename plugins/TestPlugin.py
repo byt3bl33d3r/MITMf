@@ -10,7 +10,7 @@ class TestPlugin(Plugin):
     has_opts = False
 
     def initialize(self, options):
-        HTTPServer.getInstance().application.add_handlers('', [(r"/test", MainHandler)])
+        HTTPServer.getInstance().addHandler(r"/test/(.*)", MainHandler)
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):

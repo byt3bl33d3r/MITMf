@@ -14,6 +14,9 @@ class HTTPServer:
 
         return HTTPServer._instance
 
+    def addHandler(self, urlregex, handler, vhost=''):
+        self.application.add_handlers(vhost, [(urlregex, handler)])
+
     def start(self, port=80):
         self.application.listen(port)
         t = threading.Thread(name='HTTPserver', target=tornado.ioloop.IOLoop.instance().start)
