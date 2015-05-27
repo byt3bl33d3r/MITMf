@@ -90,9 +90,9 @@ class IpTables:
         os.system('iptables -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port {}'.format(http_redir_port))
         self.http = True
 
-    def DNS(self, ip, port):
-        mitmf_logger.debug("[Utils] Setting iptables DNS redirection rule from port 53 to {}:{}".format(ip, port))
-        os.system('iptables -t nat -A PREROUTING -p udp --dport 53 -j DNAT --to {}:{}'.format(ip, port))
+    def DNS(self, dns_redir_port):
+        mitmf_logger.debug("[Utils] Setting iptables DNS redirection rule from port 53 to {}".format(dns_redir_port))
+        os.system('iptables -t nat -A PREROUTING -p udp --destination-port 53 -j REDIRECT --to-port {}'.format(dns_redir_port))
         self.dns = True
 
 class Banners:

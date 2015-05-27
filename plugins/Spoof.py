@@ -48,8 +48,6 @@ class Spoof(Plugin):
 
         #Makes scapy more verbose
         debug = False
-        if options.log_level == 'debug':
-            debug = True
 
         if options.arp:
 
@@ -98,9 +96,7 @@ class Spoof(Plugin):
 
             if not options.manualiptables:
                 if IpTables.getInstance().dns is False:
-                    IpTables.getInstance().DNS(self.myip, self.dnscfg['port'])
-
-            DNSChef.getInstance().loadRecords(self.dnscfg)
+                    IpTables.getInstance().DNS(self.dnscfg['port'])
 
         if not options.arp and not options.icmp and not options.dhcp and not options.dns:
             shutdown("[-] Spoof plugin requires --arp, --icmp, --dhcp or --dns")
@@ -108,7 +104,6 @@ class Spoof(Plugin):
         SystemConfig.setIpForwarding(1)
 
         if not options.manualiptables:
-            IpTables.getInstance().Flush()
             if IpTables.getInstance().http is False:
                 IpTables.getInstance().HTTP(options.listen)
 
