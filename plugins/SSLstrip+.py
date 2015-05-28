@@ -41,7 +41,7 @@ class HSTSbypass(Plugin):
 
         if not options.manualiptables:
             if IpTables.getInstance().dns is False:
-                IpTables.getInstance().DNS(ip_address, self.config['MITMf']['DNS']['port'])
+                IpTables.getInstance().DNS(self.config['MITMf']['DNS']['port'])
 
         URLMonitor.getInstance().setHstsBypass()
         DNSChef.getInstance().setHstsBypass()
