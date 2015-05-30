@@ -46,7 +46,7 @@ class Plugin(ConfigWatcher, object):
         '''
             Handles server response HTTP version, code and message
         '''
-        return (version, code, message)
+        return {"request": request, "version": version, "code": code, "message": message}
 
     def serverResponse(self, response, request, data):
         '''

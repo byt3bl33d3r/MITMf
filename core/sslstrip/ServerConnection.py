@@ -72,7 +72,12 @@ class ServerConnection(HTTPClient):
     def sendRequest(self):
         if self.command == 'GET':
             try:
-                mitmf_logger.info("{} [type:{} os:{}] Sending Request: {}".format(self.client.getClientIP(), self.clientInfo[1], self.clientInfo[0], self.headers['host']))
+                
+                if ('Unknown' in self.clientInfo[0]) or ('Unknown' in self.clientInfo[1]):
+                    mitmf_logger.info("{} Sending Request: {}".format(self.client.getClientIP(), self.headers['host']))
+                else:
+                    mitmf_logger.info("{} [type:{} os:{}] Sending Request: {}".format(self.client.getClientIP(), self.clientInfo[1], self.clientInfo[0], self.headers['host']))
+            
             except Exception as e:
                 mitmf_logger.debug("[ServerConnection] Unable to parse UA: {}".format(e))
                 mitmf_logger.info("{} Sending Request: {}".format(self.client.getClientIP(), self.headers['host']))
@@ -120,10 +125,12 @@ class ServerConnection(HTTPClient):
             self.sendPostData()
 
     def handleStatus(self, version, code, message):
-        try:
-            version, code, message = self.plugins.hook()
-        except ValueError:
-            pass
+
+        values = self.plugins.hook()
+
+        version = values['version']
+        code    = values['code']
+        message = values['message']
 
         mitmf_logger.debug("[ServerConnection] Server response: {} {} {}".format(version, code, message))
         self.client.setResponseCode(int(code), message)

@@ -1,6 +1,5 @@
 from plugins.plugin import Plugin
-from core.servers.http.HTTPServer import HTTPServer
-import tornado.web
+from core.servers.http.HTTPServer import HTTPServer, HTTPHandler
 
 class TestPlugin(Plugin):
     name     = "testplugin"
@@ -10,9 +9,8 @@ class TestPlugin(Plugin):
     has_opts = False
 
     def initialize(self, options):
-        HTTPServer.getInstance().addHandler(r"/test/(.*)", MainHandler)
+        HTTPServer.getInstance().addHandler(r"/test/.*", WebServer)
 
-class MainHandler(tornado.web.RequestHandler):
+class WebServer(HTTPHandler):
     def get(self):
-        print self.request
-        self.write("Hello World!")
+        self.write("It works MOFO!")

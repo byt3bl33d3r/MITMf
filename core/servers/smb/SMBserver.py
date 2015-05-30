@@ -1,81 +1,85 @@
 import logging
 import sys
 import threading
+import os
+
 from socket import error as socketerror
 from impacket import version, smbserver, LOG
+from core.servers.smb.KarmaSMB import KarmaSMBServer
 from core.configwatcher import ConfigWatcher
 from core.utils import shutdown
 
-LOG.setLevel(logging.INFO)
-LOG.propagate = False
-logging.getLogger('smbserver').setLevel(logging.INFO)
-logging.getLogger('impacket').setLevel(logging.INFO)
-
-formatter = logging.Formatter("%(asctime)s [SMBserver] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
-fileHandler = logging.FileHandler("./logs/mitmf.log")
-streamHandler = logging.StreamHandler(sys.stdout)
-fileHandler.setFormatter(formatter)
-streamHandler.setFormatter(formatter)
-LOG.addHandler(fileHandler)
-LOG.addHandler(streamHandler)
+#Logging is something I'm going to have to clean up in the future
 
 class SMBserver(ConfigWatcher):
 
+    _instance    = None
     impacket_ver = version.VER_MINOR
+    server_type  = ConfigWatcher.config["MITMf"]["SMB"]["type"].lower()
+    smbchallenge = ConfigWatcher.config["MITMf"]["SMB"]["Challenge"]
+    smb_port     = int(ConfigWatcher.config["MITMf"]["SMB"]["port"])
 
-    def __init__(self, listenAddress = '0.0.0.0', listenPort=445, configFile=''):
-        
+    @staticmethod
+    def getInstance():
+        if SMBserver._instance == None:
+            SMBserver._instance = SMBserver()
+
+        return SMBserver._instance
+
+    def parseConfig(self):
+        server = None
         try:
-            self.server = smbserver.SimpleSMBServer(listenAddress, listenPort, configFile)
-            self.server.setSMBChallenge(self.config["MITMf"]["SMB"]["Challenge"])
+            if self.server_type == 'normal':
+
+                formatter = logging.Formatter("%(asctime)s [SMBserver] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+                self.configureLogging(formatter)
+
+                server = smbserver.SimpleSMBServer(listenPort=self.smb_port)
+                
+                for share in self.config["MITMf"]["SMB"]["Shares"]:
+                    path = self.config["MITMf"]["SMB"]["Shares"][share]['path']
+                    readonly = self.config["MITMf"]["SMB"]["Shares"][share]['readonly'].lower()
+                    server.addShare(share.upper(), path, readOnly=readonly)
+
+                server.setSMBChallenge(self.smbchallenge)
+                server.setLogFile('')
+
+            elif self.server_type == 'karma':
+
+                formatter = logging.Formatter("%(asctime)s [KarmaSMB] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+                self.configureLogging(formatter)
+
+                server = KarmaSMBServer(self.smbchallenge, self.smb_port)
+                server.defaultFile = self.config["MITMf"]["SMB"]["Karma"]["defaultfile"]
+                
+                for extension, path in self.config["MITMf"]["SMB"]["Karma"].iteritems():
+                    server.extensions[extension.upper()] = os.path.normpath(path)
+
+            else:
+                shutdown("\n[-] Invalid SMB server type specified in config file!")
+
+            return server
+        
         except socketerror as e:
             if "Address already in use" in e:
-                shutdown("\n[-] Unable to start SMB server on port 445: port already in use")
+                shutdown("\n[-] Unable to start SMB server on port {}: port already in use".format(listenPort))
+
+    def configureLogging(self, formatter):
+        #yes I know this looks awful, yuck
+
+        LOG.setLevel(logging.INFO)
+        LOG.propagate = False
+        logging.getLogger('smbserver').setLevel(logging.INFO)
+        logging.getLogger('impacket').setLevel(logging.INFO)
+
+        fileHandler = logging.FileHandler("./logs/mitmf.log")
+        streamHandler = logging.StreamHandler(sys.stdout)
+        fileHandler.setFormatter(formatter)
+        streamHandler.setFormatter(formatter)
+        LOG.addHandler(fileHandler)
+        LOG.addHandler(streamHandler)
 
     def start(self):
-        t = threading.Thread(name='SMBserver', target=self.server.start)
+        t = threading.Thread(name='SMBserver', target=self.parseConfig().start)
         t.setDaemon(True)
         t.start()
-
-"""
-class SMBserver(Thread):
-    def __init__(self):
-        Thread.__init__(self)
-
-    def run(self):
-        # Here we write a mini config for the server
-        smbConfig = ConfigParser.ConfigParser()
-        smbConfig.add_section('global')
-        smbConfig.set('global','server_name','server_name')
-        smbConfig.set('global','server_os','UNIX')
-        smbConfig.set('global','server_domain','WORKGROUP')
-        smbConfig.set('global','log_file', 'None')
-        smbConfig.set('global','credentials_file','')
-
-        # Let's add a dummy share
-        #smbConfig.add_section(DUMMY_SHARE)
-        #smbConfig.set(DUMMY_SHARE,'comment','')
-        #smbConfig.set(DUMMY_SHARE,'read only','no')
-        #smbConfig.set(DUMMY_SHARE,'share type','0')
-        #smbConfig.set(DUMMY_SHARE,'path',SMBSERVER_DIR)
-
-        # IPC always needed
-        smbConfig.add_section('IPC$')
-        smbConfig.set('IPC$','comment','')
-        smbConfig.set('IPC$','read only','yes')
-        smbConfig.set('IPC$','share type','3')
-        smbConfig.set('IPC$','path')
-
-        self.smb = smbserver.SMBSERVER(('0.0.0.0',445), config_parser = smbConfig)
-
-        self.smb.processConfigFile()
-        try:
-            self.smb.serve_forever()
-        except:
-            pass
-
-    def stop(self):
-        self.smb.socket.close()
-        self.smb.server_close()
-        self._Thread__stop()
-"""

@@ -179,12 +179,12 @@ print "|_ DNSChef v{} online".format(DNSChef.version)
 #Start the HTTP Server
 from core.servers.http.HTTPServer import HTTPServer
 HTTPServer.getInstance().start()
-print "|_ HTTPserver online"
+print "|_ HTTP server online"
 
 #Start the SMB server
 from core.servers.smb.SMBserver import SMBserver
-print "|_ SMBserver online (Impacket {})\n".format(SMBserver.impacket_ver)
-SMBserver().start()
+print "|_ SMB server online [Mode: {}] (Impacket {}) \n".format(SMBserver.getInstance().server_type, SMBserver.getInstance().impacket_ver)
+SMBserver.getInstance().start()
 
 #start the reactor
 reactor.run()

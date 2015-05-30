@@ -17,7 +17,7 @@ class SMBTrap(Plugin):
 		self.ourip = SystemConfig.getIP(options.interface)
 
 	def serverResponseStatus(self, request, version, code, message):
-		return (version, 302, "Found")
+		return {"request": request, "version": version, "code": 302, "message": "Found"}
 
 	def serverHeaders(self, response, request):
 		mitmf_logger.info("{} [SMBTrap] Trapping request to {}".format(request.client.getClientIP(), request.headers['host']))
