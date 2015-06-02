@@ -590,7 +590,7 @@ class FilePwn(Plugin):
             if self.bytes_have_format(data, 'zip'):
                 mitmf_logger.info("[FilePwn] {} Detected supported zip file type!".format(client_ip))
                 
-                process = multiprocessing.Process(name='zip', target=self.zip, args=(data,))
+                process = multiprocessing.Process(name='zip', target=self.zip_files, args=(data,))
                 process.daemon = True
                 process.start()
                 #process.join()
