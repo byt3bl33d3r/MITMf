@@ -16,6 +16,7 @@ Contact me at:
 
 Available plugins
 =================
+- ```SMBtrap``` - Exploits the 'SMB Trap' vulnerability on connected clients
 - ```Screenshotter``` -  Uses HTML5 Canvas to render an accurate screenshot of a clients browser
 - ```Responder``` - LLMNR, NBT-NS, WPAD and MDNS poisoner
 - ```SSLstrip+``` - Partially bypass HSTS
@@ -35,6 +36,8 @@ Available plugins
 
 Changelog
 =========
+
+- Added the ```SMBTrap``` plugin
 
 - Config file now updates on the fly!
 

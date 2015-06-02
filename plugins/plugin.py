@@ -12,6 +12,7 @@ class Plugin(ConfigWatcher, object):
     optname     = "generic"
     tree_info   = list()
     desc        = ""
+    version     = "0.0"
     has_opts    = False
 
     def initialize(self, options):
@@ -40,6 +41,12 @@ class Plugin(ConfigWatcher, object):
             Handles all response headers, hooks handleEndHeaders()
         '''
         pass
+
+    def serverResponseStatus(self, request, version, code, message):
+        '''
+            Handles server response HTTP version, code and message
+        '''
+        return {"request": request, "version": version, "code": code, "message": message}
 
     def serverResponse(self, response, request, data):
         '''
