@@ -43,7 +43,7 @@ class BeefAutorun(Inject, Plugin):
 
 		Inject.initialize(self, options)
 
-		self.tree_output.append("Mode: {}".format(self.config['BeEFAutorun']['mode']))
+		self.tree_info.append("Mode: {}".format(self.config['BeEFAutorun']['mode']))
 		self.onConfigChange()
 
 	def onConfigChange(self):
