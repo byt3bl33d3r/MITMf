@@ -77,7 +77,7 @@ class Spoof(Plugin):
             if not options.targets:
                 shutdown("[-] --icmp argument requires --targets")
 
-            icmp = ICMPpoisoner(options.interface, options.targets, options.gateway, options.ip_address)
+            icmp = ICMPpoisoner(options.interface, options.targets, options.gateway, self.myip)
             icmp.debug = debug
 
             self.protocolInstances.append(icmp)
@@ -87,7 +87,7 @@ class Spoof(Plugin):
             if options.targets:
                 shutdown("[-] --targets argument invalid when DCHP spoofing")
 
-            dhcp = DHCPServer(options.interface, self.dhcpcfg, options.ip_address, options.mac_address)
+            dhcp = DHCPServer(options.interface, self.dhcpcfg, self.myip, self.mymac)
             dhcp.shellshock = options.shellshock
             dhcp.debug = debug
             self.protocolInstances.append(dhcp)
