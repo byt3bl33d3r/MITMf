@@ -13,5 +13,4 @@ service_identity
 watchdog
 impacket
 capstone
-tornado
 pypcap

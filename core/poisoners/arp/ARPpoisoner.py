@@ -86,7 +86,7 @@ class ARPpoisoner():
                         targetmac = getmacbyip(targetip)
 
                         if targetmac is None:
-                            mitmf_logger.error("[ARPpoisoner] Unable to resolve MAC address of {}".format(targetip))
+                            mitmf_logger.debug("[ARPpoisoner] Unable to resolve MAC address of {}".format(targetip))
 
                         elif targetmac:
                             send(ARP(pdst=targetip, psrc=self.gatewayip, hwdst=targetmac, op="is-at"), iface=self.interface, verbose=self.debug)
@@ -113,7 +113,7 @@ class ARPpoisoner():
                         targetmac = getmacbyip(targetip)
                         
                         if targetmac is None:
-                            mitmf_logger.error("[ARPpoisoner] Unable to resolve MAC address of {}".format(targetip))
+                            mitmf_logger.debug("[ARPpoisoner] Unable to resolve MAC address of {}".format(targetip))
 
                         elif targetmac:
                             send(ARP(pdst=targetip, psrc=self.gatewayip, hwdst=targetmac, op="who-has"), iface=self.interface, verbose=self.debug)
@@ -138,7 +138,7 @@ class ARPpoisoner():
                 targetmac = getmacbyip(targetip)
                 
                 if targetmac is None:
-                    mitmf_logger.error("[ARPpoisoner] Unable to resolve MAC address of {}".format(targetip))
+                    mitmf_logger.debug("[ARPpoisoner] Unable to resolve MAC address of {}".format(targetip))
 
                 elif targetmac:
                     mitmf_logger.info("[ARPpoisoner] Restoring connection {} <-> {} with {} packets per host".format(targetip, self.gatewayip, count))
