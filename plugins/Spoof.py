@@ -19,11 +19,11 @@
 #
 
 from core.utils import SystemConfig, IpTables, shutdown
-from core.protocols.arp.ARPpoisoner import ARPpoisoner
-from core.protocols.arp.ARPWatch import ARPWatch
-from core.dnschef.DNSchef import DNSChef
-from core.protocols.dhcp.DHCPServer import DHCPServer
-from core.protocols.icmp.ICMPpoisoner import ICMPpoisoner
+from core.poisoners.arp.ARPpoisoner import ARPpoisoner
+from core.poisoners.arp.ARPWatch import ARPWatch
+from core.servers.dns.DNSchef import DNSChef
+from core.poisoners.dhcp.DHCPpoisoner import DHCPpoisoner
+from core.poisoners.icmp.ICMPpoisoner import ICMPpoisoner
 from plugins.plugin import Plugin
 from scapy.all import *
 

@@ -8,7 +8,7 @@ from scapy.all import *
 
 mitmf_logger = logging.getLogger('mitmf')
 
-class DHCPServer():
+class DHCPpoisoner():
 
 	def __init__(self, interface, dhcpcfg, ip, mac):
 		self.interface   = interface

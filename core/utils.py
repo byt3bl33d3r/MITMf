@@ -69,8 +69,9 @@ class IpTables:
     _instance = None
 
     def __init__(self):
-        self.dns   = False
-        self.http  = False
+        self.dns       = False
+        self.http      = False
+        self.smb       = False
 
     @staticmethod
     def getInstance():
@@ -94,6 +95,11 @@ class IpTables:
         mitmf_logger.debug("[Utils] Setting iptables DNS redirection rule from port 53 to {}".format(dns_redir_port))
         os.system('iptables -t nat -A PREROUTING -p udp --destination-port 53 -j REDIRECT --to-port {}'.format(dns_redir_port))
         self.dns = True
+
+    def SMB(self, smb_redir_port):
+        mitmf_logger.debug("[Utils] Setting iptables SMB redirection rule from port 445 to {}".format(smb_redir_port))
+        os.system('iptables -t nat -A PREROUTING -p tcp --destination-port 445 -j REDIRECT --to-port {}'.format(smb_redir_port))
+        self.smb = True
 
 class Banners:
 
