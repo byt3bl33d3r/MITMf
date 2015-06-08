@@ -19,10 +19,6 @@ class Plugin(ConfigWatcher, object):
         '''Called if plugin is enabled, passed the options namespace'''
         self.options = options
 
-    def startThread(self, options):
-        '''Anything that will subclass this function will be a thread, passed the options namespace'''
-        return
-
     def clientRequest(self, request):
         '''
             Handles all outgoing requests, hooks connectionMade()

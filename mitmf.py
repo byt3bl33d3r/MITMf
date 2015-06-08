@@ -158,9 +158,10 @@ for p in ProxyPlugins.getInstance().plist:
     p.pluginReactor(strippingFactory) #we pass the default strippingFactory, so the plugins can use it
     p.startConfigWatch()
 
-    t = threading.Thread(name='{}-thread'.format(p.name), target=p.startThread, args=(args,))
-    t.setDaemon(True)
-    t.start()
+    if hasattr(p, 'startThread'):
+        t = threading.Thread(name='{}-Thread'.format(p.name), target=p.startThread)
+        t.setDaemon(True)
+        t.start()
 
 print "|"
 print "|_ Sergio-Proxy v{} online".format(sergio_version)

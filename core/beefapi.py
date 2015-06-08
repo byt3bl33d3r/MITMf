@@ -1,26 +1,41 @@
-#!/usr/bin/env python
+#! /usr/bin/env python2.7
+
+# BeEF-API - A Python API for BeEF (The Browser Exploitation Framework) http://beefproject.com/ 
+
+# Copyright (c) 2015-2016 Marcello Salvati - byt3bl33d3r@gmail.com
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+#
+
 import requests
 import json
 import logging
-from random import sample
-from string import lowercase, digits
+
+from UserList import UserList
 
 logging.getLogger("requests").setLevel(logging.WARNING)  #Disables "Starting new HTTP Connection (1)" log message
 
 class BeefAPI:
 
 	def __init__(self, opts=[]):
-		self.host = "127.0.0.1" or opts.get(host)
-		self.port = "3000" or opts.get(port)
+		self.host = opts.get('host') or "127.0.0.1"
+		self.port = opts.get('port') or "3000"
 		self.token = None
-		self.url = "http://%s:%s/api/" % (self.host, self.port)
+		self.url = "http://{}:{}/api/".format(self.host, self.port)
 		self.login_url = self.url + "admin/login"
-		self.hookurl = self.url + "hooks?token="
-		self.mod_url = self.url + "modules?token="
-		self.log_url = self.url + "logs?token="
-
-	def random_url(self):
-		return "".join(sample(digits + lowercase, 8))
 
 	def login(self, username, password):
 		try:
@@ -30,142 +45,269 @@ class BeefAPI:
 
 			if (r.status_code == 200) and (data["success"]):
 				self.token = data["token"]  #Auth token
+				
+				self.hooks_url = "{}hooks?token={}".format(self.url, self.token)
+				self.modules_url = "{}modules?token={}".format(self.url, self.token)
+				self.logs_url = "{}logs?token={}".format(self.url, self.token)
+				self.dns_url = "{}dns/ruleset?token={}".format(self.url, self.token)
+				
 				return True
 			elif r.status_code != 200:
 				return False
 
-		except Exception, e:
-			print "beefapi ERROR: %s" % e
+		except Exception as e:
+			print "[BeEF-API] Error logging in to BeEF: {}".format(e)
 
-	def sessions_online(self):
-		return self.get_sessions("online", "session")
+	@property	
+	def hooked_browsers(self):
+		r = requests.get(self.hooks_url)
+		return Hooked_Browsers(r.json(), self.url, self.token)
 
-	def sessions_offline(self):
-		return self.get_sessions("offline", "session")
+	@property
+	def dns(self):
+		r = requests.get(self.dns_url)
+		return DNS(r.json(), self.url, self.token)
 
-	def session2host(self, session):
-		return self.conversion(session, "ip")
-
-	def session2id(self, session):
-		return self.conversion(session, "id")
-
-	def hook_info(self, hook):  #Returns parsed information on a session
-		session = self.conversion(hook, "session")
-		url = self.hookurl + self.token
-		r = requests.get(url).json()
-
-		try:
-			states = ["online", "offline"]
-			for state in states:
-				for v in r["hooked-browsers"][state].items():
-					if v[1]["session"] == session:
-						return v[1]
-		except IndexError:
-			pass
-
-	def hook_info_all(self, hook):
-		session = self.conversion(hook, "session")
-		url = self.url + "hooks/%s?token=%s" % (session, self.token)
-		return requests.get(url).json()
-
-	def hook_logs(self, hook):
-		session = self.conversion(hook, "session")
-		url = self.url + "logs/%s?token=%s" % (session, self.token)
-		return requests.get(url).json()
-
-	def hosts_online(self):
-		return self.get_sessions("online", "ip")
-
-	def hosts_offline(self):
-		return self.get_sessions("offline", "ip")
-
-	def host2session(self, host):
-		return self.conversion(host, "session")
-
-	def host2id(self, host):
-		return self.conversion(host, "id")
-
-	def ids_online(self):
-		return self.get_sessions("online", "id")
-
-	def ids_offline(self):
-		return self.get_sessions("offline", "id")
-
-	def id2session(self, id):
-		return self.conversion(id, "session")
-
-	def id2host(self, id):
-		return self.conversion(id, "ip")
-
-	def module_id(self, name):  #Returns module id
-		url = self.mod_url + self.token
-		try:
-			r = requests.get(url).json()
-			for v in r.values():
-				if v["name"] == name:
-					return v["id"]
-		except Exception, e:
-			print "beefapi ERROR: %s" % e
-
-	def module_name(self, id):  #Returns module name
-		url = self.mod_url + self.token
-		try:
-			r = requests.get(url).json()
-			for v in r.values():
-				if v["id"] == id:
-					return v["name"]
-		except Exception, e:
-			print "beefapi ERROR: %s" % e
-
-	def module_run(self, hook, mod_id, options={}):  #Executes a module on a specified session
-		try:
-			session = self.conversion(hook, "session")
-			headers = {"Content-Type": "application/json", "charset": "UTF-8"}
-			payload = json.dumps(options)
-			url = self.url + "modules/%s/%s?token=%s" % (session, mod_id, self.token)
-			return requests.post(url, headers=headers, data=payload).json()
-		except Exception, e:
-			print "beefapi ERROR: %s" % e
-
-	def module_results(self, hook, mod_id, cmd_id):
-		session = self.conversion(hook, "session")
-		url = self.mod_url + "%s/%s/%s?token=%s" % (session, mod_id, cmd_id, self.token)
-		return requests.get(url).json()
-
-	def modules_list(self):
-		return requests.get(self.mod_url + self.token).json()
-
-	def module_info(self, id):
-		url = self.url + "modules/%s?token=%s" % (id, self.token)
-		return requests.get(url).json()
-
+	@property
 	def logs(self):
-		return requests.get(self.log_url + self.token).json()
+		logs = []
+		r = requests.get(self.logs_url)
+		for log in r.json()['logs']:
+			logs.append(Log(log))
+		return logs
 
-	def conversion(self, value, return_value):  #Helper function for all conversion functions 
-		url = self.hookurl + self.token
-		try:
-			r = requests.get(url).json()
-			states = ["online", "offline"]
-			for state in states:
-				for v in r["hooked-browsers"][state].items():
-					for r in v[1].values():
-						if str(value) == str(r):
-							return v[1][return_value]
+	@property
+	def modules(self):
+		modules = ModuleList([])
+		r = requests.get(self.modules_url)
+		for k,v in r.json().iteritems():
+			modules.append(Module(v, self.url, self.token))
+		return modules
 
-		except Exception, e:
-			print "beefapi ERROR: %s" % e
+class ModuleList(UserList):
 
-		except IndexError:
-			pass
+	def __init__(self, mlist):
+		self.data = mlist
 
-	def get_sessions(self, state, value):  #Helper function
-		try:
-			hooks = []
-			r = requests.get(self.hookurl + self.token).json()
-			for v in r["hooked-browsers"][state].items():
-				hooks.append(v[1][value])
+	def findbyid(self, m_id):
+		for m in self.data:
+			if m_id == m.id:
+				return m
 
-			return hooks
-		except Exception, e:
-			print "beefapi ERROR: %s" % e
+	def findbyname(self, m_name):
+		pmodules = ModuleList([])
+		for m in self.data:
+			if (m.name.lower().find(m_name.lower()) != -1) :
+				pmodules.append(m)
+		return pmodules
+
+class SessionList(UserList):
+
+	def __init__(self, slist):
+		self.data = slist
+
+	def findbysession(self, session):
+		for s in self.data:
+			if s.session == session:
+				return s
+
+	def findbyos(self, os):
+		res = SessionList([])
+		for s in self.data:
+			if (s.os.lower().find(os.lower()) != -1):
+				res.append(s)
+		return res
+
+	def findbyip(self, ip):
+		res = SessionList([])
+		for s in self.data:
+			if ip == s.ip:
+				res.append(s)
+		return res
+
+	def findbyid(self, s_id):
+		for s in self.data:
+			if s.id == s_id:
+				return s
+
+	def findbybrowser(self, browser):
+		res = SessionList([])
+		for s in self.data:
+			if browser == s.name:
+				res.append(s)
+		return res
+
+	def findbybrowser_v(self, browser_v):
+		res = SessionList([])
+		for s in self.data:
+			if browser_v == s.version:
+				res.append(s)
+		return res
+
+	def findbypageuri(self, uri):
+		res = SessionList([])
+		for s in self.data:
+			if uri in s.page_uri:
+				res.append(s)
+		return res
+
+	def findbydomain(self, domain):
+		res = SessionList([])
+		for s in self.data:
+			if domain in s.domain:
+				res.append(s)
+		return res		
+
+class Module(object):
+
+	def __init__(self, data, url, token):
+		self.url = url
+		self.token = token
+
+		self.id = data['id']
+		self.name = data['name']
+		self.category = data['category']
+
+	@property
+	def options(self):
+		r = requests.get("{}/modules/{}?token={}".format(self.url, self.id, self.token)).json()
+		return r['options']
+
+	@property
+	def description(self):
+		r = requests.get("{}/modules/{}?token={}".format(self.url, self.id, self.token)).json()
+		return r['description']
+
+	def run(self, session, options={}):
+		headers = {"Content-Type": "application/json", "charset": "UTF-8"}
+		payload = json.dumps(options)
+		r = requests.post("{}/modules/{}/{}?token={}".format(self.url, session, self.id, self.token), headers=headers, data=payload)
+		return r.json()
+
+	def multi_run(self, options={}, hb_ids=[]):
+		headers = {"Content-Type": "application/json", "charset": "UTF-8"}
+		payload = json.dumps({"mod_id":self.id, "mod_params": options, "hb_ids": hb_ids})
+		r = requests.post("{}/modules/multi_browser?token={}".format(self.url, self.token), headers=headers, data=payload)
+		return r.json()
+
+	def results(self, session, cmd_id):
+		r = requests.get("{}/modules/{}/{}/{}?token={}".format(self.url, session, self.id, cmd_id, self.token))
+		return r.json()
+
+class Log(object):
+
+	def __init__(self, log_dict):
+		self.id = log_dict['id']
+		self.date = log_dict['date']
+		self.event = log_dict['event']
+		self.type = log_dict['type']
+
+class DNS_Rule(object):
+
+	def __init__(self, rule, url, token):
+		self.url = url
+		self.token = token
+
+		self.id = rule['id']
+		self.pattern = rule['pattern']
+		self.type = rule['type']
+		self.response = rule=['response']
+
+	def delete(self):
+		r = requests.delete("{}/dns/rule/{}?token={}".format(self.url, self.id, self.token))
+		return r.json()
+
+class DNS(object):
+
+	def __init__(self, data, url, token):
+		self.data = data
+		self.url = url
+		self.token = token
+
+	@property
+	def ruleset(self):
+		ruleset = []
+		r = requests.get("{}/dns/ruleset?token={}".format(self.url, self.token))
+		for rule in r.json()['ruleset']:
+			ruleset.append(DNS_Rule(rule, self.url, self.token))
+		return ruleset
+
+	def add(self, pattern, resource, response=[]):
+		headers = {"Content-Type": "application/json", "charset": "UTF-8"}
+		payload = json.dumps({"pattern": pattern, "resource": resource, "response": response})
+		r = requests.post("{}/dns/rule?token={}".format(self.url, self.token), headers=headers, data=payload)
+		return r.json()
+
+	def delete(self, rule_id):
+		r = requests.delete("{}/dns/rule/{}?token={}".format(self.url, rule_id, self.token))
+		return r.json()
+
+class Hooked_Browsers(object):
+
+	def __init__(self, data, url, token):
+		self.data = data
+		self.url = url
+		self.token = token
+
+	@property
+	def online(self):
+		sessions = SessionList([])
+		for k,v in self.data['hooked-browsers']['online'].iteritems():
+			sessions.append(Session(v['session'], self.data, self.url, self.token))
+		return sessions
+
+	@property
+	def offline(self):
+		sessions = SessionList([])
+		for k,v in self.data['hooked-browsers']['offline'].iteritems():
+			sessions.append(Session(v['session'], self.data, self.url, self.token))
+		return sessions
+
+class Session(object):
+
+	def __init__(self, session, data, url, token):
+		self.session = session
+		self.data = data
+		self.url = url
+		self.token = token
+
+		self.domain = self.get_property('domain')
+		self.id = self.get_property('id')
+		self.ip = self.get_property('ip')
+		self.name = self.get_property('name') #Browser name
+		self.os = self.get_property('os')
+		self.page_uri = self.get_property('page_uri')
+		self.platform = self.get_property('platform') #Ex. win32
+		self.port = self.get_property('port')
+		self.version = self.get_property('version') #Browser version
+
+	@property
+	def details(self):
+		r = requests.get('{}/hooks/{}?token={}'.format(self.url, self.session, self.token))
+		return r.json()
+
+	@property
+	def logs(self):
+		logs = []
+		r = requests.get('{}/logs/{}?token={}'.format(self.url, self.session, self.token))
+		for log in r.json()['logs']:
+			logs.append(Log(log))
+		return logs
+
+	def run(self, module_id, options={}):
+		headers = {"Content-Type": "application/json", "charset": "UTF-8"}
+		payload = json.dumps(options)
+		r = requests.post("{}/modules/{}/{}?token={}".format(self.url, self.session, module_id, self.token), headers=headers, data=payload)
+		return r.json()
+
+	def multi_run(self, options={}):
+		headers = {"Content-Type": "application/json", "charset": "UTF-8"}
+		payload = json.dumps({"hb": self.session, "modules":[options]})
+		r = requests.post("{}/modules/multi_module?token={}".format(self.url, self.token), headers=headers, data=payload)
+		return r.json()
+
+	def get_property(self, key):
+		for k,v in self.data['hooked-browsers'].iteritems():
+			for l,s in v.iteritems(): 
+				if self.session == s['session']:
+					return s[key]

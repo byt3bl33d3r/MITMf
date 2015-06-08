@@ -48,7 +48,7 @@ class BrowserSniper(BrowserProfiler, Plugin):
         msfversion = Msf().version()
         self.tree_info.append("Connected to Metasploit v{}".format(msfversion))
 
-    def startThread(self, options):
+    def startThread(self):
         self.snipe()
 
     def onConfigChange(self):

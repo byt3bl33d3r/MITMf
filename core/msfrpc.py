@@ -95,7 +95,9 @@ class Msf:
     '''
     def __init__(self):
         try:
-            self.msf = Msfrpc({"host": ConfigWatcher.config['MITMf']['Metasploit']['rpcip']})
+            self.msf = Msfrpc({"host": ConfigWatcher.config['MITMf']['Metasploit']['rpcip'], 
+                               "port": ConfigWatcher.config['MITMf']['Metasploit']['rpcport']})
+
             self.msf.login('msf', ConfigWatcher.config['MITMf']['Metasploit']['rpcpass'])
         except Exception as e:
             shutdown("[Msfrpc] Error connecting to Metasploit: {}".format(e))
