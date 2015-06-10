@@ -82,6 +82,7 @@ class ARPWatch:
                 try:
                     if packet is not None:
                         send(packet, verbose=self.debug, iface=self.interface)
-                except Exception, e:
-                    mitmf_logger.error("[ARPWatch] Error sending re-poison packet: {}".format(e))
+                except Exception as e:
+                    if "Interrupted system call" not in e:
+                        mitmf_logger.error("[ARPWatch] Exception occurred while sending re-poison packet: {}".format(e))
                     pass
