@@ -4,7 +4,7 @@ import threading
 import os
 
 from socket import error as socketerror
-from impacket import version, smbserver, LOG
+from mitmflib.impacket import version, smbserver, LOG
 from core.servers.smb.KarmaSMB import KarmaSMBServer
 from core.configwatcher import ConfigWatcher
 from core.utils import shutdown

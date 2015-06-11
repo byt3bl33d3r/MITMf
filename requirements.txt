@@ -1,16 +1,13 @@
 Twisted
 requests
 netaddr
-scapy
 msgpack-python
-dnslib
 configobj
+mitmflib
 Pillow
 pefile
 ipy
 pyopenssl
 service_identity
-watchdog
-impacket
 capstone
 pypcap

@@ -5,7 +5,7 @@ from traceback import print_exc
 from netaddr import IPNetwork, IPRange, IPAddress, AddrFormatError
 from time import sleep
 from core.utils import shutdown
-from scapy.all import *
+from mitmflib.scapy.all import *
 
 mitmf_logger = logging.getLogger('mitmf')
 

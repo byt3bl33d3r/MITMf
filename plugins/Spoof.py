@@ -25,7 +25,7 @@ from core.servers.dns.DNSchef import DNSChef
 from core.poisoners.dhcp.DHCPpoisoner import DHCPpoisoner
 from core.poisoners.icmp.ICMPpoisoner import ICMPpoisoner
 from plugins.plugin import Plugin
-from scapy.all import *
+from mitmflib.scapy.all import *
 
 class Spoof(Plugin):
     name        = "Spoof"

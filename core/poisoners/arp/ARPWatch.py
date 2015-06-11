@@ -3,7 +3,7 @@ import os
 import sys
 import threading
 
-from scapy.all import *
+from mitmflib.scapy.all import *
 from core.utils import shutdown
 
 mitmf_logger = logging.getLogger('mitmf')
