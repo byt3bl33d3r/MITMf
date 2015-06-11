@@ -3,6 +3,7 @@ requests
 netaddr
 scapy
 msgpack-python
+dnspython
 dnslib
 configobj
 Pillow
