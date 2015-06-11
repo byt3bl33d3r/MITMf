@@ -2,6 +2,9 @@ Twisted
 requests
 netaddr
 scapy
+dnspython
+cryptography
+pycrypto
 msgpack-python
 configobj
 mitmflib

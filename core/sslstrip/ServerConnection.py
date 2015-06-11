@@ -24,8 +24,8 @@ import zlib
 import gzip
 import StringIO
 import sys
-import core.httpagentparser as hap
 
+from mitmflib.user_agents import parse
 from twisted.web.http import HTTPClient
 from URLMonitor import URLMonitor
 from core.sergioproxy.ProxyPlugins import ProxyPlugins
@@ -72,15 +72,12 @@ class ServerConnection(HTTPClient):
     def sendRequest(self):
         if self.command == 'GET':
             try:
-                
-                if ('Unknown' in self.clientInfo[0]) or ('Unknown' in self.clientInfo[1]):
-                    mitmf_logger.info("{} Sending Request: {}".format(self.client.getClientIP(), self.headers['host']))
-                else:
-                    mitmf_logger.info("{} [type:{} os:{}] Sending Request: {}".format(self.client.getClientIP(), self.clientInfo[1], self.clientInfo[0], self.headers['host']))
-            
+                user_agent = parse(self.headers['user-agent'])
+                self.clientInfo = (user_agent.browser.family, user_agent.browser.version[0], user_agent.os.family)
+                mitmf_logger.info("{} [type:{}-{} os:{}] {}".format(self.client.getClientIP(), user_agent.browser.family, user_agent.browser.version[0], user_agent.os.family, self.headers['host']))
             except Exception as e:
                 mitmf_logger.debug("[ServerConnection] Unable to parse UA: {}".format(e))
-                mitmf_logger.info("{} Sending Request: {}".format(self.client.getClientIP(), self.headers['host']))
+                mitmf_logger.info("{} Sending request: {}".format(self.client.getClientIP(), self.headers['host']))
                 pass
         
             mitmf_logger.debug("[ServerConnection] Full request: {}{}".format(self.headers['host'], self.uri))
@@ -110,12 +107,6 @@ class ServerConnection(HTTPClient):
 
     def connectionMade(self):
         mitmf_logger.debug("[ServerConnection] HTTP connection made.")
-        try:
-            self.clientInfo = hap.simple_detect(self.headers['user-agent'])
-        except KeyError as e:
-            mitmf_logger.debug("[ServerConnection] Client didn't send UA with request")
-            self.clientInfo = None
-            pass
 
         self.plugins.hook()
         self.sendRequest()
@@ -152,7 +143,7 @@ class ServerConnection(HTTPClient):
                 self.isCompressed = True
 
         elif (key.lower()== 'strict-transport-security'):
-            mitmf_logger.info("{} [type:{} os:{}] Zapped a strict-trasport-security header".format(self.client.getClientIP(), self.clientInfo[1], self.clientInfo[0]))
+            mitmf_logger.info("{} [type:{}-{} os:{}] Zapped a strict-trasport-security header".format(self.client.getClientIP(), self.clientInfo[0], self.clientInfo[1], self.clientInfo[2]))
 
         elif (key.lower() == 'content-length'):
             self.contentLength = value
