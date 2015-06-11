@@ -1,6 +1,7 @@
 Twisted
 requests
 netaddr
+scapy
 msgpack-python
 configobj
 mitmflib

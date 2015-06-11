@@ -4,7 +4,7 @@ import binascii
 import random
 
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Error when importing scapy
-from mitmflib.scapy.all import *
+from scapy.all import *
 
 mitmf_logger = logging.getLogger('mitmf')
 

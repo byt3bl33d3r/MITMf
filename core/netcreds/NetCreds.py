@@ -17,7 +17,7 @@ from urllib import unquote
 
 # shut up scapy
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
-from mitmflib.scapy.all import *
+from scapy.all import *
 conf.verb=0
 
 mitmf_logger = logging.getLogger('mitmf')

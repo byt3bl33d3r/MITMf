@@ -26,7 +26,7 @@ import re
 import sys
 
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Error when importing scapy
-from mitmflib.scapy.all import get_if_addr, get_if_hwaddr
+from scapy.all import get_if_addr, get_if_hwaddr
 from core.sergioproxy.ProxyPlugins import ProxyPlugins
 
 mitmf_logger = logging.getLogger('mitmf')
