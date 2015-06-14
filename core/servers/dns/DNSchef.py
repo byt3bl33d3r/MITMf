@@ -43,7 +43,7 @@ from configobj import ConfigObj
 from core.configwatcher import ConfigWatcher
 from core.utils import shutdown
 
-from dnslib import *
+from mitmflib.dnslib import *
 from IPy import IP
 
 formatter = logging.Formatter("%(asctime)s %(message)s", datefmt="%Y-%m-%d %H:%M:%S")

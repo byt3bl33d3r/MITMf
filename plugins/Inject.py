@@ -170,6 +170,7 @@ class Inject(CacheKill, Plugin):
         options.add_argument("--js-url", type=str, help="Location of your (presumably) malicious Javascript.")
         options.add_argument("--html-url", type=str, help="Location of your (presumably) malicious HTML. Injected via hidden iframe.")
         options.add_argument("--html-payload", type=str, default='', help="String you would like to inject.")
+        #options.add_argument("--html-file", type=argparse.FileType('r'), help='File containg HTML you would like to inject')
         options.add_argument("--match-str", type=str, default=None, help="String you would like to match and place your payload before. (</body> by default)")
         options.add_argument("--preserve-cache", action="store_true", help="Don't kill the server/client caching.")
         group = options.add_mutually_exclusive_group(required=False)

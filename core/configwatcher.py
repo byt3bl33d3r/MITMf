@@ -1,8 +1,8 @@
 #! /usr/bin/env python2.7
 
 import logging
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
+from mitmflib.watchdog.observers import Observer
+from mitmflib.watchdog.events import FileSystemEventHandler
 from configobj import ConfigObj
 
 logging.getLogger("watchdog").setLevel(logging.ERROR) #Disables watchdog's debug messages

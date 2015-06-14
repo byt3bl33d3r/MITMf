@@ -56,13 +56,13 @@ import logging
 import ntpath
 import ConfigParser
 
-from impacket import LOG as logger
-from impacket import smbserver, smb, version
-import impacket.smb3structs as smb2
-from impacket.smb import FILE_OVERWRITE, FILE_OVERWRITE_IF, FILE_WRITE_DATA, FILE_APPEND_DATA, GENERIC_WRITE
-from impacket.nt_errors import STATUS_USER_SESSION_DELETED, STATUS_SUCCESS, STATUS_ACCESS_DENIED, STATUS_NO_MORE_FILES, \
+from mitmflib.impacket import LOG as logger
+from mitmflib.impacket import smbserver, smb, version
+import mitmflib.impacket.smb3structs as smb2
+from mitmflib.impacket.smb import FILE_OVERWRITE, FILE_OVERWRITE_IF, FILE_WRITE_DATA, FILE_APPEND_DATA, GENERIC_WRITE
+from mitmflib.impacket.nt_errors import STATUS_USER_SESSION_DELETED, STATUS_SUCCESS, STATUS_ACCESS_DENIED, STATUS_NO_MORE_FILES, \
     STATUS_OBJECT_PATH_NOT_FOUND
-from impacket.smbserver import SRVSServer, decodeSMBString, findFirst2, STATUS_SMB_BAD_TID, encodeSMBString, \
+from mitmflib.impacket.smbserver import SRVSServer, decodeSMBString, findFirst2, STATUS_SMB_BAD_TID, encodeSMBString, \
     getFileTime, queryPathInformation
 
 class KarmaSMBServer():

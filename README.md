@@ -12,6 +12,8 @@ Contact me at:
 - IRC on Freenode: #MITMf
 - Email: byt3bl33d3r@gmail.com
 
+**Update: Installation steps have changed! Please read the new [instructions](#installation)** 
+
 **Before submitting issues, please read the [FAQ](#faq) and the appropriate [section](#submitting-issues).**
 
 Available plugins
@@ -81,12 +83,14 @@ How to install on Kali
 
 Installation
 ============
-If MITMf is not in your distro's repo or you just want the latest version:
-- Run the command ```git clone https://github.com/byt3bl33d3r/MITMf.git``` to clone this directory
-- Run the ```setup.sh``` script
-- Run the command ```pip install --upgrade -r requirements.txt``` to install all Python dependencies
+If you're rocking Kali and want the latest version:
+- Clone this repository
+- Run the ```kali_setup.sh``` script
 
-On Kali Linux, if you get an error while installing the ```pypcap``` package or when starting MITMf you see: ```ImportError: no module named pcap```, run ```apt-get install python-pypcap``` to fix it
+If you're rocking any other Linux distro:
+- Clone this repository
+- Run the ```other_setup.sh``` script
+- Run the command ```pip install --upgrade -r requirements.txt``` to install all Python dependencies
 
 Submitting Issues
 =================
