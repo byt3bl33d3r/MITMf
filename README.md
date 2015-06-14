@@ -13,6 +13,7 @@ Contact me at:
 - Email: byt3bl33d3r@gmail.com
 
 **Update: Installation steps have changed! Please read the new [instructions](#installation)** 
+
 **Before submitting issues, please read the [FAQ](#faq) and the appropriate [section](#submitting-issues).**
 
 Available plugins
