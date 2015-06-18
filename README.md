@@ -3,7 +3,7 @@ MITMf V0.9.7
 
 Framework for Man-In-The-Middle attacks
 
-Quick tutorials, examples and developer updates at: http://sign0f4.blogspot.it
+Quick tutorials, examples and developer updates at: https://byt3bl33d3r.github.io
 
 This tool is based on [sergio-proxy](https://github.com/supernothing/sergio-proxy) and is an attempt to revive and update the project.
 
