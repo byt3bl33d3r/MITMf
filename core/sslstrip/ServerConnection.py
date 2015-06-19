@@ -143,7 +143,10 @@ class ServerConnection(HTTPClient):
                 self.isCompressed = True
 
         elif (key.lower()== 'strict-transport-security'):
-            mitmf_logger.info("{} [type:{}-{} os:{}] Zapped a strict-trasport-security header".format(self.client.getClientIP(), self.clientInfo[0], self.clientInfo[1], self.clientInfo[2]))
+            if self.clientInfo is not None:
+                mitmf_logger.info("{} [type:{}-{} os:{}] Zapped a strict-trasport-security header".format(self.client.getClientIP(), self.clientInfo[0], self.clientInfo[1], self.clientInfo[2]))
+            else:
+                mitmf_logger.info("{} Zapped a strict-trasport-security header".format(self.client.getClientIP()))
 
         elif (key.lower() == 'content-length'):
             self.contentLength = value
