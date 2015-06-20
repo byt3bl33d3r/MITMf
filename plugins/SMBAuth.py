@@ -32,7 +32,7 @@ class SMBAuth(Inject, Plugin):
     def initialize(self, options):
         self.target_ip = SystemConfig.getIP(options.interface)
 
-        Inject.initialize(options)
+        Inject.initialize(self, options)
         self.html_payload = self._get_data()
 
     def _get_data(self):
