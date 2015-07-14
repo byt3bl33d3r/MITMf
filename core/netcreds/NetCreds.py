@@ -20,7 +20,7 @@ logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 from scapy.all import *
 conf.verb=0
 
-mitmf_logger = logging.getLogger('mitmf')
+log = logging.getLogger('mitmf')
 
 DN = open(devnull, 'w')
 pkt_frag_loads = OrderedDict()
@@ -47,13 +47,11 @@ class NetCreds:
 
     version = "1.0"
 
-    def sniffer(self, myip, interface):
-        #set the filter to our ip to prevent capturing traffic coming/going from our box
-        sniff(iface=interface, prn=pkt_parser, filter="not host {}".format(myip), store=0)
-        #sniff(iface=interface, prn=pkt_parser, store=0)
+    def sniffer(self, interface):
+        sniff(iface=interface, prn=pkt_parser, store=0)
 
-    def start(self, myip, interface):
-        t = threading.Thread(name='NetCreds', target=self.sniffer, args=(interface, myip,))
+    def start(self, interface):
+        t = threading.Thread(name='NetCreds', target=self.sniffer, args=(interface,))
         t.setDaemon(True)
         t.start()
 
@@ -903,7 +901,7 @@ def printer(src_ip_port, dst_ip_port, msg):
         print_str = '[{} > {}] {}'.format(src_ip_port, dst_ip_port, msg)
         # All credentials will have dst_ip_port, URLs will not
 
-        mitmf_logger.info("[NetCreds] {}".format(print_str))
+        log.info("[NetCreds] {}".format(print_str))
     else:
         print_str = '[{}] {}'.format(src_ip_port.split(':')[0], msg)
-        mitmf_logger.info("[NetCreds] {}".format(print_str))
+        log.info("[NetCreds] {}".format(print_str))

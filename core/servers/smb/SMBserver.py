@@ -9,15 +9,16 @@ from core.servers.smb.KarmaSMB import KarmaSMBServer
 from core.configwatcher import ConfigWatcher
 from core.utils import shutdown
 
-#Logging is something I'm going to have to clean up in the future
-
 class SMBserver(ConfigWatcher):
 
-    _instance    = None
-    impacket_ver = version.VER_MINOR
-    server_type  = ConfigWatcher.config["MITMf"]["SMB"]["type"].lower()
-    smbchallenge = ConfigWatcher.config["MITMf"]["SMB"]["Challenge"]
-    smb_port     = int(ConfigWatcher.config["MITMf"]["SMB"]["port"])
+    _instance = None
+
+    def __init__(self):
+
+        self.impacket_ver = version.VER_MINOR
+        self.server_type  = self.config["MITMf"]["SMB"]["type"].lower()
+        self.smbchallenge = self.config["MITMf"]["SMB"]["Challenge"]
+        self.smb_port     = int(self.config["MITMf"]["SMB"]["port"])
 
     @staticmethod
     def getInstance():

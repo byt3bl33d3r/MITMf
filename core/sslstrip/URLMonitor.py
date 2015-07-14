@@ -18,9 +18,10 @@
 
 import re, os
 import logging
+
 from core.configwatcher import ConfigWatcher
 
-mitmf_logger = logging.getLogger('mimtf')
+log = logging.getLogger('mitmf')
 
 class URLMonitor:    
 
@@ -57,7 +58,7 @@ class URLMonitor:
     
     #This is here because I'm lazy
     def getResolverPort(self):
-        return int(ConfigWatcher.getInstance().getConfig()['MITMf']['DNS']['port'])
+        return int(ConfigWatcher().config['MITMf']['DNS']['port'])
 
     def isSecureLink(self, client, url):
         for expression in URLMonitor.javascriptTrickery:
@@ -78,7 +79,7 @@ class URLMonitor:
                 s.add(to_url)
                 return
         url_set = set([from_url, to_url])
-        mitmf_logger.debug("[URLMonitor][AppCachePoison] Set redirection: {}".format(url_set))
+        log.debug("[URLMonitor][AppCachePoison] Set redirection: {}".format(url_set))
         self.redirects.append(url_set)
 
     def getRedirectionSet(self, url):
@@ -119,7 +120,7 @@ class URLMonitor:
                 else:
                     self.sustitucion[host] = "web"+host
                     self.real["web"+host] = host
-                mitmf_logger.debug("[URLMonitor][HSTS] SSL host ({}) tokenized ({})".format(host, self.sustitucion[host]))
+                log.debug("[URLMonitor][HSTS] SSL host ({}) tokenized ({})".format(host, self.sustitucion[host]))
                     
             url = 'http://' + host + path
 
@@ -155,14 +156,14 @@ class URLMonitor:
         return ((self.faviconSpoofing == True) and (url.find("favicon-x-favicon-x.ico") != -1))
     
     def URLgetRealHost(self, host):
-        mitmf_logger.debug("[URLMonitor][HSTS] Parsing host: {}".format(host))
+        log.debug("[URLMonitor][HSTS] Parsing host: {}".format(host))
 
         self.updateHstsConfig()
 
         if self.real.has_key(host):
-            mitmf_logger.debug("[URLMonitor][HSTS] Found host in list: {}".format(self.real[host]))
+            log.debug("[URLMonitor][HSTS] Found host in list: {}".format(self.real[host]))
             return self.real[host]
 
         else:
-            mitmf_logger.debug("[URLMonitor][HSTS] Host not in list: {}".format(host))
+            log.debug("[URLMonitor][HSTS] Host not in list: {}".format(host))
             return host

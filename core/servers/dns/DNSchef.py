@@ -46,11 +46,7 @@ from core.utils import shutdown
 from mitmflib.dnslib import *
 from IPy import IP
 
-formatter = logging.Formatter("%(asctime)s %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
-dnschef_logger = logging.getLogger('dnschef')
-fileHandler = logging.FileHandler("./logs/dnschef/dnschef.log")
-fileHandler.setFormatter(formatter)
-dnschef_logger.addHandler(fileHandler)
+log = logging.getLogger('mitmf')
 
 # DNSHandler Mixin. The class contains generic functions to parse DNS requests and
 # calculate an appropriate response based on user parameters.
@@ -70,8 +66,8 @@ class DNSHandler():
             # Parse data as DNS        
             d = DNSRecord.parse(data)
 
-        except Exception, e:
-            dnschef_logger.info("{} [DNSChef] Error: invalid DNS request".format(self.client_address[0]))
+        except Exception as e:
+            log.info("{} [DNSChef] Error: invalid DNS request".format(self.client_address[0]))
 
         else:        
             # Only Process DNS Queries
@@ -115,7 +111,7 @@ class DNSHandler():
                     # Create a custom response to the query
                     response = DNSRecord(DNSHeader(id=d.header.id, bitmap=d.header.bitmap, qr=1, aa=1, ra=1), q=d.q)
 
-                    dnschef_logger.info("{} [DNSChef] Cooking the response of type '{}' for {} to {}".format(self.client_address[0], qtype, qname, fake_record))
+                    log.info("{} [DNSChef] Cooking the response of type '{}' for {} to {}".format(self.client_address[0], qtype, qname, fake_record))
 
                     # IPv6 needs additional work before inclusion:
                     if qtype == "AAAA":
@@ -184,7 +180,7 @@ class DNSHandler():
                     response = response.pack()
 
                 elif qtype == "*" and not None in fake_records.values():
-                    dnschef_logger.info("{} [DNSChef] Cooking the response of type '{}' for {} with {}".format(self.client_address[0], "ANY", qname, "all known fake records."))
+                    log.info("{} [DNSChef] Cooking the response of type '{}' for {} with {}".format(self.client_address[0], "ANY", qname, "all known fake records."))
 
                     response = DNSRecord(DNSHeader(id=d.header.id, bitmap=d.header.bitmap,qr=1, aa=1, ra=1), q=d.q)
 
@@ -259,7 +255,7 @@ class DNSHandler():
 
                 # Proxy the request
                 else:
-                    dnschef_logger.debug("{} [DNSChef] Proxying the response of type '{}' for {}".format(self.client_address[0], qtype, qname))
+                    log.debug("{} [DNSChef] Proxying the response of type '{}' for {}".format(self.client_address[0], qtype, qname))
 
                     nameserver_tuple = random.choice(nameservers).split('#')               
                     response = self.proxyrequest(data, *nameserver_tuple)
@@ -339,13 +335,13 @@ class DNSHandler():
                 sock.close()
 
         except Exception, e:
-            dnschef_logger.warning("[DNSChef] Could not proxy request: {}".format(e))
+            log.warning("[DNSChef] Could not proxy request: {}".format(e))
         else:
             return reply
 
     def hstsbypass(self, real_domain, fake_domain, nameservers, d):
 
-        dnschef_logger.info("{} [DNSChef] Resolving '{}' to '{}' for HSTS bypass".format(self.client_address[0], fake_domain, real_domain))
+        log.info("{} [DNSChef] Resolving '{}' to '{}' for HSTS bypass".format(self.client_address[0], fake_domain, real_domain))
 
         response = DNSRecord(DNSHeader(id=d.header.id, bitmap=d.header.bitmap, qr=1, aa=1, ra=1), q=d.q)
 
@@ -435,7 +431,7 @@ class DNSChef(ConfigWatcher):
 
         return DNSChef._instance
 
-    def onConfigChange(self):
+    def on_config_change(self):
         config = self.config['MITMf']['DNS']
         
         self.port = int(config['port'])
@@ -472,8 +468,8 @@ class DNSChef(ConfigWatcher):
         self.hsts = True
 
     def start(self):
-        self.onConfigChange()
-        self.startConfigWatch()
+        self.on_config_change()
+        self.start_config_watch()
 
         try:
             if self.config['MITMf']['DNS']['tcp'].lower() == 'on':

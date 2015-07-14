@@ -25,22 +25,23 @@ import logging
 import re
 import sys
 
-logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Error when importing scapy
-from scapy.all import get_if_addr, get_if_hwaddr
 from core.sergioproxy.ProxyPlugins import ProxyPlugins
 
-mitmf_logger = logging.getLogger('mitmf')
+logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Error when importing scapy
+from scapy.all import get_if_addr, get_if_hwaddr
+
+log = logging.getLogger('mitmf')
 
 def shutdown(message=None):
     for plugin in ProxyPlugins.getInstance().plist:
-        plugin.finish()
+        plugin.on_shutdown()
     sys.exit(message)
 
 class SystemConfig:
 
     @staticmethod
     def setIpForwarding(value):
-        mitmf_logger.debug("[Utils] Setting ip forwarding to {}".format(value))
+        log.debug("[Utils] Setting ip forwarding to {}".format(value))
         with open('/proc/sys/net/ipv4/ip_forward', 'w') as file:
             file.write(str(value))
             file.close()
@@ -53,7 +54,7 @@ class SystemConfig:
                 shutdown("[Utils] Interface {} does not have an assigned IP address".format(interface))
 
             return ip_address
-        except Exception, e:
+        except Exception as e:
             shutdown("[Utils] Error retrieving IP address from {}: {}".format(interface, e))
     
     @staticmethod
@@ -81,23 +82,23 @@ class IpTables:
         return IpTables._instance
 
     def Flush(self):
-        mitmf_logger.debug("[Utils] Flushing iptables")
+        log.debug("[Utils] Flushing iptables")
         os.system('iptables -F && iptables -X && iptables -t nat -F && iptables -t nat -X')
         self.dns  = False
         self.http = False
 
     def HTTP(self, http_redir_port):
-        mitmf_logger.debug("[Utils] Setting iptables HTTP redirection rule from port 80 to {}".format(http_redir_port))
+        log.debug("[Utils] Setting iptables HTTP redirection rule from port 80 to {}".format(http_redir_port))
         os.system('iptables -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port {}'.format(http_redir_port))
         self.http = True
 
     def DNS(self, dns_redir_port):
-        mitmf_logger.debug("[Utils] Setting iptables DNS redirection rule from port 53 to {}".format(dns_redir_port))
+        log.debug("[Utils] Setting iptables DNS redirection rule from port 53 to {}".format(dns_redir_port))
         os.system('iptables -t nat -A PREROUTING -p udp --destination-port 53 -j REDIRECT --to-port {}'.format(dns_redir_port))
         self.dns = True
 
     def SMB(self, smb_redir_port):
-        mitmf_logger.debug("[Utils] Setting iptables SMB redirection rule from port 445 to {}".format(smb_redir_port))
+        log.debug("[Utils] Setting iptables SMB redirection rule from port 445 to {}".format(smb_redir_port))
         os.system('iptables -t nat -A PREROUTING -p tcp --destination-port 445 -j REDIRECT --to-port {}'.format(smb_redir_port))
         self.smb = True
 
@@ -163,6 +164,6 @@ class Banners:
 ╚═╝     ╚═╝╚═╝   ╚═╝   ╚═╝     ╚═╝╚═╝     
 """
     
-    def printBanner(self):
+    def get_banner(self):
         banners = [self.banner1, self.banner2, self.banner3, self.banner4, self.banner5]
-        print random.choice(banners)
+        return random.choice(banners)

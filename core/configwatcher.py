@@ -1,46 +1,48 @@
-#! /usr/bin/env python2.7
+#!/usr/bin/env python2.7
+
+# Copyright (c) 2014-2016 Marcello Salvati
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+#
 
 import logging
+
 from mitmflib.watchdog.observers import Observer
 from mitmflib.watchdog.events import FileSystemEventHandler
 from configobj import ConfigObj
 
 logging.getLogger("watchdog").setLevel(logging.ERROR) #Disables watchdog's debug messages
 
-mitmf_logger = logging.getLogger('mitmf')
+log = logging.getLogger('mitmf')
 
 class ConfigWatcher(FileSystemEventHandler):
 
-    _instance = None
-    config = ConfigObj("./config/mitmf.conf")
+    @property
+    def config(self):
+        return ConfigObj("./config/mitmf.conf")
 
-    @staticmethod
-    def getInstance():
-        if ConfigWatcher._instance is None:
-            ConfigWatcher._instance = ConfigWatcher()
+    def on_modified(self, event):
+        log.debug("[{}] Detected configuration changes, reloading!".format(self.name))
+        self.on_config_change()
 
-        return ConfigWatcher._instance
-
-    def startConfigWatch(self):
+    def start_config_watch(self):
         observer = Observer()
         observer.schedule(self, path='./config', recursive=False)
         observer.start()
 
-    def getConfig(self):
-        return self.config
-
-    def on_modified(self, event):
-        mitmf_logger.debug("[{}] Detected configuration changes, reloading!".format(self.__class__.__name__))
-        self.reloadConfig()
-        self.onConfigChange()
-
-    def onConfigChange(self):
+    def on_config_change(self):
         """ We can subclass this function to do stuff after the config file has been modified"""
         pass
-
-    def reloadConfig(self):
-        try:
-            self.config = ConfigObj("./config/mitmf.conf")
-        except Exception as e:
-            mitmf_logger.error("Error reloading config file: {}".format(e))
-            pass

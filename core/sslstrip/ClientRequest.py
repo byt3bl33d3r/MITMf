@@ -40,7 +40,7 @@ from URLMonitor import URLMonitor
 from CookieCleaner import CookieCleaner
 from DnsCache import DnsCache
 
-mitmf_logger = logging.getLogger('mitmf')
+log = logging.getLogger('mitmf')
 
 class ClientRequest(Request):
 
@@ -74,24 +74,23 @@ class ClientRequest(Request):
                     dregex = re.compile("({})".format("|".join(map(re.escape, real.keys()))))
                     headers['referer'] = dregex.sub(lambda x: str(real[x.string[x.start() :x.end()]]), headers['referer'])
 
-            if 'if-none-match' in headers:
-                del headers['if-none-match']
-
             if 'host' in headers:
                 host = self.urlMonitor.URLgetRealHost(str(headers['host']))
-                mitmf_logger.debug("[ClientRequest][HSTS] Modifing HOST header: {} -> {}".format(headers['host'], host))
+                log.debug("[ClientRequest][HSTS] Modifing HOST header: {} -> {}".format(headers['host'], host))
                 headers['host'] = host
                 self.setHeader('Host', host)
 
         if 'accept-encoding' in headers:
              del headers['accept-encoding']
-             mitmf_logger.debug("[ClientRequest] Zapped encoding")
+             log.debug("[ClientRequest] Zapped encoding")
+
+        if 'if-none-match' in headers:
+            del headers['if-none-match']
 
         if 'if-modified-since' in headers:
             del headers['if-modified-since']
 
-        if 'cache-control' in headers:
-            del headers['cache-control']
+        headers['pragma'] = 'no-cache'
 
         return headers
 
@@ -110,11 +109,11 @@ class ClientRequest(Request):
 
         if os.path.exists(scriptPath): return scriptPath
 
-        mitmf_logger.warning("[ClientRequest] Error: Could not find lock.ico")
+        log.warning("[ClientRequest] Error: Could not find lock.ico")
         return "lock.ico"        
 
     def handleHostResolvedSuccess(self, address):
-        mitmf_logger.debug("[ClientRequest] Resolved host successfully: {} -> {}".format(self.getHeader('host'), address))
+        log.debug("[ClientRequest] Resolved host successfully: {} -> {}".format(self.getHeader('host'), address))
         host              = self.getHeader("host")
         headers           = self.cleanHeaders()
         client            = self.getClientIP()
@@ -152,22 +151,22 @@ class ClientRequest(Request):
         self.dnsCache.cacheResolution(hostparts[0], address)
 
         if (not self.cookieCleaner.isClean(self.method, client, host, headers)):
-            mitmf_logger.debug("[ClientRequest] Sending expired cookies")
+            log.debug("[ClientRequest] Sending expired cookies")
             self.sendExpiredCookies(host, path, self.cookieCleaner.getExpireHeaders(self.method, client, host, headers, path))
         
         elif (self.urlMonitor.isSecureFavicon(client, path)):
-            mitmf_logger.debug("[ClientRequest] Sending spoofed favicon response")
+            log.debug("[ClientRequest] Sending spoofed favicon response")
             self.sendSpoofedFaviconResponse()
 
         elif (self.urlMonitor.isSecureLink(client, url) or ('securelink' in headers)):
             if 'securelink' in headers:
                 del headers['securelink']
             
-            mitmf_logger.debug("[ClientRequest] Sending request via SSL ({})".format((client,url)))
+            log.debug("[ClientRequest] Sending request via SSL ({})".format((client,url)))
             self.proxyViaSSL(address, self.method, path, postData, headers, self.urlMonitor.getSecurePort(client, url))
         
         else:
-            mitmf_logger.debug("[ClientRequest] Sending request via HTTP")
+            log.debug("[ClientRequest] Sending request via HTTP")
             #self.proxyViaHTTP(address, self.method, path, postData, headers)
             port = 80
             if len(hostparts) > 1:
@@ -176,7 +175,7 @@ class ClientRequest(Request):
             self.proxyViaHTTP(address, self.method, path, postData, headers, port)
 
     def handleHostResolvedError(self, error):
-        mitmf_logger.debug("[ClientRequest] Host resolution error: {}".format(error))
+        log.debug("[ClientRequest] Host resolution error: {}".format(error))
         try:
             self.finish()
         except:
@@ -186,23 +185,23 @@ class ClientRequest(Request):
         address = self.dnsCache.getCachedAddress(host)
 
         if address != None:
-            mitmf_logger.debug("[ClientRequest] Host cached: {} {}".format(host, address))
+            log.debug("[ClientRequest] Host cached: {} {}".format(host, address))
             return defer.succeed(address)
         else:
             
-            mitmf_logger.debug("[ClientRequest] Host not cached.")
+            log.debug("[ClientRequest] Host not cached.")
             self.customResolver.port = self.urlMonitor.getResolverPort()
 
             try:
-                mitmf_logger.debug("[ClientRequest] Resolving with DNSChef")
+                log.debug("[ClientRequest] Resolving with DNSChef")
                 address = str(self.customResolver.query(host)[0].address)
                 return defer.succeed(address)
             except Exception:
-                mitmf_logger.debug("[ClientRequest] Exception occured, falling back to Twisted")
+                log.debug("[ClientRequest] Exception occured, falling back to Twisted")
                 return reactor.resolve(host)
 
     def process(self):
-        mitmf_logger.debug("[ClientRequest] Resolving host: {}".format(self.getHeader('host')))
+        log.debug("[ClientRequest] Resolving host: {}".format(self.getHeader('host')))
         host = self.getHeader('host').split(":")[0]
 
         if self.hsts:

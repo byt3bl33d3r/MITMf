@@ -21,7 +21,7 @@ import logging
 import inspect
 import traceback
 
-mitmf_logger = logging.getLogger("mitmf")
+log = logging.getLogger('mitmf')
 
 class ProxyPlugins:
     '''
@@ -44,11 +44,11 @@ class ProxyPlugins:
     _instance = None
     
     plist = []
-    mthdDict = {"connectionMade": "clientRequest", 
-                "handleStatus": "serverResponseStatus", 
-                "handleResponse": "serverResponse", 
-                "handleHeader": "serverHeaders", 
-                "handleEndHeaders":"serverHeaders"}
+    mthdDict = {"connectionMade"  : "request", 
+                "handleStatus"    : "responsestatus", 
+                "handleResponse"  : "response", 
+                "handleHeader"    : "responseheaders", 
+                "handleEndHeaders": "responseheaders"}
 
     pmthds = {}
 
@@ -65,12 +65,12 @@ class ProxyPlugins:
         for p in plugins:
             self.addPlugin(p)
 
-        mitmf_logger.debug("[ProxyPlugins] Loaded {} plugin/s".format(len(self.plist)))
+        log.debug("[ProxyPlugins] Loaded {} plugin/s".format(len(self.plist)))
 
     def addPlugin(self,p):
         '''Load a plugin'''
         self.plist.append(p)
-        mitmf_logger.debug("[ProxyPlugins] Adding {} plugin".format(p.name))
+        log.debug("[ProxyPlugins] Adding {} plugin".format(p.name))
         for mthd,pmthd in self.mthdDict.iteritems():
             try:
                 self.pmthds[mthd].append(getattr(p,pmthd))
@@ -80,7 +80,7 @@ class ProxyPlugins:
     def removePlugin(self,p):
         '''Unload a plugin'''
         self.plist.remove(p)
-        mitmf_logger.debug("[ProxyPlugins] Removing {} plugin".format(p.name))
+        log.debug("[ProxyPlugins] Removing {} plugin".format(p.name))
         for mthd,pmthd in self.mthdDict.iteritems():
             self.pmthds[mthd].remove(p)
 
@@ -105,7 +105,7 @@ class ProxyPlugins:
 
         del args['self']
 
-        mitmf_logger.debug("[ProxyPlugins] hooking {}()".format(fname))
+        log.debug("[ProxyPlugins] hooking {}()".format(fname))
         #calls any plugin that has this hook
         try:
             for f in self.pmthds[fname]:
@@ -115,7 +115,7 @@ class ProxyPlugins:
             pass
         except Exception as e:
             #This is needed because errors in hooked functions won't raise an Exception + Traceback (which can be infuriating)
-            mitmf_logger.error("[ProxyPlugins] Exception occurred in hooked function")
+            log.error("[ProxyPlugins] Exception occurred in hooked function")
             traceback.print_exc()
 
         #pass our changes to the locals back down
