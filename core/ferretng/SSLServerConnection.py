@@ -21,7 +21,8 @@ import logging, re, string
 from ServerConnection import ServerConnection
 from URLMonitor import URLMonitor
 
-mitmf_logger = logging.getLogger('mitmf')
+formatter = logging.Formatter("%(asctime)s [Ferrent-NG] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+log = logger().setup_logger("Ferret_SSLServerConnection", formatter)
 
 class SSLServerConnection(ServerConnection):
 
@@ -63,13 +64,13 @@ class SSLServerConnection(ServerConnection):
         if ((not link.startswith('http')) and (not link.startswith('/'))):                
             absoluteLink = "http://"+self.headers['host']+self.stripFileFromPath(self.uri)+'/'+link
 
-            mitmf_logger.debug("[Ferret-NG] [SSLServerConnection] Found path-relative link in secure transmission: " + link)
-            mitmf_logger.debug("[Ferret-NG] [SSLServerConnection] New Absolute path-relative link: " + absoluteLink)                
+            log.debug("[SSLServerConnection] Found path-relative link in secure transmission: " + link)
+            log.debug("[SSLServerConnection] New Absolute path-relative link: " + absoluteLink)        
         elif not link.startswith('http'):
             absoluteLink = "http://"+self.headers['host']+link
 
-            mitmf_logger.debug("[Ferret-NG] [SSLServerConnection] Found relative link in secure transmission: " + link)
-            mitmf_logger.debug("[Ferret-NG] [SSLServerConnection] New Absolute link: " + absoluteLink)                            
+            log.debug("[SSLServerConnection] Found relative link in secure transmission: " + link)
+            log.debug("[SSLServerConnection] New Absolute link: " + absoluteLink)
 
         if not absoluteLink == "":                
             absoluteLink = absoluteLink.replace('&amp;', '&')

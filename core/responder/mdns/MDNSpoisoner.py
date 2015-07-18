@@ -1,5 +1,3 @@
-#! /usr/bin/env python2.7
-
 import threading
 import socket
 import struct
@@ -10,10 +8,12 @@ from core.configwatcher import ConfigWatcher
 from core.responder.odict import OrderedDict
 from core.responder.packet import Packet
 from core.responder.common import *
+from core.logger import logger
 
-mitmf_logger = logging.getLogger("mitmf")
+formatter = logging.Formatter("%(asctime)s [MDNSpoisoner] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+log = logger().setup_logger("MDNSpoisoner", formatter)
 
-class MDNSPoisoner():
+class MDNSpoisoner():
 
 	def start(self, options, ourip):
 		
@@ -21,13 +21,13 @@ class MDNSPoisoner():
 		global OURIP; OURIP = ourip
 
 		try:
-			mitmf_logger.debug("[MDNSPoisoner] OURIP => {}".format(OURIP))
+			log.debug("OURIP => {}".format(OURIP))
 			server = ThreadingUDPMDNSServer(("0.0.0.0", 5353), MDNS)
-			t = threading.Thread(name="MDNSPoisoner", target=server.serve_forever)
+			t = threading.Thread(name="MDNSpoisoner", target=server.serve_forever)
 			t.setDaemon(True)
 			t.start()
 		except Exception, e:
-			print "[MDNSPoisoner] Error starting on port 5353: {}" .format(e)
+			log.error("Error starting on port 5353: {}" .format(e))
 
 class ThreadingUDPMDNSServer(ThreadingMixIn, UDPServer):
 
@@ -78,7 +78,7 @@ class MDNS(BaseRequestHandler):
 
 	def handle(self):
 
-		ResponderConfig = ConfigWatcher.getInstance().getConfig()['Responder']
+		ResponderConfig = ConfigWatcher().config['Responder']
 		RespondTo       = ResponderConfig['RespondTo']
 
 		MADDR = "224.0.0.251"
@@ -89,14 +89,14 @@ class MDNS(BaseRequestHandler):
 		try:
 			if args.analyze:
 				if Parse_IPV6_Addr(data):
-					mitmf_logger.info('[MDNSPoisoner] {} is looking for: {}'.format(self.client_address[0],Parse_MDNS_Name(data)))
+					log.info('{} is looking for: {}'.format(self.client_address[0],Parse_MDNS_Name(data)))
 
 			if RespondToSpecificHost(RespondTo):
 				if args.analyze == False:
 					if RespondToIPScope(RespondTo, self.client_address[0]):
 						if Parse_IPV6_Addr(data):
 
-							mitmf_logger.info('[MDNSPoisoner] Poisoned answer sent to {} the requested name was: {}'.format(self.client_address[0],Parse_MDNS_Name(data)))
+							log.info('Poisoned answer sent to {} the requested name was: {}'.format(self.client_address[0],Parse_MDNS_Name(data)))
 							Name = Poisoned_MDNS_Name(data)
 							MDns = MDNSAns(AnswerName = Name)
 							MDns.calculate()
@@ -104,7 +104,7 @@ class MDNS(BaseRequestHandler):
 
 			if args.analyze == False and RespondToSpecificHost(RespondTo) == False:
 				if Parse_IPV6_Addr(data):
-					mitmf_logger.info('[MDNSPoisoner] Poisoned answer sent to {} the requested name was: {}'.format(self.client_address[0],Parse_MDNS_Name(data)))
+					log.info('Poisoned answer sent to {} the requested name was: {}'.format(self.client_address[0],Parse_MDNS_Name(data)))
 					Name = Poisoned_MDNS_Name(data)
 					MDns = MDNSAns(AnswerName = Name)
 					MDns.calculate()

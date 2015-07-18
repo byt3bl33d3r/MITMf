@@ -1,34 +1,34 @@
-
 import socket
 import threading
 import struct
 import logging
 
+from core.logger import logger
 from SocketServer import UDPServer, TCPServer, ThreadingMixIn, BaseRequestHandler
 
-mitmf_logger = logging.getLogger("mitmf")
+formatter = logging.Formatter("%(asctime)s [KERBserver] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+log = logger().setup_logger("KERBserver", formatter)
 
-class KERBServer():
+class KERBserver():
 
 	def serve_thread_udp(self, host, port, handler):
 		try:
 			server = ThreadingUDPServer((host, port), handler)
 			server.serve_forever()
-		except Exception, e:
-			mitmf_logger.debug("[KERBServer] Error starting UDP server on port 88: {}:".format(e))
+		except Exception as e:
+			log.debug("Error starting UDP server on port 88: {}:".format(e))
 
 	def serve_thread_tcp(self, host, port, handler):
 		try:
 			server = ThreadingTCPServer((host, port), handler)
 			server.serve_forever()
-		except Exception, e:
-			mitmf_logger.debug("[KERBServer] Error starting TCP server on port 88: {}:".format(e))
+		except Exception as e:
+			log.debug("Error starting TCP server on port 88: {}:".format(e))
 
-	#Function name self-explanatory
 	def start(self):
-		mitmf_logger.debug("[KERBServer] online")
-		t1 = threading.Thread(name="KERBServerUDP", target=self.serve_thread_udp, args=("0.0.0.0", 88,KerbUDP))
-		t2 = threading.Thread(name="KERBServerTCP", target=self.serve_thread_tcp, args=("0.0.0.0", 88, KerbTCP))
+		log.debug("online")
+		t1 = threading.Thread(name="KERBserverUDP", target=self.serve_thread_udp, args=("0.0.0.0", 88,KerbUDP))
+		t2 = threading.Thread(name="KERBserverTCP", target=self.serve_thread_tcp, args=("0.0.0.0", 88, KerbTCP))
 		for t in [t1,t2]:
 			t.setDaemon(True)
 			t.start()
@@ -54,7 +54,7 @@ class KerbTCP(BaseRequestHandler):
 			data = self.request.recv(1024)
 			KerbHash = ParseMSKerbv5TCP(data)
 			if KerbHash:
-				mitmf_logger.info('[KERBServer] MSKerbv5 complete hash is: {}'.format(KerbHash))
+				log.info('MSKerbv5 complete hash is: {}'.format(KerbHash))
 		except Exception:
 			raise
 
@@ -65,7 +65,7 @@ class KerbUDP(BaseRequestHandler):
 			data, soc = self.request
 			KerbHash = ParseMSKerbv5UDP(data)
 			if KerbHash:
-				mitmf_logger.info('[KERBServer] MSKerbv5 complete hash is: {}'.format(KerbHash))
+				log.info('MSKerbv5 complete hash is: {}'.format(KerbHash))
 		except Exception:
 			raise
 

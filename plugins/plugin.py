@@ -1,5 +1,3 @@
-#!/usr/bin/env python2.7
-
 # Copyright (c) 2014-2016 Marcello Salvati
 #
 # This program is free software; you can redistribute it and/or
@@ -24,7 +22,7 @@ import argparse
 from core.configwatcher import ConfigWatcher
 from core.logger import logger
 
-class Plugin(ConfigWatcher, object):
+class Plugin(ConfigWatcher):
     name        = "Generic plugin"
     optname     = "generic"
     tree_info   = []

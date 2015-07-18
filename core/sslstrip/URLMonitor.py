@@ -20,10 +20,12 @@ import re, os
 import logging
 
 from core.configwatcher import ConfigWatcher
+from core.logger import logger 
 
-log = logging.getLogger('mitmf')
+formatter = logging.Formatter("%(asctime)s [URLMonitor] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+log = logger().setup_logger("URLMonitor", formatter)
 
-class URLMonitor:    
+class URLMonitor:
 
     '''
     The URL monitor maintains a set of (client, url) tuples that correspond to requests which the
@@ -79,7 +81,7 @@ class URLMonitor:
                 s.add(to_url)
                 return
         url_set = set([from_url, to_url])
-        log.debug("[URLMonitor][AppCachePoison] Set redirection: {}".format(url_set))
+        log.debug("Set redirection: {}".format(url_set))
         self.redirects.append(url_set)
 
     def getRedirectionSet(self, url):
@@ -120,7 +122,7 @@ class URLMonitor:
                 else:
                     self.sustitucion[host] = "web"+host
                     self.real["web"+host] = host
-                log.debug("[URLMonitor][HSTS] SSL host ({}) tokenized ({})".format(host, self.sustitucion[host]))
+                log.debug("SSL host ({}) tokenized ({})".format(host, self.sustitucion[host]))
                     
             url = 'http://' + host + path
 
@@ -139,7 +141,7 @@ class URLMonitor:
         self.faviconSpoofing = faviconSpoofing
 
     def updateHstsConfig(self):
-        for k,v in ConfigWatcher.getInstance().config['SSLstrip+'].iteritems():
+        for k,v in ConfigWatcher().config['SSLstrip+'].iteritems():
             self.sustitucion[k] = v
             self.real[v] = k
 
@@ -156,14 +158,14 @@ class URLMonitor:
         return ((self.faviconSpoofing == True) and (url.find("favicon-x-favicon-x.ico") != -1))
     
     def URLgetRealHost(self, host):
-        log.debug("[URLMonitor][HSTS] Parsing host: {}".format(host))
+        log.debug("Parsing host: {}".format(host))
 
         self.updateHstsConfig()
 
         if self.real.has_key(host):
-            log.debug("[URLMonitor][HSTS] Found host in list: {}".format(self.real[host]))
+            log.debug("Found host in list: {}".format(self.real[host]))
             return self.real[host]
 
         else:
-            log.debug("[URLMonitor][HSTS] Host not in list: {}".format(host))
+            log.debug("Host not in list: {}".format(host))
             return host

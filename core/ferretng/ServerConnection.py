@@ -28,7 +28,8 @@ import sys
 from twisted.web.http import HTTPClient
 from URLMonitor import URLMonitor
 
-mitmf_logger = logging.getLogger('mitmf')
+formatter = logging.Formatter("%(asctime)s [Ferrent-NG] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+log = logger().setup_logger("Ferret_ServerConnection", formatter)
 
 class ServerConnection(HTTPClient):
 
@@ -66,13 +67,13 @@ class ServerConnection(HTTPClient):
     def sendRequest(self):
         if self.command == 'GET':
 
-            mitmf_logger.debug(self.client.getClientIP() + " [Ferret-NG] Sending Request: {}".format(self.headers['host']))
+            log.debug(self.client.getClientIP() + "Sending Request: {}".format(self.headers['host']))
 
         self.sendCommand(self.command, self.uri)
 
     def sendHeaders(self):
         for header, value in self.headers.iteritems():
-            mitmf_logger.debug("[Ferret-NG] [ServerConnection] Sending header: ({}: {})".format(header, value))
+            log.debug("[ServerConnection] Sending header: ({}: {})".format(header, value))
             self.sendHeader(header, value)
 
         self.endHeaders()
@@ -82,7 +83,7 @@ class ServerConnection(HTTPClient):
         self.transport.write(self.postData)
 
     def connectionMade(self):
-        mitmf_logger.debug("[Ferret-NG] [ServerConnection] HTTP connection made.")
+        log.debug("[ServerConnection] HTTP connection made.")
         self.sendRequest()
         self.sendHeaders()
         
@@ -90,7 +91,7 @@ class ServerConnection(HTTPClient):
             self.sendPostData()
 
     def handleStatus(self, version, code, message):
-        mitmf_logger.debug("[Ferret-NG] [ServerConnection] Server response: {} {} {}".format(version, code, message))
+        log.debug("[ServerConnection] Server response: {} {} {}".format(version, code, message))
         self.client.setResponseCode(int(code), message)
 
     def handleHeader(self, key, value):
@@ -100,15 +101,15 @@ class ServerConnection(HTTPClient):
         if (key.lower() == 'content-type'):
             if (value.find('image') != -1):
                 self.isImageRequest = True
-                mitmf_logger.debug("[Ferret-NG] [ServerConnection] Response is image content, not scanning")
+                log.debug("[ServerConnection] Response is image content, not scanning")
 
         if (key.lower() == 'content-encoding'):
             if (value.find('gzip') != -1):
-                mitmf_logger.debug("[Ferret-NG] [ServerConnection] Response is compressed")
+                log.debug("[ServerConnection] Response is compressed")
                 self.isCompressed = True
 
         elif (key.lower()== 'strict-transport-security'):
-            mitmf_logger.debug("[Ferret-NG] [ServerConnection] Zapped a strict-trasport-security header")
+            log.debug("[ServerConnection] Zapped a strict-trasport-security header")
 
         elif (key.lower() == 'content-length'):
             self.contentLength = value
@@ -126,9 +127,9 @@ class ServerConnection(HTTPClient):
         if self.length == 0:
             self.shutdown()
 
-        if logging.getLevelName(mitmf_logger.getEffectiveLevel()) == "DEBUG":
+        if logging.getLevelName(log.getEffectiveLevel()) == "DEBUG":
             for header, value in self.client.headers.iteritems():
-                mitmf_logger.debug("[Ferret-NG] [ServerConnection] Receiving header: ({}: {})".format(header, value)) 
+                log.debug("[ServerConnection] Receiving header: ({}: {})".format(header, value)) 
 
     def handleResponsePart(self, data):
         if (self.isImageRequest):
@@ -147,12 +148,12 @@ class ServerConnection(HTTPClient):
 
     def handleResponse(self, data):
         if (self.isCompressed):
-            mitmf_logger.debug("[Ferret-NG] [ServerConnection] Decompressing content...")
+            log.debug("[ServerConnection] Decompressing content...")
             data = gzip.GzipFile('', 'rb', 9, StringIO.StringIO(data)).read()
 
         data = self.replaceSecureLinks(data)
 
-        mitmf_logger.debug("[Ferret-NG] [ServerConnection] Read from server {} bytes of data".format(len(data)))
+        log.debug("[ServerConnection] Read from server {} bytes of data".format(len(data)))
 
         if (self.contentLength != None):
             self.client.setHeader('Content-Length', len(data))
@@ -165,7 +166,7 @@ class ServerConnection(HTTPClient):
         try:
             self.shutdown()
         except:
-            mitmf_logger.info("[Ferret-NG] [ServerConnection] Client connection dropped before request finished.")
+            log.info("[ServerConnection] Client connection dropped before request finished.")
 
     def replaceSecureLinks(self, data):
 
@@ -174,7 +175,7 @@ class ServerConnection(HTTPClient):
         for match in iterator:
             url = match.group()
 
-            mitmf_logger.debug("[Ferret-NG] [ServerConnection] Found secure reference: " + url)
+            log.debug("[ServerConnection] Found secure reference: " + url)
 
             url = url.replace('https://', 'http://', 1)
             url = url.replace('&amp;', '&')

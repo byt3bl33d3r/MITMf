@@ -1,5 +1,3 @@
-#!/usr/bin/env python2.7
-
 # Copyright (c) 2014-2016 Marcello Salvati
 #
 # This program is free software; you can redistribute it and/or
@@ -22,17 +20,15 @@ import logging
 import threading
 import binascii
 import random
-#import dns.resolver
 
 from base64 import b64decode
 from urllib import unquote
 from time import sleep
-#from netfilterqueue import NetfilterQueue
-
-logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Error when importing scapy
+from core.logger import logger
 from scapy.all import *
 
-mitmf_logger = logging.getLogger('mitmf')
+formatter = logging.Formatter("%(asctime)s [ICMPpoisoner] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+log = logger().setup_logger("ICMPpoisoner", formatter)
 
 class ICMPpoisoner():
 

@@ -7,15 +7,17 @@ import logging
 import string
 
 from SocketServer import UDPServer, ThreadingMixIn, BaseRequestHandler
+from core.logger import logger
 from core.configwatcher import ConfigWatcher
 from core.responder.fingerprinter.Fingerprint import RunSmbFinger
 from core.responder.odict import OrderedDict
 from core.responder.packet import Packet
 from core.responder.common import *
 
-mitmf_logger = logging.getLogger("mitmf")
+formatter = logging.Formatter("%(asctime)s [NBTNSpoisoner] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+log = logger().setup_logger("NBTNSpoisoner", formatter)
 
-class NBTNSPoisoner():
+class NBTNSpoisoner():
 
 	def start(self, options, ourip):
 
@@ -23,13 +25,13 @@ class NBTNSPoisoner():
 		global args; args = options
 
 		try:
-			mitmf_logger.debug("[NBTNSPoisoner] OURIP => {}".format(ourip))
+			log.debug("OURIP => {}".format(ourip))
 			server = ThreadingUDPServer(("0.0.0.0", 137), NB)
-			t = threading.Thread(name="NBTNSPoisoner", target=server.serve_forever)
+			t = threading.Thread(name="NBTNSpoisoner", target=server.serve_forever)
 			t.setDaemon(True)
 			t.start()
-		except Exception, e:
-			mitmf_logger.debug("[NBTNSPoisoner] Error starting on port 137: {}".format(e))
+		except Exception as e:
+			log.debug("Error starting on port 137: {}".format(e))
 
 class ThreadingUDPServer(ThreadingMixIn, UDPServer):
 
@@ -107,7 +109,7 @@ def Decode_Name(nbname):
 					   ((ord(nbname[i+1]) - 0x41) & 0xf)))
 		return filter(lambda x: x in string.printable, ''.join(l).split('\x00', 1)[0].replace(' ', ''))
 	except Exception, e:
-		mitmf_logger.debug("[NBTNSPoisoner] Error parsing NetBIOS name: {}".format(e))
+		log.debug("Error parsing NetBIOS name: {}".format(e))
 		return "Illegal NetBIOS name"
 
 # NBT_NS Server class.
@@ -115,7 +117,7 @@ class NB(BaseRequestHandler):
 
 	def handle(self):
 
-		ResponderConfig   = ConfigWatcher.getInstance().getConfig()['Responder']
+		ResponderConfig   = ConfigWatcher().config['Responder']
 		DontRespondTo     = ResponderConfig['DontRespondTo']
 		DontRespondToName = ResponderConfig['DontRespondToName']
 		RespondTo         = ResponderConfig['RespondTo']
@@ -136,11 +138,11 @@ class NB(BaseRequestHandler):
 				if args.finger:
 					try:
 						Finger = RunSmbFinger((self.client_address[0],445))
-						mitmf_logger.warning("[NBTNSPoisoner] {} is looking for: {} | Service requested: {} | OS: {} | Client Version: {}".format(self.client_address[0], Name,NBT_NS_Role(data[43:46]),Finger[0],Finger[1]))
+						log.warning("{} is looking for: {} | Service requested: {} | OS: {} | Client Version: {}".format(self.client_address[0], Name,NBT_NS_Role(data[43:46]),Finger[0],Finger[1]))
 					except Exception:
-						mitmf_logger.warning("[NBTNSPoisoner] {} is looking for: {} | Service requested is: {}".format(self.client_address[0], Name, NBT_NS_Role(data[43:46])))
+						log.warning("{} is looking for: {} | Service requested is: {}".format(self.client_address[0], Name, NBT_NS_Role(data[43:46])))
 				else:
-					mitmf_logger.warning("[NBTNSPoisoner] {} is looking for: {} | Service requested is: {}".format(self.client_address[0], Name, NBT_NS_Role(data[43:46])))
+					log.warning("{} is looking for: {} | Service requested is: {}".format(self.client_address[0], Name, NBT_NS_Role(data[43:46])))
 
 		if RespondToSpecificHost(RespondTo) and args.analyze == False:
 			if RespondToIPScope(RespondTo, self.client_address[0]):
@@ -151,26 +153,26 @@ class NB(BaseRequestHandler):
 							buff.calculate(data)
 							for x in range(1):
 								socket.sendto(str(buff), self.client_address)
-								mitmf_logger.warning('[NBTNSPoisoner] Poisoned answer sent to {} the requested name was: {}'.format(self.client_address[0], Name))
+								log.warning('Poisoned answer sent to {} the requested name was: {}'.format(self.client_address[0], Name))
 								if args.finger:
 									try:
 										Finger = RunSmbFinger((self.client_address[0],445))
-										mitmf_logger.info("[NBTNSPoisoner] OS: {} | ClientVersion: {}".format(Finger[0],Finger[1]))
+										log.info("OS: {} | ClientVersion: {}".format(Finger[0],Finger[1]))
 									except Exception:
-										mitmf_logger.info('[NBTNSPoisoner] Fingerprint failed for host: %s'%(self.client_address[0]))
+										log.info('Fingerprint failed for host: %s'%(self.client_address[0]))
 										pass
 						if RespondToSpecificName(RespondToName) and RespondToNameScope(RespondToName.upper(), Name.upper()):
 							buff = NBT_Ans()
 							buff.calculate(data)
 							for x in range(1):
 								socket.sendto(str(buff), self.client_address)
-								mitmf_logger.warning('[NBTNSPoisoner] Poisoned answer sent to {} the requested name was: {}'.format(self.client_address[0], Name))
+								log.warning('Poisoned answer sent to {} the requested name was: {}'.format(self.client_address[0], Name))
 								if args.finger:
 									try:
 										Finger = RunSmbFinger((self.client_address[0],445))
-										mitmf_logger.info("[NBTNSPoisoner] OS: {} | ClientVersion: {}".format(Finger[0],Finger[1]))
+										log.info("OS: {} | ClientVersion: {}".format(Finger[0],Finger[1]))
 									except Exception:
-										mitmf_logger.info('[NBTNSPoisoner] Fingerprint failed for host: %s'%(self.client_address[0]))
+										log.info('Fingerprint failed for host: %s'%(self.client_address[0]))
 										pass
 						else:
 							pass
@@ -185,26 +187,26 @@ class NB(BaseRequestHandler):
 						buff.calculate(data)
 						for x in range(1):
 							socket.sendto(str(buff), self.client_address)
-						mitmf_logger.warning('[NBTNSPoisoner] Poisoned answer sent to {} the requested name was: {}'.format(self.client_address[0], Name))
+						log.warning('Poisoned answer sent to {} the requested name was: {}'.format(self.client_address[0], Name))
 						if args.finger:
 							try:
 								Finger = RunSmbFinger((self.client_address[0],445))
-								mitmf_logger.info("[NBTNSPoisoner] OS: {} | ClientVersion: {}".format(Finger[0],Finger[1]))
+								log.info("OS: {} | ClientVersion: {}".format(Finger[0],Finger[1]))
 							except Exception:
-								mitmf_logger.info('[NBTNSPoisoner] Fingerprint failed for host: %s'%(self.client_address[0]))
+								log.info('Fingerprint failed for host: %s'%(self.client_address[0]))
 								pass
 					if RespondToSpecificName(RespondToName) == False:
 						buff = NBT_Ans()
 						buff.calculate(data)
 						for x in range(1):
 							socket.sendto(str(buff), self.client_address)
-						mitmf_logger.warning('[NBTNSPoisoner] Poisoned answer sent to {} the requested name was: {}'.format(self.client_address[0], Name))
+						log.warning('Poisoned answer sent to {} the requested name was: {}'.format(self.client_address[0], Name))
 						if args.finger:
 							try:
 								Finger = RunSmbFinger((self.client_address[0],445))
-								mitmf_logger.info("[NBTNSPoisoner] OS: {} | ClientVersion: {}".format(Finger[0],Finger[1]))
+								log.info("OS: {} | ClientVersion: {}".format(Finger[0],Finger[1]))
 							except Exception:
-								mitmf_logger.info('[NBTNSPoisoner] Fingerprint failed for host: %s'%(self.client_address[0]))
+								log.info('Fingerprint failed for host: %s'%(self.client_address[0]))
 								pass
 					else:
 						pass

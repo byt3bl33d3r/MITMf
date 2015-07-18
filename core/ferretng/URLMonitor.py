@@ -18,9 +18,6 @@
 
 import re
 import os
-import logging
-
-mitmf_logger = logging.getLogger('mimtf')
 
 class URLMonitor:    
 

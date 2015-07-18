@@ -18,9 +18,11 @@
 
 import logging
 
+from core.logger import logger
 from twisted.internet.protocol import ClientFactory
 
-log = logging.getLogger('mitmf')
+formatter = logging.Formatter("%(asctime)s [ServerConnectionFactory] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+log = logger().setup_logger("ServerConnectionFactory", formatter)
 
 class ServerConnectionFactory(ClientFactory):
 
@@ -35,12 +37,12 @@ class ServerConnectionFactory(ClientFactory):
         return self.protocol(self.command, self.uri, self.postData, self.headers, self.client)
     
     def clientConnectionFailed(self, connector, reason):
-        log.debug("[ServerConnectionFactory] Server connection failed.")
+        log.debug("Server connection failed.")
 
         destination = connector.getDestination()
 
         if (destination.port != 443):
-            log.debug("[ServerConnectionFactory] Retrying via SSL")
+            log.debug("Retrying via SSL")
             self.client.proxyViaSSL(self.headers['host'], self.command, self.uri, self.postData, self.headers, 443)
         else:
             try:

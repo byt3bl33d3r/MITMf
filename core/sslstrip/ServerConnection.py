@@ -32,6 +32,9 @@ from core.sergioproxy.ProxyPlugins import ProxyPlugins
 from core.logger import logger
 
 formatter = logging.Formatter("%(asctime)s %(clientip)s [type:%(browser)s-%(browserv)s os:%(clientos)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+clientlog = logger().setup_logger("ServerConnection_clientlog", formatter)
+
+formatter = logging.Formatter("%(asctime)s [ServerConnection] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 log = logger().setup_logger("ServerConnection", formatter)
 
 class ServerConnection(HTTPClient):
@@ -57,57 +60,64 @@ class ServerConnection(HTTPClient):
         self.postData         = postData
         self.headers          = headers
         self.client           = client
-        self.printPostData    = True
         self.clientInfo       = {}
+        self.plugins          = ProxyPlugins()
         self.urlMonitor       = URLMonitor.getInstance()
         self.hsts             = URLMonitor.getInstance().hsts
         self.app              = URLMonitor.getInstance().app
-        self.plugins          = ProxyPlugins.getInstance()
         self.isImageRequest   = False
         self.isCompressed     = False
         self.contentLength    = None
         self.shutdownComplete = False
 
+        self.handle_post_output = False
+
     def sendRequest(self):
         if self.command == 'GET':
 
-            log.info(self.headers['host'], extra=self.clientInfo)
+            clientlog.info(self.headers['host'], extra=self.clientInfo)
 
-            log.debug("[ServerConnection] Full request: {}{}".format(self.headers['host'], self.uri))
+            log.debug("Full request: {}{}".format(self.headers['host'], self.uri))
 
         self.sendCommand(self.command, self.uri)
 
     def sendHeaders(self):
         for header, value in self.headers.iteritems():
-            log.debug("[ServerConnection] Sending header: ({}: {})".format(header, value))
+            log.debug("Sending header: ({}: {})".format(header, value))
             self.sendHeader(header, value)
 
         self.endHeaders()
 
     def sendPostData(self):
-        if self.printPostData is True: #So we can disable printing POST data coming from plugins 
+        if self.handle_post_output is False: #So we can disable printing POST data coming from plugins 
             try:
                 postdata = self.postData.decode('utf8') #Anything that we can't decode to utf-8 isn't worth logging
                 if len(postdata) > 0:
-                    log.warning("POST Data ({}):\n{}".format(self.headers['host'], postdata), extra=self.clientInfo)
+                    clientlog.warning("POST Data ({}):\n{}".format(self.headers['host'], postdata), extra=self.clientInfo)
             except Exception as e:
                 if ('UnicodeDecodeError' or 'UnicodeEncodeError') in e.message:
-                    log.debug("[ServerConnection] {} Ignored post data from {}".format(self.clientInfo['clientip'], self.headers['host']))
+                    log.debug("{} Ignored post data from {}".format(self.clientInfo['clientip'], self.headers['host']))
 
-        self.printPostData = True
+        self.handle_post_output = False
         self.transport.write(self.postData)
 
     def connectionMade(self):
-        log.debug("[ServerConnection] HTTP connection made.")
+        log.debug("HTTP connection made.")
 
-        user_agent = parse(self.headers['user-agent'])
-        
         self.clientInfo["clientip"] = self.client.getClientIP()
-        self.clientInfo["clientos"] = user_agent.os.family
-        self.clientInfo["browser"]  = user_agent.browser.family
+
         try:
-            self.clientInfo["browserv"] = user_agent.browser.version[0]
-        except IndexError:
+            user_agent = parse(self.headers['user-agent'])
+
+            self.clientInfo["clientos"] = user_agent.os.family
+            self.clientInfo["browser"]  = user_agent.browser.family
+            try:
+                self.clientInfo["browserv"] = user_agent.browser.version[0]
+            except IndexError:
+                self.clientInfo["browserv"] = "Other"
+        except KeyError:
+            self.clientInfo["clientos"] = "Other"
+            self.clientInfo["browser"]  = "Other"
             self.clientInfo["browserv"] = "Other"
 
         self.plugins.hook()
@@ -125,7 +135,7 @@ class ServerConnection(HTTPClient):
         code    = values['code']
         message = values['message']
 
-        log.debug("[ServerConnection] Server response: {} {} {}".format(version, code, message))
+        log.debug("Server response: {} {} {}".format(version, code, message))
         self.client.setResponseCode(int(code), message)
 
     def handleHeader(self, key, value):
@@ -137,15 +147,15 @@ class ServerConnection(HTTPClient):
         if (key.lower() == 'content-type'):
             if (value.find('image') != -1):
                 self.isImageRequest = True
-                log.debug("[ServerConnection] Response is image content, not scanning")
+                log.debug("Response is image content, not scanning")
 
         if (key.lower() == 'content-encoding'):
             if (value.find('gzip') != -1):
-                log.debug("[ServerConnection] Response is compressed")
+                log.debug("Response is compressed")
                 self.isCompressed = True
 
         elif (key.lower()== 'strict-transport-security'):
-            log.info("Zapped a strict-trasport-security header", extra=self.clientInfo)
+            clientlog.info("Zapped a strict-trasport-security header", extra=self.clientInfo)
 
         elif (key.lower() == 'content-length'):
             self.contentLength = value
@@ -170,7 +180,7 @@ class ServerConnection(HTTPClient):
 
         if logging.getLevelName(log.getEffectiveLevel()) == "DEBUG":
             for header, value in self.client.headers.iteritems():
-                log.debug("[ServerConnection] Receiving header: ({}: {})".format(header, value)) 
+                log.debug("Receiving header: ({}: {})".format(header, value)) 
 
     def handleResponsePart(self, data):
         if (self.isImageRequest):
@@ -190,13 +200,14 @@ class ServerConnection(HTTPClient):
 
     def handleResponse(self, data):
         if (self.isCompressed):
-            log.debug("[ServerConnection] Decompressing content...")
+            log.debug("Decompressing content...")
             data = gzip.GzipFile('', 'rb', 9, StringIO.StringIO(data)).read()
 
         data = self.replaceSecureLinks(data)
         data = self.plugins.hook()['data']
 
-        log.debug("[ServerConnection] Read from server {} bytes of data".format(len(data)))
+        log.debug("Read from server {} bytes of data:\n{}".format(len(data), data))
+        #log.debug("Read from server {} bytes of data".format(len(data)))
 
         if (self.contentLength != None):
             self.client.setHeader('Content-Length', len(data))
@@ -209,7 +220,7 @@ class ServerConnection(HTTPClient):
         try:
             self.shutdown()
         except:
-            log.info("[ServerConnection] Client connection dropped before request finished.")
+            log.info("Client connection dropped before request finished.")
 
     def replaceSecureLinks(self, data):
         if self.hsts:
@@ -225,9 +236,9 @@ class ServerConnection(HTTPClient):
             for match in iterator:
                 url = match.group()
 
-                log.debug("[ServerConnection][HSTS] Found secure reference: " + url)
+                log.debug("Found secure reference: " + url)
                 nuevaurl=self.urlMonitor.addSecureLink(self.clientInfo['clientip'], url)
-                log.debug("[ServerConnection][HSTS] Replacing {} => {}".format(url,nuevaurl))
+                log.debug("Replacing {} => {}".format(url,nuevaurl))
                 sustitucion[url] = nuevaurl
 
             if sustitucion:
@@ -243,7 +254,7 @@ class ServerConnection(HTTPClient):
             for match in iterator:
                 url = match.group()
 
-                log.debug("[ServerConnection] Found secure reference: " + url)
+                log.debug("Found secure reference: " + url)
 
                 url = url.replace('https://', 'http://', 1)
                 url = url.replace('&amp;', '&')

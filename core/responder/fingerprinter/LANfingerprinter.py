@@ -1,4 +1,3 @@
-
 import socket
 import threading
 import struct
@@ -7,23 +6,25 @@ import string
 
 from SocketServer import UDPServer, ThreadingMixIn, BaseRequestHandler
 from core.responder.fingerprinter.RAPLANMANPackets import *
+from core.logger import logger
 
-mitmf_logger = logging.getLogger("mitmf")
+formatter = logging.Formatter("%(asctime)s [LANfingerprinter] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+log = logger().setup_logger("LANfingerprinter", formatter)
 
-class LANFingerprinter():
+class LANfingerprinter():
 
     def start(self, options):
 
-        global args; args = options #For now a quick hack to make argparse's namespace object available to all
+        global args; args = options
 
         try:
-            mitmf_logger.debug("[LANFingerprinter] online")
+            log.debug("online")
             server = ThreadingUDPServer(("0.0.0.0", 138), Browser)
-            t = threading.Thread(name="LANFingerprinter", target=server.serve_forever)
+            t = threading.Thread(name="LANfingerprinter", target=server.serve_forever)
             t.setDaemon(True)
             t.start()
-        except Exception, e:
-            mitmf_logger.error("[LANFingerprinter] Error starting on port 138: {}:".format(e))
+        except Exception as e:
+            log.error("Error starting on port 138: {}:".format(e))
         
 class ThreadingUDPServer(ThreadingMixIn, UDPServer):
 
@@ -70,8 +71,8 @@ def Decode_Name(nbname):
             l.append(chr(((ord(nbname[i]) - 0x41) << 4) |
                        ((ord(nbname[i+1]) - 0x41) & 0xf)))
         return filter(lambda x: x in string.printable, ''.join(l).split('\x00', 1)[0].replace(' ', ''))
-    except Exception, e:
-        mitmf_logger.debug("[LANFingerprinter] Error parsing NetBIOS name: {}".format(e))
+    except Exception as e:
+        log.debug("Error parsing NetBIOS name: {}".format(e))
         return "Illegal NetBIOS name"
 
 def WorkstationFingerPrint(data):
@@ -201,8 +202,8 @@ def BecomeBackup(data, Client):
             Role = NBT_NS_Role(data[45:48])
             if args.analyze:
                 Message1=RAPThisDomain(Client,Domain)
-                mitmf_logger.warning(Message1)
-            mitmf_logger.warning("[LANFingerprinter] Datagram Request from {} | Hostname: {} via the {} wants to become a Local Master Browser Backup on this domain: {}.".format(Client, Name,Role,Domain))
+                log.warning(Message1)
+            log.warning("Datagram Request from {} | Hostname: {} via the {} wants to become a Local Master Browser Backup on this domain: {}.".format(Client, Name,Role,Domain))
     except:
         pass
 
@@ -215,8 +216,8 @@ def BecomeBackup(data, Client):
         if Role2 == "Domain controller service. This name is a domain controller." or Role2 == "Browser Election Service." or Role2 == "Local Master Browser.":
             if args.analyze:
                 Message1=RAPThisDomain(Client,Domain)
-                mitmf_logger.warning(Message1)
-            mitmf_logger.warning('[LANFingerprinter] Datagram Request from: {} | Hostname: {} via the {} to {} | Service: {}'.format(Client, Name, Role1, Domain, Role2))
+                log.warning(Message1)
+            log.warning('Datagram Request from: {} | Hostname: {} via the {} to {} | Service: {}'.format(Client, Name, Role1, Domain, Role2))
     except:
         pass
 
@@ -229,7 +230,7 @@ def ParseDatagramNBTNames(data,Client):
         if Role2 == "Domain controller service. This name is a domain controller." or Role2 == "Browser Election Service." or Role2 == "Local Master Browser.":
             if args.analyze:
                 Message1=RAPThisDomain(Client,Domain)
-                mitmf_logger.warning(Message1)
-            mitmf_logger.warning('[LANFingerprinter] Datagram Request from: {} | Hostname: {} via the {} to {} | Service: {}'.format(Client, Name, Role1, Domain, Role2))
+                log.warning(Message1)
+            log.warning('Datagram Request from: {} | Hostname: {} via the {} to {} | Service: {}'.format(Client, Name, Role1, Domain, Role2))
     except:
         pass

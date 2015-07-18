@@ -20,8 +20,10 @@ import sys
 import logging
 import inspect
 import traceback
+from core.logger import logger
 
-log = logging.getLogger('mitmf')
+formatter = logging.Formatter("%(asctime)s [ProxyPlugins] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+log = logger().setup_logger("ProxyPlugins", formatter)
 
 class ProxyPlugins:
     '''
@@ -41,48 +43,45 @@ class ProxyPlugins:
     vars still have to be set back in the function. This only happens
     in handleResponse, but is still annoying.
     '''
-    _instance = None
-    
-    plist = []
+
     mthdDict = {"connectionMade"  : "request", 
                 "handleStatus"    : "responsestatus", 
                 "handleResponse"  : "response", 
                 "handleHeader"    : "responseheaders", 
                 "handleEndHeaders": "responseheaders"}
 
-    pmthds = {}
+    plugin_mthds = {}
+    plugin_list = []
 
-    @staticmethod
-    def getInstance():
-        if ProxyPlugins._instance == None:
-            ProxyPlugins._instance = ProxyPlugins()
+    __shared_state = {}
 
-        return ProxyPlugins._instance
+    def __init__(self):
+        self.__dict__ = self.__shared_state
 
-    def setPlugins(self, plugins):
+    def set_plugins(self, plugins):
         '''Set the plugins in use'''
 
         for p in plugins:
-            self.addPlugin(p)
+            self.add_plugin(p)
 
-        log.debug("[ProxyPlugins] Loaded {} plugin/s".format(len(self.plist)))
+        log.debug("Loaded {} plugin/s".format(len(plugins)))
 
-    def addPlugin(self,p):
+    def add_plugin(self,p):
         '''Load a plugin'''
-        self.plist.append(p)
-        log.debug("[ProxyPlugins] Adding {} plugin".format(p.name))
+        self.plugin_list.append(p)
+        log.debug("Adding {} plugin".format(p.name))
         for mthd,pmthd in self.mthdDict.iteritems():
             try:
-                self.pmthds[mthd].append(getattr(p,pmthd))
+                self.plugin_mthds[mthd].append(getattr(p,pmthd))
             except KeyError:
-                self.pmthds[mthd] = [getattr(p,pmthd)]
+                self.plugin_mthds[mthd] = [getattr(p,pmthd)]
 
-    def removePlugin(self,p):
+    def remove_plugin(self,p):
         '''Unload a plugin'''
-        self.plist.remove(p)
-        log.debug("[ProxyPlugins] Removing {} plugin".format(p.name))
+        self.plugin_list.remove(p)
+        log.debug("Removing {} plugin".format(p.name))
         for mthd,pmthd in self.mthdDict.iteritems():
-            self.pmthds[mthd].remove(p)
+            self.plugin_mthds[mthd].remove(p)
 
     def hook(self):
         '''Magic to hook various function calls in sslstrip'''
@@ -105,17 +104,17 @@ class ProxyPlugins:
 
         del args['self']
 
-        log.debug("[ProxyPlugins] hooking {}()".format(fname))
+        log.debug("hooking {}()".format(fname))
         #calls any plugin that has this hook
         try:
-            for f in self.pmthds[fname]:
+            for f in self.plugin_mthds[fname]:
                 a = f(**args)
                 if a != None: args = a
         except KeyError as e:
             pass
         except Exception as e:
             #This is needed because errors in hooked functions won't raise an Exception + Traceback (which can be infuriating)
-            log.error("[ProxyPlugins] Exception occurred in hooked function")
+            log.error("Exception occurred in hooked function")
             traceback.print_exc()
 
         #pass our changes to the locals back down

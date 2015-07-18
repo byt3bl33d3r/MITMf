@@ -16,10 +16,6 @@
 # USA
 #
 
-import logging
-
-mitmf_logger = logging.getLogger('mitmf')
-
 class DnsCache:    
 
 	'''

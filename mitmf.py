@@ -19,6 +19,10 @@
 #
 
 import logging
+logging.getLogger("scapy.runtime").setLevel(logging.ERROR) #Gets rid of IPV6 Error when importing scapy
+logging.getLogger("requests").setLevel(logging.WARNING) #Disables "Starting new HTTP Connection (1)" log message
+logging.getLogger("watchdog").setLevel(logging.ERROR) #Disables watchdog's debug messages
+
 import argparse
 import sys
 import os
@@ -26,28 +30,29 @@ import threading
 
 from twisted.web import http
 from twisted.internet import reactor
-from core.utils import Banners, SystemConfig, shutdown
 from core.logger import logger
-
+from core.banners import get_banner
 from plugins import *
 
-print Banners().get_banner()
+print get_banner()
+
+mitmf_version = '0.9.8'
+mitmf_codename = 'The Dark Side'
 
 if os.geteuid() != 0:
     sys.exit("[-] The derp is strong with this one")
 
-parser = argparse.ArgumentParser(description="MITMf v0.9.8 - 'The Dark Side'", version="0.9.8 - 'The Dark Side'", usage='mitmf.py -i interface [mitmf options] [plugin name] [plugin options]', epilog="Use wisely, young Padawan.")
+parser = argparse.ArgumentParser(description="MITMf v{} - '{}'".format(mitmf_version, mitmf_codename), 
+                                 version="{} - '{}'".format(mitmf_version, mitmf_codename), 
+                                 usage='mitmf.py -i interface [mitmf options] [plugin name] [plugin options]', 
+                                 epilog="Use wisely, young Padawan.")
 
 #add MITMf options
-mgroup = parser.add_argument_group("MITMf", "Options for MITMf")
-mgroup.add_argument("--log-level", type=str,choices=['debug', 'info'], default="info", help="Specify a log level [default: info]")
-mgroup.add_argument("-i", dest='interface', required=True, type=str, help="Interface to listen on")
-mgroup.add_argument("-c", dest='configfile', metavar="CONFIG_FILE", type=str, default="./config/mitmf.conf", help="Specify config file to use")
-mgroup.add_argument('-m', '--manual-iptables', dest='manualiptables', action='store_true', default=False, help='Do not setup iptables or flush them automatically')
-
-#Add sslstrip options
-sgroup = parser.add_argument_group("SSLstrip", "Options for SSLstrip library")
-slogopts = sgroup.add_mutually_exclusive_group()
+sgroup = parser.add_argument_group("MITMf", "Options for MITMf")
+sgroup.add_argument("--log-level", type=str,choices=['debug', 'info'], default="info", help="Specify a log level [default: info]")
+sgroup.add_argument("-i", dest='interface', required=True, type=str, help="Interface to listen on")
+sgroup.add_argument("-c", dest='configfile', metavar="CONFIG_FILE", type=str, default="./config/mitmf.conf", help="Specify config file to use")
+sgroup.add_argument('-m', '--manual-iptables', dest='manualiptables', action='store_true', default=False, help='Do not setup iptables or flush them automatically')
 sgroup.add_argument("-p", "--preserve-cache", action="store_true", help="Don't kill client/server caching")
 sgroup.add_argument("-l", dest='listen_port', type=int, metavar="PORT", default=10000, help="Port to listen on (default 10000)")
 sgroup.add_argument("-f", "--favicon", action="store_true", help="Substitute a lock favicon on secure requests.")
@@ -62,14 +67,13 @@ if len(sys.argv) == 1:
 
 options = parser.parse_args()
 
-#Check to see if we supplied a valid interface, pass the IP and MAC to the NameSpace object
-options.ip  = SystemConfig.getIP(options.interface)
-options.mac = SystemConfig.getMAC(options.interface)
-
 #Set the log level
 logger().log_level = logging.__dict__[options.log_level.upper()]
-formatter = logging.Formatter("%(asctime)s %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
-log = logger().setup_logger('mitmf', formatter)
+
+#Check to see if we supplied a valid interface, pass the IP and MAC to the NameSpace object
+from core.utils import get_ip, get_mac, shutdown
+options.ip  = get_ip(options.interface)
+options.mac = get_mac(options.interface)
 
 from core.sslstrip.CookieCleaner import CookieCleaner
 from core.sergioproxy.ProxyPlugins import ProxyPlugins
@@ -85,11 +89,13 @@ strippingFactory.protocol = StrippingProxy
 reactor.listenTCP(options.listen_port, strippingFactory)
 
 #All our options should be loaded now, start initializing the plugins
-print "[*] MITMf v0.9.8 - 'The Dark Side'"
+print "[*] MITMf v{} - '{}'".format(mitmf_version, mitmf_codename)
 for plugin in plugins:
 
     #load only the plugins that have been called at the command line
     if vars(options)[plugin.optname] is True:
+
+        ProxyPlugins().add_plugin(plugin)
 
         print "|_ {} v{}".format(plugin.name, plugin.version)
         if plugin.tree_info:
@@ -102,7 +108,6 @@ for plugin in plugins:
             for line in xrange(0, len(plugin.tree_info)):
                 print "|  |_ {}".format(plugin.tree_info.pop())
 
-        ProxyPlugins.getInstance().addPlugin(plugin)
         plugin.reactor(strippingFactory)
         plugin.setup_logger()
         plugin.start_config_watch()
@@ -116,20 +121,20 @@ from core.netcreds.NetCreds import NetCreds
 NetCreds().start(options.interface)
 print "|_ Net-Creds v{} online".format(NetCreds.version)
 
+#Start the HTTP Server
+from core.servers.http.HTTPserver import HTTPserver
+HTTPserver().start()
+print "|_ HTTP server online"
+
 #Start DNSChef
 from core.servers.dns.DNSchef import DNSChef
-DNSChef.getInstance().start()
+DNSChef().start()
 print "|_ DNSChef v{} online".format(DNSChef.version)
-
-#Start the HTTP Server
-#from core.servers.http.HTTPServer import HTTPServer
-#HTTPServer.getInstance().start()
-#print "|_ HTTP server online"
 
 #Start the SMB server
 from core.servers.smb.SMBserver import SMBserver
-SMBserver.getInstance().start()
-print "|_ SMB server online [Mode: {}] (Impacket {}) \n".format(SMBserver.getInstance().server_type, SMBserver.getInstance().impacket_ver)
+SMBserver().start()
+print "|_ SMB server online [Mode: {}] (Impacket {}) \n".format(SMBserver().mode, SMBserver().version)
 
 #start the reactor
 reactor.run()

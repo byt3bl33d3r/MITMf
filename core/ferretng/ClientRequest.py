@@ -39,7 +39,8 @@ from URLMonitor import URLMonitor
 from CookieCleaner import CookieCleaner
 from DnsCache import DnsCache
 
-mitmf_logger = logging.getLogger('mitmf')
+formatter = logging.Formatter("%(asctime)s [Ferrent-NG] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+log = logger().setup_logger("Ferret_ClientRequest", formatter)
 
 class ClientRequest(Request):
 
@@ -62,7 +63,7 @@ class ClientRequest(Request):
 
         if 'accept-encoding' in headers:
              del headers['accept-encoding']
-             mitmf_logger.debug("[Ferret-NG] [ClientRequest] Zapped encoding")
+             log.debug("[ClientRequest] Zapped encoding")
 
         if 'if-modified-since' in headers:
             del headers['if-modified-since']
@@ -74,10 +75,10 @@ class ClientRequest(Request):
             try:
                 for entry in self.urlMonitor.cookies[self.urlMonitor.hijack_client]:
                     if headers['host'] == entry['host']:
-                        mitmf_logger.info("[Ferret-NG] Hijacking session for host: {}".format(headers['host']))
+                        log.info("Hijacking session for host: {}".format(headers['host']))
                         headers['cookie'] = entry['cookie']
             except KeyError:
-                mitmf_logger.error("[Ferret-NG] No captured sessions (yet) from {}".format(self.urlMonitor.hijack_client))
+                log.error("No captured sessions (yet) from {}".format(self.urlMonitor.hijack_client))
                 pass
 
         return headers
@@ -90,7 +91,7 @@ class ClientRequest(Request):
         return self.uri   
 
     def handleHostResolvedSuccess(self, address):
-        mitmf_logger.debug("[Ferret-NG] [ClientRequest] Resolved host successfully: {} -> {}".format(self.getHeader('host'), address))
+        log.debug("[ClientRequest] Resolved host successfully: {} -> {}".format(self.getHeader('host'), address))
         host              = self.getHeader("host")
         headers           = self.cleanHeaders()
         client            = self.getClientIP()
@@ -107,18 +108,18 @@ class ClientRequest(Request):
         self.dnsCache.cacheResolution(hostparts[0], address)
 
         if (not self.cookieCleaner.isClean(self.method, client, host, headers)):
-            mitmf_logger.debug("[Ferret-NG] [ClientRequest] Sending expired cookies")
+            log.debug("[ClientRequest] Sending expired cookies")
             self.sendExpiredCookies(host, path, self.cookieCleaner.getExpireHeaders(self.method, client, host, headers, path))
 
         elif (self.urlMonitor.isSecureLink(client, url) or ('securelink' in headers)):
             if 'securelink' in headers:
                 del headers['securelink']
             
-            mitmf_logger.debug("[Ferret-NG] [ClientRequest] Sending request via SSL ({})".format((client,url)))
+            log.debug("[ClientRequest] Sending request via SSL ({})".format((client,url)))
             self.proxyViaSSL(address, self.method, path, postData, headers, self.urlMonitor.getSecurePort(client, url))
         
         else:
-            mitmf_logger.debug("[Ferret-NG] [ClientRequest] Sending request via HTTP")
+            log.debug("[ClientRequest] Sending request via HTTP")
             #self.proxyViaHTTP(address, self.method, path, postData, headers)
             port = 80
             if len(hostparts) > 1:
@@ -127,7 +128,7 @@ class ClientRequest(Request):
             self.proxyViaHTTP(address, self.method, path, postData, headers, port)
 
     def handleHostResolvedError(self, error):
-        mitmf_logger.debug("[Ferret-NG] [ClientRequest] Host resolution error: {}".format(error))
+        log.debug("[ClientRequest] Host resolution error: {}".format(error))
         try:
             self.finish()
         except:
@@ -137,13 +138,13 @@ class ClientRequest(Request):
         address = self.dnsCache.getCachedAddress(host)
 
         if address != None:
-            mitmf_logger.debug("[Ferret-NG] [ClientRequest] Host cached: {} {}".format(host, address))
+            log.debug("[ClientRequest] Host cached: {} {}".format(host, address))
             return defer.succeed(address)
         else:
             return reactor.resolve(host)
 
     def process(self):
-        mitmf_logger.debug("[Ferret-NG] [ClientRequest] Resolving host: {}".format(self.getHeader('host')))
+        log.debug("[ClientRequest] Resolving host: {}".format(self.getHeader('host')))
         host = self.getHeader('host').split(":")[0]              
 
         deferred = self.resolveHost(host)

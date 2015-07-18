@@ -11,46 +11,39 @@ from core.utils import shutdown
 
 class SMBserver(ConfigWatcher):
 
-    _instance = None
+    __shared_state = {}
 
     def __init__(self):
+        self.__dict__ = self.__shared_state
 
-        self.impacket_ver = version.VER_MINOR
-        self.server_type  = self.config["MITMf"]["SMB"]["type"].lower()
-        self.smbchallenge = self.config["MITMf"]["SMB"]["Challenge"]
-        self.smb_port     = int(self.config["MITMf"]["SMB"]["port"])
+        self.version   = version.VER_MINOR
+        self.mode      = self.config["MITMf"]["SMB"]["mode"].lower()
+        self.challenge = self.config["MITMf"]["SMB"]["Challenge"]
+        self.port      = int(self.config["MITMf"]["SMB"]["port"])
 
-    @staticmethod
-    def getInstance():
-        if SMBserver._instance == None:
-            SMBserver._instance = SMBserver()
-
-        return SMBserver._instance
-
-    def parseConfig(self):
-        server = None
+    def server(self):
         try:
-            if self.server_type == 'normal':
+            if self.mode == 'normal':
 
                 formatter = logging.Formatter("%(asctime)s [SMBserver] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
-                self.configureLogging(formatter)
+                self.conf_impacket_logger(formatter)
 
-                server = smbserver.SimpleSMBServer(listenPort=self.smb_port)
+                server = smbserver.SimpleSMBServer(listenPort=self.port)
                 
                 for share in self.config["MITMf"]["SMB"]["Shares"]:
                     path = self.config["MITMf"]["SMB"]["Shares"][share]['path']
                     readonly = self.config["MITMf"]["SMB"]["Shares"][share]['readonly'].lower()
                     server.addShare(share.upper(), path, readOnly=readonly)
 
-                server.setSMBChallenge(self.smbchallenge)
+                server.setSMBChallenge(self.challenge)
                 server.setLogFile('')
 
-            elif self.server_type == 'karma':
+            elif self.mode == 'karma':
 
                 formatter = logging.Formatter("%(asctime)s [KarmaSMB] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
-                self.configureLogging(formatter)
+                self.conf_impacket_logger(formatter)
 
-                server = KarmaSMBServer(self.smbchallenge, self.smb_port)
+                server = KarmaSMBServer(self.challenge, self.port)
                 server.defaultFile = self.config["MITMf"]["SMB"]["Karma"]["defaultfile"]
                 
                 for extension, path in self.config["MITMf"]["SMB"]["Karma"].iteritems():
@@ -60,13 +53,12 @@ class SMBserver(ConfigWatcher):
                 shutdown("\n[-] Invalid SMB server type specified in config file!")
 
             return server
-        
+   
         except socketerror as e:
             if "Address already in use" in e:
-                shutdown("\n[-] Unable to start SMB server on port {}: port already in use".format(self.smb_port))
+                shutdown("\n[-] Unable to start SMB server on port {}: port already in use".format(self.port))
 
-    def configureLogging(self, formatter):
-        #yes I know this looks awful, yuck
+    def conf_impacket_logger(self, formatter):
 
         LOG.setLevel(logging.INFO)
         LOG.propagate = False
@@ -81,6 +73,6 @@ class SMBserver(ConfigWatcher):
         LOG.addHandler(streamHandler)
 
     def start(self):
-        t = threading.Thread(name='SMBserver', target=self.parseConfig().start)
+        t = threading.Thread(name='SMBserver', target=self.server().start)
         t.setDaemon(True)
         t.start()

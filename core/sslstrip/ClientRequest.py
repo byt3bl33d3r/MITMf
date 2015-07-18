@@ -39,8 +39,10 @@ from SSLServerConnection import SSLServerConnection
 from URLMonitor import URLMonitor
 from CookieCleaner import CookieCleaner
 from DnsCache import DnsCache
+from core.logger import logger
 
-log = logging.getLogger('mitmf')
+formatter = logging.Formatter("%(asctime)s [ClientRequest] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+log = logger().setup_logger("ClientRequest", formatter)
 
 class ClientRequest(Request):
 
@@ -76,13 +78,13 @@ class ClientRequest(Request):
 
             if 'host' in headers:
                 host = self.urlMonitor.URLgetRealHost(str(headers['host']))
-                log.debug("[ClientRequest][HSTS] Modifing HOST header: {} -> {}".format(headers['host'], host))
+                log.debug("Modifing HOST header: {} -> {}".format(headers['host'], host))
                 headers['host'] = host
                 self.setHeader('Host', host)
 
         if 'accept-encoding' in headers:
              del headers['accept-encoding']
-             log.debug("[ClientRequest] Zapped encoding")
+             log.debug("Zapped encoding")
 
         if 'if-none-match' in headers:
             del headers['if-none-match']
@@ -109,11 +111,11 @@ class ClientRequest(Request):
 
         if os.path.exists(scriptPath): return scriptPath
 
-        log.warning("[ClientRequest] Error: Could not find lock.ico")
+        log.warning("Error: Could not find lock.ico")
         return "lock.ico"        
 
     def handleHostResolvedSuccess(self, address):
-        log.debug("[ClientRequest] Resolved host successfully: {} -> {}".format(self.getHeader('host'), address))
+        log.debug("Resolved host successfully: {} -> {}".format(self.getHeader('host'), address))
         host              = self.getHeader("host")
         headers           = self.cleanHeaders()
         client            = self.getClientIP()
@@ -151,22 +153,22 @@ class ClientRequest(Request):
         self.dnsCache.cacheResolution(hostparts[0], address)
 
         if (not self.cookieCleaner.isClean(self.method, client, host, headers)):
-            log.debug("[ClientRequest] Sending expired cookies")
+            log.debug("Sending expired cookies")
             self.sendExpiredCookies(host, path, self.cookieCleaner.getExpireHeaders(self.method, client, host, headers, path))
         
         elif (self.urlMonitor.isSecureFavicon(client, path)):
-            log.debug("[ClientRequest] Sending spoofed favicon response")
+            log.debug("Sending spoofed favicon response")
             self.sendSpoofedFaviconResponse()
 
         elif (self.urlMonitor.isSecureLink(client, url) or ('securelink' in headers)):
             if 'securelink' in headers:
                 del headers['securelink']
             
-            log.debug("[ClientRequest] Sending request via SSL ({})".format((client,url)))
+            log.debug("Sending request via SSL ({})".format((client,url)))
             self.proxyViaSSL(address, self.method, path, postData, headers, self.urlMonitor.getSecurePort(client, url))
         
         else:
-            log.debug("[ClientRequest] Sending request via HTTP")
+            log.debug("Sending request via HTTP")
             #self.proxyViaHTTP(address, self.method, path, postData, headers)
             port = 80
             if len(hostparts) > 1:
@@ -175,7 +177,7 @@ class ClientRequest(Request):
             self.proxyViaHTTP(address, self.method, path, postData, headers, port)
 
     def handleHostResolvedError(self, error):
-        log.debug("[ClientRequest] Host resolution error: {}".format(error))
+        log.debug("Host resolution error: {}".format(error))
         try:
             self.finish()
         except:
@@ -185,23 +187,23 @@ class ClientRequest(Request):
         address = self.dnsCache.getCachedAddress(host)
 
         if address != None:
-            log.debug("[ClientRequest] Host cached: {} {}".format(host, address))
+            log.debug("Host cached: {} {}".format(host, address))
             return defer.succeed(address)
         else:
             
-            log.debug("[ClientRequest] Host not cached.")
+            log.debug("Host not cached.")
             self.customResolver.port = self.urlMonitor.getResolverPort()
 
             try:
-                log.debug("[ClientRequest] Resolving with DNSChef")
+                log.debug("Resolving with DNSChef")
                 address = str(self.customResolver.query(host)[0].address)
                 return defer.succeed(address)
             except Exception:
-                log.debug("[ClientRequest] Exception occured, falling back to Twisted")
+                log.debug("Exception occured, falling back to Twisted")
                 return reactor.resolve(host)
 
     def process(self):
-        log.debug("[ClientRequest] Resolving host: {}".format(self.getHeader('host')))
+        log.debug("Resolving host: {}".format(self.getHeader('host')))
         host = self.getHeader('host').split(":")[0]
 
         if self.hsts:

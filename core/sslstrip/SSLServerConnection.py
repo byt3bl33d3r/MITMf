@@ -22,8 +22,10 @@ import string
 
 from ServerConnection import ServerConnection
 from URLMonitor import URLMonitor
+from core.logger import logger
 
-log = logging.getLogger('mitmf')
+formatter = logging.Formatter("%(asctime)s [SSLServerConnection] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+log = logger().setup_logger("SSLServerConnection", formatter)
 
 class SSLServerConnection(ServerConnection):
 
@@ -59,11 +61,11 @@ class SSLServerConnection(ServerConnection):
                 for v in values:
                     if v[:7].lower()==' domain':
                         dominio=v.split("=")[1]
-                        log.debug("[SSLServerConnection][HSTS] Parsing cookie domain parameter: %s"%v)
+                        log.debug("Parsing cookie domain parameter: %s"%v)
                         real = self.urlMonitor.real
                         if dominio in real:
                             v=" Domain=%s"%real[dominio]
-                            log.debug("[SSLServerConnection][HSTS] New cookie domain parameter: %s"%v)
+                            log.debug("New cookie domain parameter: %s"%v)
                     newvalues.append(v)
                 value = ';'.join(newvalues)
 
@@ -87,13 +89,13 @@ class SSLServerConnection(ServerConnection):
         if ((not link.startswith('http')) and (not link.startswith('/'))):                
             absoluteLink = "http://"+self.headers['host']+self.stripFileFromPath(self.uri)+'/'+link
 
-            log.debug("[SSLServerConnection] Found path-relative link in secure transmission: " + link)
-            log.debug("[SSLServerConnection] New Absolute path-relative link: " + absoluteLink)                
+            log.debug("Found path-relative link in secure transmission: " + link)
+            log.debug("New Absolute path-relative link: " + absoluteLink)                
         elif not link.startswith('http'):
             absoluteLink = "http://"+self.headers['host']+link
 
-            log.debug("[SSLServerConnection] Found relative link in secure transmission: " + link)
-            log.debug("[SSLServerConnection] New Absolute link: " + absoluteLink)                            
+            log.debug("Found relative link in secure transmission: " + link)
+            log.debug("New Absolute link: " + absoluteLink)                            
 
         if not absoluteLink == "":                
             absoluteLink = absoluteLink.replace('&amp;', '&')

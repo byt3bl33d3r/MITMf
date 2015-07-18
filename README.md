@@ -1,5 +1,4 @@
-MITMf V0.9.7
-============
+#MITMf V0.9.8 - 'The Dark Side'
 
 Framework for Man-In-The-Middle attacks
 
@@ -7,10 +6,9 @@ Quick tutorials, examples and developer updates at: https://byt3bl33d3r.github.i
 
 This tool is based on [sergio-proxy](https://github.com/supernothing/sergio-proxy) and is an attempt to revive and update the project.
 
-Contact me at:
-- Twitter: @byt3bl33d3r
-- IRC on Freenode: #MITMf
-- Email: byt3bl33d3r@gmail.com
+Twitter: @byt3bl33d3r
+IRC on Freenode: #MITMf
+Email: byt3bl33d3r@gmail.com
 
 **Update: Installation steps have changed! Please read the new [instructions](#installation)** 
 

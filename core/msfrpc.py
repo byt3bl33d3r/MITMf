@@ -27,8 +27,6 @@ import requests
 from core.configwatcher import ConfigWatcher
 from core.utils import shutdown
 
-logging.getLogger("requests").setLevel(logging.WARNING)  #Disables "Starting new HTTP Connection (1)" log message
-
 class Msfrpc:
 
     class MsfError(Exception):
@@ -87,7 +85,7 @@ class Msfrpc:
         except:
             raise self.MsfAuthError("MsfRPC: Authentication failed")
 
-class Msf:
+class Msf(ConfigWatcher):
     '''
      This is just a wrapper around the Msfrpc class,
      prevents a lot of code re-use throught the framework
@@ -95,13 +93,14 @@ class Msf:
     '''
     def __init__(self):
         try:
-            self.msf = Msfrpc({"host": ConfigWatcher.config['MITMf']['Metasploit']['rpcip'], 
-                               "port": ConfigWatcher.config['MITMf']['Metasploit']['rpcport']})
+            self.msf = Msfrpc({"host": self.config['MITMf']['Metasploit']['rpcip'], 
+                               "port": self.config['MITMf']['Metasploit']['rpcport']})
 
-            self.msf.login('msf', ConfigWatcher.config['MITMf']['Metasploit']['rpcpass'])
+            self.msf.login('msf', self.config['MITMf']['Metasploit']['rpcpass'])
         except Exception as e:
             shutdown("[Msfrpc] Error connecting to Metasploit: {}".format(e))
 
+    @property
     def version(self):
         return self.msf.call('core.version')['version']
 
@@ -114,12 +113,14 @@ class Msf:
     def killjob(self, pid):
         return self.msf.call('job.kill', [pid])
 
-    def findpid(self, name):
+    def findjobs(self, name):
         jobs = self.jobs()
+        pids = []
         for pid, jobname in jobs.iteritems():
             if name in jobname:
-                return pid
-        return None
+                pids.append(pid)
+
+        return pids
 
     def sessions(self):
         return self.msf.call('session.list')

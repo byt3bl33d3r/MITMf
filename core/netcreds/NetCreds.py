@@ -1,5 +1,3 @@
-#!/usr/bin/env python2
-
 import logging
 import binascii
 import struct
@@ -15,8 +13,6 @@ from BaseHTTPServer import BaseHTTPRequestHandler
 from StringIO import StringIO
 from urllib import unquote
 
-# shut up scapy
-logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 from scapy.all import *
 conf.verb=0
 

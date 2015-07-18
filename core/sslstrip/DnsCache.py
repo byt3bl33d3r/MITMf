@@ -17,8 +17,10 @@
 #
 
 import logging
+from core.logger import logger
 
-log = logging.getLogger('mitmf')
+formatter = logging.Formatter("%(asctime)s [DnsCache] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+log = logger().setup_logger("DnsCache", formatter)
 
 class DnsCache:    
 
@@ -51,7 +53,7 @@ class DnsCache:
 	def setCustomRes(self, host, ip_address=None):
 		if ip_address is not None:
 			self.cache[host] = ip_address
-			log.debug("[DNSCache] DNS entry set: %s -> %s" %(host, ip_address))
+			log.debug("DNS entry set: %s -> %s" %(host, ip_address))
 		else:
 			if self.customAddress is not None:
 				self.cache[host] = self.customAddress
