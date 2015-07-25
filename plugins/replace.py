@@ -18,7 +18,7 @@
 
 """
 
-Original plugin by @rubenthijssen
+Original plugin by @rthijssen
 
 """
 
