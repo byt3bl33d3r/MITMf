@@ -21,7 +21,9 @@
 import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR) #Gets rid of IPV6 Error when importing scapy
 logging.getLogger("requests").setLevel(logging.WARNING) #Disables "Starting new HTTP Connection (1)" log message
-logging.getLogger("watchdog").setLevel(logging.ERROR) #Disables watchdog's debug messages
+logging.getLogger("mitmflib.watchdog").setLevel(logging.ERROR) #Disables watchdog's debug messages
+logging.getLogger('mitmflib.smbserver').setLevel(logging.INFO)
+logging.getLogger('mitmflib.impacket').setLevel(logging.INFO)
 
 import argparse
 import sys
@@ -88,6 +90,8 @@ strippingFactory.protocol = StrippingProxy
 
 reactor.listenTCP(options.listen_port, strippingFactory)
 
+ProxyPlugins().all_plugins = plugins
+
 #All our options should be loaded now, start initializing the plugins
 print "[*] MITMf v{} - '{}'".format(mitmf_version, mitmf_codename)
 for plugin in plugins:
@@ -102,6 +106,7 @@ for plugin in plugins:
             for line in xrange(0, len(plugin.tree_info)):
                 print "|  |_ {}".format(plugin.tree_info.pop())
 
+        plugin.setup_logger()
         plugin.initialize(options)
 
         if plugin.tree_info:
@@ -109,16 +114,21 @@ for plugin in plugins:
                 print "|  |_ {}".format(plugin.tree_info.pop())
 
         plugin.reactor(strippingFactory)
-        plugin.setup_logger()
         plugin.start_config_watch()
 
 print "|"
 print "|_ Sergio-Proxy v0.2.1 online"
 print "|_ SSLstrip v0.9 by Moxie Marlinspike online"
+print "|"
+
+#Start mitmf-api
+from core.mitmfapi import mitmfapi
+print "|_ MITMf-API online"
+mitmfapi().start()
 
 #Start Net-Creds
 from core.netcreds.NetCreds import NetCreds
-NetCreds().start(options.interface)
+NetCreds().start(options.interface, options.ip)
 print "|_ Net-Creds v{} online".format(NetCreds.version)
 
 #Start the HTTP Server

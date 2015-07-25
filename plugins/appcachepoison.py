@@ -55,7 +55,7 @@ class AppCachePlugin(Plugin):
             if regexp and not re.search(regexp,req_headers["user-agent"]):
                 self.clientlog.info("Tampering disabled in this useragent ({})".format(req_headers["user-agent"]), extra=request.clientInfo)
                 return {'response': response, 'request': request, 'data': data}
-               
+
         urls = self.urlMonitor.getRedirectionSet(url)
         self.clientlog.debug("Got redirection set: {}".format(urls), extra=request.clientInfo)
         (name,s,element,url) = self.getSectionForUrls(urls)

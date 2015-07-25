@@ -49,14 +49,16 @@
 #       hosting. *CAREFUL!!!*
 #
 
+
 import sys
 import os
 import argparse
 import logging
 import ntpath
 import ConfigParser
+from threading import Thread
 
-from mitmflib.impacket import LOG as logger
+from mitmflib.impacket.examples import logger
 from mitmflib.impacket import smbserver, smb, version
 import mitmflib.impacket.smb3structs as smb2
 from mitmflib.impacket.smb import FILE_OVERWRITE, FILE_OVERWRITE_IF, FILE_WRITE_DATA, FILE_APPEND_DATA, GENERIC_WRITE
@@ -65,8 +67,10 @@ from mitmflib.impacket.nt_errors import STATUS_USER_SESSION_DELETED, STATUS_SUCC
 from mitmflib.impacket.smbserver import SRVSServer, decodeSMBString, findFirst2, STATUS_SMB_BAD_TID, encodeSMBString, \
     getFileTime, queryPathInformation
 
-class KarmaSMBServer():
+
+class KarmaSMBServer(Thread):
     def __init__(self, smb_challenge, smb_port, smb2Support = False):
+        Thread.__init__(self)
         self.server = 0
         self.defaultFile = None
         self.extensions = {}
@@ -105,7 +109,7 @@ class KarmaSMBServer():
         if smb2Support:
             smbConfig.set("global", "SMB2Support", "True")
 
-        self.server = smbserver.SMBSERVER(('0.0.0.0',int(smb_port)), config_parser = smbConfig)
+        self.server = smbserver.SMBSERVER(('0.0.0.0', int(smb_port)), config_parser = smbConfig)
         self.server.processConfigFile()
 
         # Unregistering some dangerous and unwanted commands
@@ -144,7 +148,6 @@ class KarmaSMBServer():
         respSetup = ''
         respParameters = ''
         respData = ''
-        errorCode = STATUS_SUCCESS
         findFirst2Parameters = smb.SMBFindFirst2_Parameters( recvPacket['Flags2'], data = parameters)
 
         # 1. Let's grab the extension and map the file's contents we will deliver
@@ -158,11 +161,6 @@ class KarmaSMBServer():
             targetFile = self.extensions[origPathNameExtension.upper()]
         else:
             targetFile = self.defaultFile
-
-        if (len(data) > 0):
-            findFirst2Data = smb.SMBFindFirst2_Data(data)
-        else:
-            findFirst2Data = ''
 
         if connData['ConnectedShares'].has_key(recvPacket['Tid']):
             path = connData['ConnectedShares'][recvPacket['Tid']]['path']
@@ -282,9 +280,7 @@ class KarmaSMBServer():
         errorCode = 0
 
         queryPathInfoParameters = smb.SMBQueryPathInformation_Parameters(flags = recvPacket['Flags2'], data = parameters)
-        if len(data) > 0: 
-           queryPathInfoData = smb.SMBQueryPathInformation_Data(data)
-  
+
         if connData['ConnectedShares'].has_key(recvPacket['Tid']):
             path = ''
             try:
@@ -327,7 +323,7 @@ class KarmaSMBServer():
         connData = smbServer.getConnectionData(connId)
         # We're closing the connection trying to flush the client's
         # cache.
-        if connData['MS15011']['StopConnection'] == True:
+        if connData['MS15011']['StopConnection'] is True:
             return [smb2.SMB2Error()], None, STATUS_USER_SESSION_DELETED
         return self.origsmb2Close(connId, smbServer, recvPacket)
 
@@ -391,7 +387,7 @@ class KarmaSMBServer():
         connData = smbServer.getConnectionData(connId)
 
         respSMBCommand = smb2.SMB2QueryDirectory_Response()
-        queryDirectoryRequest   = smb2.SMB2QueryDirectory(recvPacket['Data'])
+        #queryDirectoryRequest   = smb2.SMB2QueryDirectory(recvPacket['Data'])
 
         errorCode = 0xff
         respSMBCommand['Buffer'] = '\x00' 

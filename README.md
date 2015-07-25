@@ -10,12 +10,11 @@ Twitter: @byt3bl33d3r
 IRC on Freenode: #MITMf
 Email: byt3bl33d3r@gmail.com
 
-**Update: Installation steps have changed! Please read the new [instructions](#installation)** 
-
-**Before submitting issues, please read the [FAQ](#faq) and the appropriate [section](#submitting-issues).**
+**Before submitting issues, please read the [FAQ](#faq) and [CONTRIBIUTING.md](#submitting-issues).**
 
 Available plugins
 =================
+- ```HTA Drive-By``` - Injects a fake update notification and prompts clients to download an HTA application
 - ```SMBtrap``` - Exploits the 'SMB Trap' vulnerability on connected clients
 - ```Screenshotter``` -  Uses HTML5 Canvas to render an accurate screenshot of a clients browser
 - ```Responder``` - LLMNR, NBT-NS, WPAD and MDNS poisoner
@@ -84,33 +83,20 @@ Installation
 If you're rocking Kali and want the latest version:
 - Clone this repository
 - Run the ```kali_setup.sh``` script
+**Note: you can ignore any errors when ```pip``` tries to install dependencies, MITMf should be able to run anyway**
 
 If you're rocking any other Linux distro:
 - Clone this repository
 - Run the ```other_setup.sh``` script
-- Run the command ```pip install --upgrade -r requirements.txt``` to install all Python dependencies
-
-Submitting Issues
-=================
-If you have *questions* regarding the framework please email me at byt3bl33d3r@gmail.com
-
-**Only submit issues if you find a bug in the latest version of the framework.**
-
-When inevitably you do come across said *bug*, please open an issue and include at least the following in the description:
-
-- Full command string you used
-- OS you're using
-- Full error traceback, if any
-
-Also, remember that Github markdown is your friend!
+- Run the command ```pip install --upgrade mitmflib``` to install all Python dependencies
 
 FAQ
 ===
 - **Is Windows supported?**
-- No
+- No, it will never be supported
 
 - **Is OSX supported?**
-- Currently no, although with some tweaking (which I'll probably get around to in the near future), it should be able to run perfectly on OSX.
+- Yes! Initial compatibility has been introduced in 0.9.8! Find anything broken submit a PR or open an issue ticket!
 
 - **I can't install package X because of an error!**
 - Try installing the package via ```pip``` or your distro's package manager. This *isn't* a problem with MITMf.
@@ -121,5 +107,5 @@ FAQ
 - **I get an ImportError when launching MITMf!**
 - Please read the [installation](#installation) guide.
 
-- **Dude, no documentation/video tutorials?**
-- Currently no but once the framework hits 1.0, I'll probably start writing/making some.
+- **Dude, no documentation?**
+- The docs are a work in progress at the moment, once the framework hits 1.0 I will push them to the wiki

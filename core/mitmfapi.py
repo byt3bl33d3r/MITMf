@@ -32,41 +32,37 @@ from core.sergioproxy.ProxyPlugins import ProxyPlugins
 
 app = Flask(__name__)
 
-class mitmfapi:
+class mitmfapi(ConfigWatcher):
 
-    _instance = None
-    host = ConfigWatcher.getInstance().config['MITMf']['MITMf-API']['host']
-    port = int(ConfigWatcher.getInstance().config['MITMf']['MITMf-API']['port'])
+    __shared_state = {}
 
-    @staticmethod
-    def getInstance():
-        if mitmfapi._instance is None:
-            mitmfapi._instance = mitmfapi()
-
-        return mitmfapi._instance
+    def __init__(self):
+        self.__dict__ = self.__shared_state
+        self.host = self.config['MITMf']['MITMf-API']['host']
+        self.port = int(self.config['MITMf']['MITMf-API']['port'])
 
     @app.route("/")
     def getPlugins():
-        # example: http://127.0.0.1:9090/
+        # example: http://127.0.0.1:9999/
         pdict = {}
         
-        #print ProxyPlugins.getInstance().plist
-        for activated_plugin in ProxyPlugins.getInstance().plist:
+        #print ProxyPlugins().plugin_list
+        for activated_plugin in ProxyPlugins().plugin_list:
             pdict[activated_plugin.name] = True
 
-        #print ProxyPlugins.getInstance().plist_all
-        for plugin in ProxyPlugins.getInstance().plist_all:
+        #print ProxyPlugins().all_plugins
+        for plugin in ProxyPlugins().all_plugins:
             if plugin.name not in pdict:
                 pdict[plugin.name]  = False
 
-        #print ProxyPlugins.getInstance().pmthds
+        #print ProxyPlugins().pmthds
         
         return json.dumps(pdict)
 
     @app.route("/<plugin>")
     def getPluginStatus(plugin):
         # example: http://127.0.0.1:9090/cachekill
-        for p in ProxyPlugins.getInstance().plist:
+        for p in ProxyPlugins().plugin_list:
             if plugin == p.name:
                 return json.dumps("1")
 
@@ -77,15 +73,15 @@ class mitmfapi:
         # example: http://127.0.0.1:9090/cachekill/1 # enabled
         # example: http://127.0.0.1:9090/cachekill/0 # disabled
         if status == "1":
-            for p in ProxyPlugins.getInstance().plist_all:
-                if (p.name == plugin) and (p not in ProxyPlugins.getInstance().plist):
-                    ProxyPlugins.getInstance().addPlugin(p)
+            for p in ProxyPlugins().all_plugins:
+                if (p.name == plugin) and (p not in ProxyPlugins().plugin_list):
+                    ProxyPlugins().addPlugin(p)
                     return json.dumps({"plugin": plugin, "response": "success"})
 
         elif status == "0":
-            for p in ProxyPlugins.getInstance().plist:
+            for p in ProxyPlugins().plugin_list:
                 if p.name == plugin:
-                    ProxyPlugins.getInstance().removePlugin(p)
+                    ProxyPlugins().removePlugin(p)
                     return json.dumps({"plugin": plugin, "response": "success"})
 
         return json.dumps({"plugin": plugin, "response": "failed"})

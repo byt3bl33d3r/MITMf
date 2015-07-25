@@ -52,6 +52,7 @@ class ProxyPlugins:
 
     plugin_mthds = {}
     plugin_list = []
+    all_plugins = []
 
     __shared_state = {}
 

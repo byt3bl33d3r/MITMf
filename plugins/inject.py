@@ -65,7 +65,7 @@ class Inject(Plugin):
                 if self.html_url:
                     iframe = html.new_tag("iframe", src=self.html_url, frameborder=0, height=0, width=0)
                     html.body.append(iframe)
-                    self.clientlog.info("Injected HTML Iframe: {}".format(hn))
+                    self.clientlog.info("Injected HTML Iframe: {}".format(hn), extra=request.clientInfo)
 
                 if self.html_payload:
                     payload = BeautifulSoup(self.html_payload, "html.parser")

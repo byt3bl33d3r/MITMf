@@ -1260,6 +1260,12 @@ var PD = PluginDetect;
 //Set delimiter
 PD.getVersion(".");
 
+//Get client Info
+data = os_detect.getVersion()
+
+//Check to see if the UA is a lying bastard
+data['ua_is_lying'] = os_detect.ua_is_lying
+
 //Try to get plugin list
 var pluginList = [];
 if (navigator.plugins) {
@@ -1270,30 +1276,24 @@ if (navigator.plugins) {
 }
 
 if (pluginList.length > 0){
-    data['pluginlist'] = pluginList;
+    data['plugin_list'] = pluginList;
 }
 
 //Check if java plugin is installed and/or enabled
-var javaEnabled = PD.isMinVersion('java');
-data['java'] = javaEnabled;
+//var javaEnabled = PD.isMinVersion('java');
+//data['java'] = javaEnabled;
 
 //Get exact java plugin version
 var javaVersionString = PD.getVersion('java');
-data['java_v'] = javaVersionString;
+data['java'] = javaVersionString;
 
 //Check if flash plugin is installed and/or enabled
-var flashEnabled = PD.isMinVersion('flash');
-data['flash'] = flashEnabled;
+//var flashEnabled = PD.isMinVersion('flash');
+//data['flash'] = flashEnabled;
 
 //Get exact flash plugin version
 var flashVersionString = PD.getVersion('flash');
-data['flash_v'] = flashVersionString;
-
-//Get client Info
-data['client_info'] = os_detect.getVersion()
-
-//Check to see if the UA is a lying bastard
-data['client_info']['ua_is_lying'] = os_detect.ua_is_lying
+data['flash'] = flashVersionString;
 
 xhr.open("POST", "clientprfl", true);
 xhr.setRequestHeader("Content-Type", "application/json; charset=UTF-8");

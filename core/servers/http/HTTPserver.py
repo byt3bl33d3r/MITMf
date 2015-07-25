@@ -17,13 +17,16 @@
 #
 import logging
 import threading
+import sys
 
+from core.utils import shutdown
 from core.configwatcher import ConfigWatcher
 from flask import Flask
 
 class HTTPserver(ConfigWatcher):
 
     server = Flask("HTTPserver")
+    func_list = []
 
     __shared_state = {}
 
@@ -31,6 +34,16 @@ class HTTPserver(ConfigWatcher):
         self.__dict__ = self.__shared_state
 
     def start_flask(self):
+
+        @self.server.route('/', defaults={'path': '/'})
+        @self.server.route('/<path:path>')
+        def catch_all(path):
+            for func in self.func_list:
+                resp = func(path)
+                if resp:
+                    return resp
+            return path
+
         self.server.run(debug=False, host='0.0.0.0', port=int(self.config['MITMf']['HTTP']['port']))
 
     def start(self):
@@ -38,6 +51,9 @@ class HTTPserver(ConfigWatcher):
         server_thread = threading.Thread(name='HTTPserver', target=self.start_flask)
         server_thread.setDaemon(True)
         server_thread.start()
+
+    def add_endpoint(self, function):
+        self.func_list.append(function)
 
     def setup_http_logger(self):
         formatter = logging.Formatter("%(asctime)s [HTTP] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")

@@ -38,6 +38,7 @@ class BrowserProfiler(Inject, Plugin):
         if (request.command == 'POST') and ('clientprfl' in request.uri):
             request.handle_post_output = True
             self.output = json.loads(request.postData)
+            self.output['ip'] = request.client.getClientIP()
             pretty_output = pformat(self.output)
             self.clientlog.info("Got profile:\n{}".format(pretty_output), extra=request.clientInfo)
 

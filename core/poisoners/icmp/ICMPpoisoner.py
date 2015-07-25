@@ -18,26 +18,22 @@
 
 import logging
 import threading
-import binascii
-import random
 
-from base64 import b64decode
-from urllib import unquote
 from time import sleep
 from core.logger import logger
-from scapy.all import *
+from scapy.all import IP, ICMP, UDP, sendp
 
 formatter = logging.Formatter("%(asctime)s [ICMPpoisoner] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 log = logger().setup_logger("ICMPpoisoner", formatter)
 
 class ICMPpoisoner():
 
-    def __init__(self, interface, target, gateway, ip_address):
+    def __init__(self, options):
 
-        self.target        = target
-        self.gateway       = gateway
-        self.interface     = interface
-        self.ip_address    = ip_address
+        self.target        = options.target
+        self.gateway       = options.gateway
+        self.interface     = options.interface
+        self.ip_address    = options.ip
         self.debug         = False
         self.send          = True
         self.icmp_interval = 2

@@ -17,6 +17,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
 #
+import flask
 
 from plugins.plugin import Plugin
 from twisted.internet import reactor
@@ -53,13 +54,8 @@ class Responder(Plugin):
 
         if options.wpad:
             from core.servers.http.HTTPserver import HTTPserver
-            import flask
-            
-            server = HTTPserver().server
-            
-            @server.route('/<wpad_req>')
-            def wpad(wpad_req):
-                if (wpad_req == 'wpad.dat') or (wpad_req.endswith('.pac')):
+            def wpad_request(path):
+                if (path == 'wpad.dat') or (path.endswith('.pac')):
                     payload = self.config['Responder']['WPADScript']
                     
                     resp = flask.Response(payload)
@@ -69,6 +65,8 @@ class Responder(Plugin):
                     resp.headers['Content-Length'] = len(payload)
 
                     return resp
+
+            HTTPserver().add_endpoint(wpad_request)
 
         if self.config["Responder"]["MSSQL"].lower() == "on":
             from core.responder.mssql.MSSQLserver import MSSQLserver

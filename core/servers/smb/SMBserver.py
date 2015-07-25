@@ -25,7 +25,7 @@ class SMBserver(ConfigWatcher):
         try:
             if self.mode == 'normal':
 
-                formatter = logging.Formatter("%(asctime)s [SMBserver] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+                formatter = logging.Formatter("%(asctime)s [SMB] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
                 self.conf_impacket_logger(formatter)
 
                 server = smbserver.SimpleSMBServer(listenPort=self.port)
@@ -62,8 +62,6 @@ class SMBserver(ConfigWatcher):
 
         LOG.setLevel(logging.INFO)
         LOG.propagate = False
-        logging.getLogger('smbserver').setLevel(logging.INFO)
-        logging.getLogger('impacket').setLevel(logging.INFO)
 
         fileHandler = logging.FileHandler("./logs/mitmf.log")
         streamHandler = logging.StreamHandler(sys.stdout)

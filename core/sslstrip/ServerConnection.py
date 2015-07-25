@@ -104,8 +104,6 @@ class ServerConnection(HTTPClient):
     def connectionMade(self):
         log.debug("HTTP connection made.")
 
-        self.clientInfo["clientip"] = self.client.getClientIP()
-
         try:
             user_agent = parse(self.headers['user-agent'])
 
@@ -119,6 +117,8 @@ class ServerConnection(HTTPClient):
             self.clientInfo["clientos"] = "Other"
             self.clientInfo["browser"]  = "Other"
             self.clientInfo["browserv"] = "Other"
+
+        self.clientInfo["clientip"] = self.client.getClientIP()
 
         self.plugins.hook()
         self.sendRequest()
@@ -206,8 +206,8 @@ class ServerConnection(HTTPClient):
         data = self.replaceSecureLinks(data)
         data = self.plugins.hook()['data']
 
-        log.debug("Read from server {} bytes of data:\n{}".format(len(data), data))
-        #log.debug("Read from server {} bytes of data".format(len(data)))
+        #log.debug("Read from server {} bytes of data:\n{}".format(len(data), data))
+        log.debug("Read from server {} bytes of data".format(len(data)))
 
         if (self.contentLength != None):
             self.client.setHeader('Content-Length', len(data))

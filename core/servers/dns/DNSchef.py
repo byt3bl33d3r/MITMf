@@ -47,7 +47,7 @@ from core.logger import logger
 from mitmflib.dnslib import *
 from IPy import IP
 
-formatter = logging.Formatter("%(asctime)s %(clientip)s [DNSChef] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+formatter = logging.Formatter("%(asctime)s %(clientip)s [DNS] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 log = logger().setup_logger("DNSChef", formatter)
 
 # DNSHandler Mixin. The class contains generic functions to parse DNS requests and
@@ -300,6 +300,8 @@ class DNSHandler():
     
     # Obtain a response from a real DNS server.
     def proxyrequest(self, request, host, port="53", protocol="udp"):
+        clientip = {'clientip': self.client_address[0]}
+
         reply = None
         try:
             if DNSChef().ipv6:
@@ -337,12 +339,13 @@ class DNSHandler():
 
                 sock.close()
 
-        except Exception, e:
+        except Exception as e:
             log.warning("Could not proxy request: {}".format(e), extra=clientip)
         else:
             return reply
 
     def hstsbypass(self, real_domain, fake_domain, nameservers, d):
+        clientip = {'clientip': self.client_address[0]}
 
         log.info("Resolving '{}' to '{}' for HSTS bypass".format(fake_domain, real_domain), extra=clientip)
 
@@ -477,7 +480,7 @@ class DNSChef(ConfigWatcher):
                 self.startUDP()
         except socket.error as e:
             if "Address already in use" in e:
-                shutdown("\n[DNSChef] Unable to start DNS server on port {}: port already in use".format(self.config['MITMf']['DNS']['port']))
+                shutdown("\n[DNS] Unable to start DNS server on port {}: port already in use".format(self.config['MITMf']['DNS']['port']))
 
     # Initialize and start the DNS Server        
     def startUDP(self):

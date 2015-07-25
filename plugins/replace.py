@@ -26,28 +26,28 @@ import re
 from plugins.plugin import Plugin
 
 class Replace(Plugin):
-	name       = "Replace"
-	optname    = "replace"
-	desc       = "Replace arbitrary content in HTML content"
-	version    = "0.2"
+    name       = "Replace"
+    optname    = "replace"
+    desc       = "Replace arbitrary content in HTML content"
+    version    = "0.2"
 
-	def initialize(self, options):
-		self.options = options
+    def initialize(self, options):
+        self.options = options
 
-	def response(self, response, request, data):
-		mime = response.headers['Content-Type']
-		hn = response.getRequestHostname()
+    def response(self, response, request, data):
+        mime = response.headers['Content-Type']
+        hn = response.getRequestHostname()
 
-		if "text/html" in mime:
+        if "text/html" in mime:
 
-			for rulename, regexs in self.config['Replace'].iteritems():
-				for regex1,regex2 in regexs.iteritems():
-					if re.search(regex1, data):
-						try:
-							data = re.sub(regex1, regex2, data)
+            for rulename, regexs in self.config['Replace'].iteritems():
+                for regex1,regex2 in regexs.iteritems():
+                    if re.search(regex1, data):
+                        try:
+                            data = re.sub(regex1, regex2, data)
 
-							self.clientlog.info("occurances matching '{}' replaced with '{}' according to rule '{}'".format(regex1, regex2, rulename), extra=request.clientInfo)
-						except Exception:
-							self.log.error("Your provided regex ({}) or replace value ({}) is empty or invalid. Please debug your provided regex(es) in rule '{}'".format(regex1, regex2, rulename))
+                            self.clientlog.info("occurances matching '{}' replaced with '{}' according to rule '{}'".format(regex1, regex2, rulename), extra=request.clientInfo)
+                        except Exception:
+                            self.log.error("Your provided regex ({}) or replace value ({}) is empty or invalid. Please debug your provided regex(es) in rule '{}'".format(regex1, regex2, rulename))
 
-		return {'response': response, 'request': request, 'data': data}
+        return {'response': response, 'request': request, 'data': data}

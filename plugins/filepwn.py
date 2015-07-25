@@ -111,21 +111,17 @@ class FilePwn(Plugin):
 
         #NOT USED NOW
         self.supportedBins = ('MZ', '7f454c46'.decode('hex'))
-
+        
         #FilePwn options
-        self.userConfig      = self.config['FilePwn']
-        self.FileSizeMax     = self.userConfig['targets']['ALL']['FileSizeMax']
-        self.WindowsIntelx86 = self.userConfig['targets']['ALL']['WindowsIntelx86']
-        self.WindowsIntelx64 = self.userConfig['targets']['ALL']['WindowsIntelx64']
-        self.WindowsType     = self.userConfig['targets']['ALL']['WindowsType']
-        self.LinuxIntelx86   = self.userConfig['targets']['ALL']['LinuxIntelx86']
-        self.LinuxIntelx64   = self.userConfig['targets']['ALL']['LinuxIntelx64']
-        self.LinuxType       = self.userConfig['targets']['ALL']['LinuxType']
-        self.MachoIntelx86   = self.userConfig['targets']['ALL']['MachoIntelx86']
-        self.MachoIntelx64   = self.userConfig['targets']['ALL']['MachoIntelx64']
-        self.FatPriority     = self.userConfig['targets']['ALL']['FatPriority']
-        self.zipblacklist    = self.userConfig['ZIP']['blacklist']
-        self.tarblacklist    = self.userConfig['TAR']['blacklist']
+        self.userConfig    = self.config['FilePwn']
+        self.hostblacklist = self.userConfig['hosts']['blacklist']
+        self.hostwhitelist = self.userConfig['hosts']['whitelist']
+        self.keysblacklist = self.userConfig['keywords']['blacklist']
+        self.keyswhitelist = self.userConfig['keywords']['whitelist']
+        self.zipblacklist  = self.userConfig['ZIP']['blacklist']
+        self.tarblacklist  = self.userConfig['TAR']['blacklist']
+        self.parse_target_config(self.userConfig['targets']['ALL'])
+
 
         self.tree_info.append("Connected to Metasploit v{}".format(self.msf.version))
 
@@ -570,11 +566,39 @@ class FilePwn(Plugin):
         else:
             self.patched.put(tempZipFile)
             return
+    
+    def parse_target_config(self, targetConfig):
+        for key, value in targetConfig.iteritems():
+            if hasattr(self, key) is False:
+                setattr(self, key, value)
+                self.log.debug("Settings Config {}: {}".format(key, value))
+
+            elif getattr(self, key, value) != value:
+
+                if value == "None":
+                    continue
+
+                #test if string can be easily converted to dict
+                if ':' in str(value):
+                    for tmpkey, tmpvalue in dict(value).iteritems():
+                        getattr(self, key, value)[tmpkey] = tmpvalue
+                        self.log.debug("Updating Config {}: {}".format(tmpkey, tmpvalue))
+
+                else:
+                    setattr(self, key, value)
+                    self.log.debug("Updating Config {}: {}".format(key, value))
 
     def response(self, response, request, data):
 
         content_header = response.headers['Content-Type']
         client_ip      = response.getClientIP()
+
+        for target in self.userConfig['targets'].keys():
+            if target == 'ALL':
+                self.parse_target_config(self.userConfig['targets']['ALL'])
+
+            if target in request.headers['host']: 
+                self.parse_target_config(self.userConfig['targets'][target])
 
         if content_header in self.zipMimeTypes:
 

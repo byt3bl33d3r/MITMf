@@ -111,13 +111,10 @@ class ClientRequest(Request):
             log.debug("[ClientRequest] Sending expired cookies")
             self.sendExpiredCookies(host, path, self.cookieCleaner.getExpireHeaders(self.method, client, host, headers, path))
 
-        elif (self.urlMonitor.isSecureLink(client, url) or ('securelink' in headers)):
-            if 'securelink' in headers:
-                del headers['securelink']
-            
+        elif self.urlMonitor.isSecureLink(client, url):
             log.debug("[ClientRequest] Sending request via SSL ({})".format((client,url)))
             self.proxyViaSSL(address, self.method, path, postData, headers, self.urlMonitor.getSecurePort(client, url))
-        
+
         else:
             log.debug("[ClientRequest] Sending request via HTTP")
             #self.proxyViaHTTP(address, self.method, path, postData, headers)

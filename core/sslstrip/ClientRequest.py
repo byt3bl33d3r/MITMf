@@ -160,11 +160,8 @@ class ClientRequest(Request):
             log.debug("Sending spoofed favicon response")
             self.sendSpoofedFaviconResponse()
 
-        elif (self.urlMonitor.isSecureLink(client, url) or ('securelink' in headers)):
-            if 'securelink' in headers:
-                del headers['securelink']
-            
-            log.debug("Sending request via SSL ({})".format((client,url)))
+        elif self.urlMonitor.isSecureLink(client, url):
+            log.debug("Sending request via SSL/TLS: {}".format(url))
             self.proxyViaSSL(address, self.method, path, postData, headers, self.urlMonitor.getSecurePort(client, url))
         
         else:

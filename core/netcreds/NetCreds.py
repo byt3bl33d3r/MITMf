@@ -5,6 +5,7 @@ import base64
 import threading
 import binascii
 
+from core.logger import logger
 from os import geteuid, devnull
 from sys import exit
 from urllib import unquote
@@ -16,7 +17,8 @@ from urllib import unquote
 from scapy.all import *
 conf.verb=0
 
-log = logging.getLogger('mitmf')
+formatter = logging.Formatter("%(asctime)s %(clientip)s [NetCreds] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+log = logger().setup_logger("NetCreds", formatter)
 
 DN = open(devnull, 'w')
 pkt_frag_loads = OrderedDict()
@@ -43,11 +45,11 @@ class NetCreds:
 
     version = "1.0"
 
-    def sniffer(self, interface):
-        sniff(iface=interface, prn=pkt_parser, store=0)
+    def sniffer(self, interface, ip):
+        sniff(iface=interface, prn=pkt_parser, filter="not host {}".format(ip), store=0)
 
-    def start(self, interface):
-        t = threading.Thread(name='NetCreds', target=self.sniffer, args=(interface,))
+    def start(self, interface, ip):
+        t = threading.Thread(name='NetCreds', target=self.sniffer, args=(interface, ip,))
         t.setDaemon(True)
         t.start()
 
@@ -897,7 +899,7 @@ def printer(src_ip_port, dst_ip_port, msg):
         print_str = '[{} > {}] {}'.format(src_ip_port, dst_ip_port, msg)
         # All credentials will have dst_ip_port, URLs will not
 
-        log.info("[NetCreds] {}".format(print_str))
+        log.info("{}".format(print_str))
     else:
         print_str = '[{}] {}'.format(src_ip_port.split(':')[0], msg)
-        log.info("[NetCreds] {}".format(print_str))
+        log.info("{}".format(print_str))

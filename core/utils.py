@@ -20,6 +20,8 @@ import os
 import logging
 import re
 import sys
+
+from commands import getstatusoutput
 from core.logger import logger
 from core.sergioproxy.ProxyPlugins import ProxyPlugins
 from scapy.all import get_if_addr, get_if_hwaddr
@@ -33,10 +35,15 @@ def shutdown(message=None):
     sys.exit(message)
 
 def set_ip_forwarding(value):
-    log.debug("Setting ip forwarding to {}".format(value))
-    with open('/proc/sys/net/ipv4/ip_forward', 'w') as file:
-        file.write(str(value))
-        file.close()
+    status, result = getstatusoutput('sysctl --help')
+    if status == 0:
+        log.debug("Setting ip forwarding to {} using sysctl".format(value))
+        os.system('sysctl -w net.ipv4.ip_forward={} &> /dev/null'.format(value)) #for OSX
+    else:
+        log.debug("Setting ip forwarding to {}".format(value))
+        with open('/proc/sys/net/ipv4/ip_forward', 'w') as file:
+            file.write(str(value))
+            file.close()
 
 def get_ip(interface):
     try:
@@ -52,7 +59,7 @@ def get_mac(interface):
     try:
         mac_address = get_if_hwaddr(interface)
         return mac_address
-    except Exception, e:
+    except Exception as e:
         shutdown("Error retrieving MAC address from {}: {}".format(interface, e))
 
 class iptables:
