@@ -6,70 +6,32 @@ Quick tutorials, examples and developer updates at: https://byt3bl33d3r.github.i
 
 This tool is based on [sergio-proxy](https://github.com/supernothing/sergio-proxy) and is an attempt to revive and update the project.
 
-Twitter: @byt3bl33d3r
-IRC on Freenode: #MITMf
-Email: byt3bl33d3r@gmail.com
+Contact me at:
+- Twitter: @byt3bl33d3r
+- IRC on Freenode: #MITMf
+- Email: byt3bl33d3r@gmail.com
 
-**Before submitting issues, please read the [FAQ](#faq) and [CONTRIBIUTING.md](#submitting-issues).**
+**Before submitting issues, please read the [FAQ](#faq) and [CONTRIBUTING.md](CONTRIBUTING.md).**
 
 Available plugins
 =================
-- ```HTA Drive-By``` - Injects a fake update notification and prompts clients to download an HTA application
-- ```SMBtrap``` - Exploits the 'SMB Trap' vulnerability on connected clients
-- ```Screenshotter``` -  Uses HTML5 Canvas to render an accurate screenshot of a clients browser
-- ```Responder``` - LLMNR, NBT-NS, WPAD and MDNS poisoner
-- ```SSLstrip+``` - Partially bypass HSTS
-- ```Spoof``` - Redirect traffic using ARP spoofing, ICMP redirects or DHCP spoofing
-- ```BeEFAutorun``` - Autoruns BeEF modules based on a client's OS or browser type
-- ```AppCachePoison``` - Perform app cache poisoning attacks 
-- ```Ferret-NG``` - Transperently hijacks sessions
-- ```BrowserProfiler``` - Attempts to enumerate all browser plugins of connected clients
-- ```CacheKill``` - Kills page caching by modifying headers
-- ```FilePwn``` - Backdoor executables sent over HTTP using the Backdoor Factory and BDFProxy
-- ```Inject``` - Inject arbitrary content into HTML content
-- ```BrowserSniper``` - Performs drive-by attacks on clients with out-of-date browser plugins
-- ```jskeylogger``` - Injects a Javascript keylogger into a client's webpages
-- ```Replace``` - Replace arbitary content in HTML content
-- ```SMBAuth``` - Evoke SMB challenge-response authentication attempts
+- ```HTA Drive-By```     - Injects a fake update notification and prompts clients to download an HTA application
+- ```SMBtrap```          - Exploits the 'SMB Trap' vulnerability on connected clients
+- ```Screenshotter```    - Uses HTML5 Canvas to render an accurate screenshot of a clients browser
+- ```Responder```        - LLMNR, NBT-NS, WPAD and MDNS poisoner
+- ```SSLstrip+```        - Partially bypass HSTS
+- ```Spoof```            - Redirect traffic using ARP spoofing, ICMP redirects or DHCP spoofing
+- ```BeEFAutorun```      - Autoruns BeEF modules based on a client's OS or browser type
+- ```AppCachePoison```   - Perform app cache poisoning attacks 
+- ```Ferret-NG```        - Transperently hijacks sessions
+- ```BrowserProfiler```  - Attempts to enumerate all browser plugins of connected clients
+- ```FilePwn```          - Backdoor executables sent over HTTP using the Backdoor Factory and BDFProxy
+- ```Inject```           - Inject arbitrary content into HTML content
+- ```BrowserSniper```    - Performs drive-by attacks on clients with out-of-date browser plugins
+- ```jskeylogger```      - Injects a Javascript keylogger into a client's webpages
+- ```Replace```          - Replace arbitary content in HTML content
+- ```SMBAuth```          - Evoke SMB challenge-response authentication attempts
 - ```Upsidedownternet``` - Flips images 180 degrees
-
-Changelog
-=========
-
-- Added the ```SMBTrap``` plugin
-
-- Config file now updates on the fly!
-
-- ```SessionHijacker``` is replaced with ```Ferret-NG```,  captures cookies and starts a proxy that will feed them to connected clients
-
-- ```JavaPwn``` plugin replced with ```BrowserSniper```, now supports Java, Flash and browser exploits
-
-- Addition of the ```Screenshotter``` plugin, able to render screenshots of a client's browser at regular intervals
-
-- Addition of a fully functional SMB server using the [Impacket](https://github.com/CoreSecurity/impacket) library
-
-- Addition of [DNSChef](https://github.com/iphelix/dnschef), the framework is now a IPv4/IPv6 (TCP & UDP) DNS server! Supported queries are: 'A', 'AAAA', 'MX', 'PTR', 'NS', 'CNAME', 'TXT', 'SOA', 'NAPTR', 'SRV', 'DNSKEY' and 'RRSIG'
-
-- Integrated [Net-Creds](https://github.com/DanMcInerney/net-creds) currently supported protocols are:
-  FTP, IRC, POP, IMAP, Telnet, SMTP, SNMP (community strings), NTLMv1/v2 (all supported protocols like HTTP, SMB, LDAP etc.) and Kerberos
-
-- Integrated [Responder](https://github.com/SpiderLabs/Responder) to poison LLMNR, NBT-NS and MDNS and act as a rogue WPAD server
-
-- Integrated [SSLstrip+](https://github.com/LeonardoNve/sslstrip2) by Leonardo Nve to partially bypass HSTS as demonstrated at BlackHat Asia 2014 
-
-- ```Spoof``` plugin can now exploit the 'ShellShock' bug when DHCP spoofing 
-
-- ```Spoof``` plugin now supports ICMP, ARP and DHCP spoofing
-
-- Usage of third party tools has been completely removed (e.g. Ettercap)
-
-- ```FilePwn```plugin re-written to backdoor executables zip and tar files on the fly by using [the-backdoor-factory](https://github.com/secretsquirrel/the-backdoor-factory) and code from [BDFProxy](https://github.com/secretsquirrel/BDFProxy)
-
-- Added [msfrpc.py](https://github.com/byt3bl33d3r/msfrpc/blob/master/python-msfrpc/msfrpc.py) for interfacing with Metasploit's RPC server
-
-- Added [beefapi.py](https://github.com/byt3bl33d3r/beefapi) for interfacing with BeEF's RESTfulAPI
-
-- Addition of the app-cache poisoning attack by [Krzysztof Kotowicz](https://github.com/koto/sslstrip) (blogpost explaining the attack here: http://blog.kotowicz.net/2010/12/squid-imposter-phishing-websites.html)
 
 How to install on Kali
 ======================
@@ -83,6 +45,7 @@ Installation
 If you're rocking Kali and want the latest version:
 - Clone this repository
 - Run the ```kali_setup.sh``` script
+
 **Note: you can ignore any errors when ```pip``` tries to install dependencies, MITMf should be able to run anyway**
 
 If you're rocking any other Linux distro:
@@ -93,7 +56,7 @@ If you're rocking any other Linux distro:
 FAQ
 ===
 - **Is Windows supported?**
-- No, it will never be supported
+- No, it will never be supported (so don't ask).
 
 - **Is OSX supported?**
 - Yes! Initial compatibility has been introduced in 0.9.8! Find anything broken submit a PR or open an issue ticket!
