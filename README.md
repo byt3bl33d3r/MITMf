@@ -1,7 +1,7 @@
 ![Supported Python versions](https://img.shields.io/badge/python-2.7-blue.svg)
-![Latest Version](https://img.shields.io/badge/mitmf-0.9.8-red.svg)
+![Latest Version](https://img.shields.io/badge/mitmf-0.9.8%20--%20The%20Dark%20Side-red.svg)
 
-#MITMf V0.9.8 - 'The Dark Side'
+#MITMf
 
 Framework for Man-In-The-Middle attacks
 

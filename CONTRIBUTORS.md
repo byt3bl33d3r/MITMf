@@ -15,6 +15,7 @@
 #Unintentional contributors and/or projects that I stole code from
 
 - Metasploit Framework's os.js and Javascript Keylogger module
+- Responder by Laurent Gaffie
 - The Backdoor Factory and BDFProxy
 - ARPWatch module from the Subterfuge Framework
 - Impacket's KarmaSMB script
