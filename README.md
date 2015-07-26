@@ -1,5 +1,6 @@
 ![Supported Python versions](https://img.shields.io/badge/python-2.7-blue.svg)
 ![Latest Version](https://img.shields.io/badge/mitmf-0.9.8%20--%20The%20Dark%20Side-red.svg)
+![Supported OS](https://img.shields.io/badge/Supported%20OS-Linux%2FOSX-yellow.svg)
 
 #MITMf
 
@@ -18,7 +19,7 @@ Contact me at:
 
 Description
 ============
-MITMf aims to provide a one-stop-shop for Man-In-The-Middle and Network attacks while updating and improving
+MITMf aims to provide a one-stop-shop for Man-In-The-Middle and network attacks while updating and improving
 existing attacks and techniques.
 
 Originally built to address the significant shortcomings of other tools (e.g Ettercap, Mallory), it's been almost completely 
@@ -28,23 +29,23 @@ Additionally, the framework contains a built-in SMB, HTTP and DNS server that ca
 
 Available plugins
 =================
-- ```HTA Drive-By```     : Injects a fake update notification and prompts clients to download an HTA application
-- ```SMBtrap```          : Exploits the 'SMB Trap' vulnerability on connected clients
-- ```Screenshotter```    : Uses HTML5 Canvas to render an accurate screenshot of a clients browser
-- ```Responder```        : LLMNR, NBT-NS, WPAD and MDNS poisoner
-- ```SSLstrip+```        : Partially bypass HSTS
-- ```Spoof```            : Redirect traffic using ARP spoofing, ICMP redirects or DHCP spoofing
-- ```BeEFAutorun```      : Autoruns BeEF modules based on a client's OS or browser type
-- ```AppCachePoison```   : Perform app cache poisoning attacks 
-- ```Ferret-NG```        : Transperently hijacks sessions
-- ```BrowserProfiler```  : Attempts to enumerate all browser plugins of connected clients
-- ```FilePwn```          : Backdoor executables sent over HTTP using the Backdoor Factory and BDFProxy
-- ```Inject```           : Inject arbitrary content into HTML content
-- ```BrowserSniper```    : Performs drive-by attacks on clients with out-of-date browser plugins
-- ```jskeylogger```      : Injects a Javascript keylogger into a client's webpages
-- ```Replace```          : Replace arbitary content in HTML content
-- ```SMBAuth```          : Evoke SMB challenge-response authentication attempts
-- ```Upsidedownternet``` : Flips images 180 degrees
+- **HTA Drive-By**     : Injects a fake update notification and prompts clients to download an HTA application
+- **SMBTrap**          : Exploits the 'SMB Trap' vulnerability on connected clients
+- **ScreenShotter**    : Uses HTML5 Canvas to render an accurate screenshot of a clients browser
+- **Responder**        : LLMNR, NBT-NS, WPAD and MDNS poisoner
+- **SSLstrip+**        : Partially bypass HSTS
+- **Spoof**            : Redirect traffic using ARP, ICMP, DHCP or DNS spoofing
+- **BeEFAutorun**      : Autoruns BeEF modules based on a client's OS or browser type
+- **AppCachePoison**   : Performs HTML5 App-Cache poisoning attacks 
+- **Ferret-NG**        : Transperently hijacks client sessions
+- **BrowserProfiler**  : Attempts to enumerate all browser plugins of connected clients
+- **FilePwn**          : Backdoor executables sent over HTTP using the Backdoor Factory and BDFProxy
+- **Inject**           : Inject arbitrary content into HTML content
+- **BrowserSniper**    : Performs drive-by attacks on clients with out-of-date browser plugins
+- **JSkeylogger**      : Injects a Javascript keylogger into a client's webpages
+- **Replace**          : Replace arbitary content in HTML content
+- **SMBAuth**          : Evoke SMB challenge-response authentication attempts
+- **Upsidedownternet** : Flips images 180 degrees
 
 How to install on Kali
 ======================
@@ -57,9 +58,7 @@ Installation
 ============
 If you're rocking Kali and want the latest version:
 - Clone this repository
-- Run the ```kali_setup.sh``` script
-
-**Note: you can ignore any errors when ```pip``` tries to install dependencies, MITMf should be able to run anyway**
+- Run the ```kali_setup.sh``` script (**Note: you can ignore any errors when ```pip``` tries to install dependencies, MITMf should be able to run anyway**)
 
 If you're rocking any other Linux distro:
 - Clone this repository
