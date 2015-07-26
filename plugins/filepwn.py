@@ -388,7 +388,7 @@ class FilePwn(Plugin):
                     continue
 
                 # Check against keywords
-                keywordCheck = False
+                keywordCheck = True
 
                 if type(self.tarblacklist) is str:
                     if self.tarblacklist.lower() in info.name.lower():
@@ -502,7 +502,7 @@ class FilePwn(Plugin):
                 continue
 
             #Check against keywords
-            keywordCheck = False
+            keywordCheck = True
 
             if type(self.zipblacklist) is str:
                 if self.zipblacklist.lower() in info.filename.lower():
@@ -591,7 +591,8 @@ class FilePwn(Plugin):
     def response(self, response, request, data):
 
         content_header = response.headers['Content-Type']
-        client_ip      = response.getClientIP()
+        content_length = int(response.headers['Content-Length'])
+        client_ip      = request.client.getClientIP()
 
         for target in self.userConfig['targets'].keys():
             if target == 'ALL':
@@ -630,7 +631,7 @@ class FilePwn(Plugin):
                             self.clientlog.info("Patching complete, forwarding to client!", extra=request.clientInfo)
                             return {'response': response, 'request': request, 'data': bd_tar}
 
-        elif content_header in self.binaryMimeTypes:
+        elif (content_header in self.binaryMimeTypes) and (content_length <= self.FileSizeMax):
             for bintype in ['pe','elf','fatfile','machox64','machox86']:
                 if self.bytes_have_format(data, bintype):
                     self.clientlog.info("Detected supported binary type ({})!".format(bintype), extra=request.clientInfo)

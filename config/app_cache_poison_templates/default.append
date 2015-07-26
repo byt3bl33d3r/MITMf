@@ -34,5 +34,5 @@
 </div>
 <div style="padding: 1em;border:1px solid red;margin:1em">
 <h1>AppCache Poison works!</h1>
-<p><code>%%tamper_url%%</code> page is spoofed with <a href="https://github.com/koto/sslstrip">AppCache Poison</a> by <a href="http://blog.kotowicz.net">Krzysztof Kotowicz</a>, but this is just a default content. To replace it, create appropriate files in your templates directory and add your content there.</p>
+<p>This page is spoofed with <a href="https://github.com/koto/sslstrip">AppCache Poison</a> by <a href="http://blog.kotowicz.net">Krzysztof Kotowicz</a>, but this is just a default content. To replace it, create appropriate files in your templates directory and add your content there.</p>
 </div>

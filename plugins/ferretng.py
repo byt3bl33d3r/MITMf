@@ -23,7 +23,7 @@ from datetime import datetime
 from plugins.plugin import Plugin
 from twisted.internet import reactor
 from twisted.web import http
-from twisted.internet import reactor
+from core.ferretng.URLMonitor import URLMonitor
 
 class FerretNG(Plugin):
     name        = "Ferret-NG"
@@ -36,9 +36,6 @@ class FerretNG(Plugin):
         self.options = options
         self.ferret_port = options.ferret_port
         self.cookie_file = None
-
-        from core.ferretng.FerretProxy import FerretProxy
-        from core.ferretng.URLMonitor import URLMonitor
 
         URLMonitor.getInstance().hijack_client = self.config['Ferret-NG']['Client']
 
@@ -79,6 +76,7 @@ class FerretNG(Plugin):
             URLMonitor.getInstance().cookies[client].append({'host': host, 'cookie': cookie})
 
     def reactor(self, StrippingProxy):
+        from core.ferretng.FerretProxy import FerretProxy
         FerretFactory = http.HTTPFactory(timeout=10)
         FerretFactory.protocol = FerretProxy
         reactor.listenTCP(self.ferret_port, FerretFactory)

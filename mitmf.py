@@ -83,6 +83,7 @@ from core.sslstrip.StrippingProxy import StrippingProxy
 from core.sslstrip.URLMonitor import URLMonitor
 
 URLMonitor.getInstance().setFaviconSpoofing(options.favicon)
+URLMonitor.getInstance().setCaching(options.preserve_cache)
 CookieCleaner.getInstance().setEnabled(options.killsessions)
 
 strippingFactory          = http.HTTPFactory(timeout=10)

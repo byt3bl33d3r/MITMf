@@ -25,10 +25,11 @@ import gzip
 import StringIO
 import sys
 
+from core.logger import logger
 from twisted.web.http import HTTPClient
 from URLMonitor import URLMonitor
 
-formatter = logging.Formatter("%(asctime)s [Ferrent-NG] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+formatter = logging.Formatter("%(asctime)s [Ferret-NG] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 log = logger().setup_logger("Ferret_ServerConnection", formatter)
 
 class ServerConnection(HTTPClient):

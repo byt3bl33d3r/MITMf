@@ -10,6 +10,7 @@
 - @golind
 - @mmetince
 - @niallmerrigan
+- @auraltension
 
 #Unintentional contributors and/or projects that I stole code from
 

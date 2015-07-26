@@ -32,6 +32,7 @@ from twisted.internet import defer
 from twisted.internet import reactor
 from twisted.internet.protocol import ClientFactory
 
+from core.logger import logger
 from ServerConnectionFactory import ServerConnectionFactory
 from ServerConnection import ServerConnection
 from SSLServerConnection import SSLServerConnection
@@ -39,7 +40,7 @@ from URLMonitor import URLMonitor
 from CookieCleaner import CookieCleaner
 from DnsCache import DnsCache
 
-formatter = logging.Formatter("%(asctime)s [Ferrent-NG] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+formatter = logging.Formatter("%(asctime)s [Ferret-NG] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 log = logger().setup_logger("Ferret_ClientRequest", formatter)
 
 class ClientRequest(Request):
@@ -79,7 +80,6 @@ class ClientRequest(Request):
                         headers['cookie'] = entry['cookie']
             except KeyError:
                 log.error("No captured sessions (yet) from {}".format(self.urlMonitor.hijack_client))
-                pass
 
         return headers
 

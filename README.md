@@ -1,3 +1,5 @@
+[![Supported Python versions](https://img.shields.io/badge/python-2.7-blue.svg)]
+
 #MITMf V0.9.8 - 'The Dark Side'
 
 Framework for Man-In-The-Middle attacks
@@ -15,23 +17,23 @@ Contact me at:
 
 Available plugins
 =================
-- ```HTA Drive-By```     - Injects a fake update notification and prompts clients to download an HTA application
-- ```SMBtrap```          - Exploits the 'SMB Trap' vulnerability on connected clients
-- ```Screenshotter```    - Uses HTML5 Canvas to render an accurate screenshot of a clients browser
-- ```Responder```        - LLMNR, NBT-NS, WPAD and MDNS poisoner
-- ```SSLstrip+```        - Partially bypass HSTS
-- ```Spoof```            - Redirect traffic using ARP spoofing, ICMP redirects or DHCP spoofing
-- ```BeEFAutorun```      - Autoruns BeEF modules based on a client's OS or browser type
-- ```AppCachePoison```   - Perform app cache poisoning attacks 
-- ```Ferret-NG```        - Transperently hijacks sessions
-- ```BrowserProfiler```  - Attempts to enumerate all browser plugins of connected clients
-- ```FilePwn```          - Backdoor executables sent over HTTP using the Backdoor Factory and BDFProxy
-- ```Inject```           - Inject arbitrary content into HTML content
-- ```BrowserSniper```    - Performs drive-by attacks on clients with out-of-date browser plugins
-- ```jskeylogger```      - Injects a Javascript keylogger into a client's webpages
-- ```Replace```          - Replace arbitary content in HTML content
-- ```SMBAuth```          - Evoke SMB challenge-response authentication attempts
-- ```Upsidedownternet``` - Flips images 180 degrees
+- ```HTA Drive-By```     : Injects a fake update notification and prompts clients to download an HTA application
+- ```SMBtrap```          : Exploits the 'SMB Trap' vulnerability on connected clients
+- ```Screenshotter```    : Uses HTML5 Canvas to render an accurate screenshot of a clients browser
+- ```Responder```        : LLMNR, NBT-NS, WPAD and MDNS poisoner
+- ```SSLstrip+```        : Partially bypass HSTS
+- ```Spoof```            : Redirect traffic using ARP spoofing, ICMP redirects or DHCP spoofing
+- ```BeEFAutorun```      : Autoruns BeEF modules based on a client's OS or browser type
+- ```AppCachePoison```   : Perform app cache poisoning attacks 
+- ```Ferret-NG```        : Transperently hijacks sessions
+- ```BrowserProfiler```  : Attempts to enumerate all browser plugins of connected clients
+- ```FilePwn```          : Backdoor executables sent over HTTP using the Backdoor Factory and BDFProxy
+- ```Inject```           : Inject arbitrary content into HTML content
+- ```BrowserSniper```    : Performs drive-by attacks on clients with out-of-date browser plugins
+- ```jskeylogger```      : Injects a Javascript keylogger into a client's webpages
+- ```Replace```          : Replace arbitary content in HTML content
+- ```SMBAuth```          : Evoke SMB challenge-response authentication attempts
+- ```Upsidedownternet``` : Flips images 180 degrees
 
 How to install on Kali
 ======================

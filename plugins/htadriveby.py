@@ -53,4 +53,4 @@ class HTADriveBy(Inject, Plugin):
 
     def options(self, options):
         options.add_argument('--text', type=str, default='The Adobe Flash Player plug-in was blocked because it is out of date.', help="Text to display on notification bar")
-        options.add_argument('--hta-app', type=str, default='./config/hta_driveby/Flash.hta', help='Path to HTA application [defaults to config/hta_driveby/Flash.hta]')
+        options.add_argument('--hta-app', type=str, default='./config/hta_driveby/flash_setup.hta', help='Path to HTA application [defaults to config/hta_driveby/flash_setup.hta]')
