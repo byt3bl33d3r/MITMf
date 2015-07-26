@@ -16,6 +16,16 @@ Contact me at:
 
 **Before submitting issues, please read the [FAQ](#faq) and [CONTRIBUTING.md](CONTRIBUTING.md).**
 
+Description
+============
+MITMf aims to provide a one-stop-shop for Man-In-The-Middle and Network attacks while updating and improving
+existing attacks and techniques.
+
+Originally built to address the significant shortcomings of other tools (e.g Ettercap, Mallory), it's been almost completely 
+re-written from scratch to provide a modular and easily extendible framework that anyone can use to implement their own MITM attack.
+
+Additionally, the framework contains a built-in SMB, HTTP and DNS server that can be controlled and used by the various plugins.
+
 Available plugins
 =================
 - ```HTA Drive-By```     : Injects a fake update notification and prompts clients to download an HTA application
