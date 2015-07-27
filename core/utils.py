@@ -64,20 +64,23 @@ def get_mac(interface):
 
 class iptables:
 
-    dns  = False
-    http = False
-    smb  = False
+    dns     = False
+    http    = False
+    smb     = False
+    nfqueue = False
 
     __shared_state = {}
-    
+
     def __init__(self):
         self.__dict__ = self.__shared_state
 
-    def Flush(self):
+    def flush(self):
         log.debug("Flushing iptables")
         os.system('iptables -F && iptables -X && iptables -t nat -F && iptables -t nat -X')
         self.dns  = False
         self.http = False
+        self.smb  = False
+        self.nfqueue = False
 
     def HTTP(self, http_redir_port):
         log.debug("Setting iptables HTTP redirection rule from port 80 to {}".format(http_redir_port))
@@ -93,3 +96,8 @@ class iptables:
         log.debug("Setting iptables SMB redirection rule from port 445 to {}".format(smb_redir_port))
         os.system('iptables -t nat -A PREROUTING -p tcp --destination-port 445 -j REDIRECT --to-port {}'.format(smb_redir_port))
         self.smb = True
+
+    def NFQUEUE(self):
+        log.debug("Setting iptables NFQUEUE rule")
+        os.system('iptables -t nat -A PREROUTING -j NFQUEUE --queue-num 1')
+        self.nfqueue = True

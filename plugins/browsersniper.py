@@ -30,7 +30,6 @@ class BrowserSniper(BrowserProfiler, Plugin):
     optname     = "browsersniper"
     desc        = "Performs drive-by attacks on clients with out-of-date browser plugins"
     version     = "0.4"
-    has_opts    = False
 
     def initialize(self, options):
         self.options = options

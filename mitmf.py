@@ -54,11 +54,11 @@ sgroup = parser.add_argument_group("MITMf", "Options for MITMf")
 sgroup.add_argument("--log-level", type=str,choices=['debug', 'info'], default="info", help="Specify a log level [default: info]")
 sgroup.add_argument("-i", dest='interface', required=True, type=str, help="Interface to listen on")
 sgroup.add_argument("-c", dest='configfile', metavar="CONFIG_FILE", type=str, default="./config/mitmf.conf", help="Specify config file to use")
-sgroup.add_argument('-m', '--manual-iptables', dest='manualiptables', action='store_true', default=False, help='Do not setup iptables or flush them automatically')
 sgroup.add_argument("-p", "--preserve-cache", action="store_true", help="Don't kill client/server caching")
 sgroup.add_argument("-l", dest='listen_port', type=int, metavar="PORT", default=10000, help="Port to listen on (default 10000)")
 sgroup.add_argument("-f", "--favicon", action="store_true", help="Substitute a lock favicon on secure requests.")
 sgroup.add_argument("-k", "--killsessions", action="store_true", help="Kill sessions in progress.")
+sgroup.add_argument("-F", "--filter", type=str, help='Filter to apply to incoming traffic')
 
 #Initialize plugins and pass them the parser NameSpace object
 plugins = [plugin(parser) for plugin in plugin.Plugin.__subclasses__()]
@@ -93,7 +93,6 @@ reactor.listenTCP(options.listen_port, strippingFactory)
 
 ProxyPlugins().all_plugins = plugins
 
-#All our options should be loaded now, start initializing the plugins
 print "[*] MITMf v{} - '{}'".format(mitmf_version, mitmf_codename)
 for plugin in plugins:
 
@@ -122,6 +121,13 @@ print "|_ Sergio-Proxy v0.2.1 online"
 print "|_ SSLstrip v0.9 by Moxie Marlinspike online"
 print "|"
 
+if options.filter:
+    from core.packetparser import PacketParser
+    pparser = PacketParser(options.filter)
+    pparser.start()
+    print "|_ PacketParser online"
+    print "|  |_ Applying filter {} to incoming packets".format(options.filter)
+
 #Start mitmf-api
 from core.mitmfapi import mitmfapi
 print "|_ MITMf-API online"
@@ -149,6 +155,9 @@ print "|_ SMB server online [Mode: {}] (Impacket {}) \n".format(SMBserver().mode
 
 #start the reactor
 reactor.run()
-
 print "\n"
+
+if options.filter:
+    pparser.stop()
+
 shutdown()

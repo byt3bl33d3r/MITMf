@@ -23,12 +23,10 @@ class Spoof(Plugin):
     optname     = "spoof"
     desc        = "Redirect/Modify traffic using ICMP, ARP, DHCP or DNS"
     version     = "0.6"
-    has_opts    = True
 
     def initialize(self, options):
         '''Called if plugin is enabled, passed the options namespace'''
         self.options            = options
-        self.manualiptables     = options.manualiptables
         self.protocol_instances = []
 
         from core.utils import iptables, shutdown, set_ip_forwarding
@@ -74,18 +72,16 @@ class Spoof(Plugin):
             from core.servers.dns.DNSchef import DNSChef
 
             self.tree_info.append('DNS spoofing enabled')
-            if not options.manualiptables:
-                if iptables().dns is False:
-                    iptables().DNS(self.config['MITMf']['DNS']['port'])
+            if iptables().dns is False:
+                iptables().DNS(self.config['MITMf']['DNS']['port'])
 
         if not options.arp and not options.icmp and not options.dhcp and not options.dns:
             shutdown("[Spoof] Spoof plugin requires --arp, --icmp, --dhcp or --dns")
 
         set_ip_forwarding(1)
 
-        if not options.manualiptables:
-            if iptables().http is False:
-                iptables().HTTP(options.listen_port)
+        if iptables().http is False:
+            iptables().HTTP(options.listen_port)
 
         for protocol in self.protocol_instances:
             protocol.start()
@@ -109,7 +105,6 @@ class Spoof(Plugin):
             if hasattr(protocol, 'stop'):
                 protocol.stop()
 
-        if not self.manualiptables:
-            iptables().Flush()
+        iptables().flush()
 
         set_ip_forwarding(0)

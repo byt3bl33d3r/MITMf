@@ -28,7 +28,6 @@ class Responder(Plugin):
     desc        = "Poison LLMNR, NBT-NS and MDNS requests"
     tree_info   = ["NBT-NS, LLMNR & MDNS Responder v2.1.2 by Laurent Gaffie online"]
     version     = "0.2"
-    has_opts    = True
 
     def initialize(self, options):
         '''Called if plugin is enabled, passed the options namespace'''

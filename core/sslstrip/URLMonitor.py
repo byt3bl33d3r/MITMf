@@ -50,6 +50,7 @@ class URLMonitor:
         self.faviconReplacement = False
         self.hsts               = False
         self.app                = False
+        self.caching            = False
 
     @staticmethod
     def getInstance():
@@ -74,6 +75,9 @@ class URLMonitor:
             return self.strippedURLPorts[(client,url)]
         else:
             return 443
+
+    def setCaching(self, value):
+        self.caching = value
 
     def addRedirection(self, from_url, to_url):
         for s in self.redirects:

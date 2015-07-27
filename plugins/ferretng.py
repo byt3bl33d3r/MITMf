@@ -30,7 +30,6 @@ class FerretNG(Plugin):
     optname     = "ferretng"
     desc        = "Captures cookies and starts a proxy that will feed them to connected clients"
     version     = "0.1"
-    has_opts    = True
 
     def initialize(self, options):
         self.options = options

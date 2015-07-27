@@ -29,7 +29,6 @@ class AppCachePlugin(Plugin):
     optname    = "appoison"
     desc       = "Performs App Cache Poisoning attacks"
     version    = "0.3"
-    has_opts   = False
 
     def initialize(self, options):
         self.options = options

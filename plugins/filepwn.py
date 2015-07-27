@@ -80,7 +80,6 @@ class FilePwn(Plugin):
     desc        = "Backdoor executables being sent over http using bdfactory"
     tree_info   = ["BDFProxy v0.3.2 online"]
     version     = "0.3"
-    has_opts    = False
 
     def initialize(self, options):
         '''Called if plugin is enabled, passed the options namespace'''

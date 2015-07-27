@@ -25,25 +25,21 @@ class SSLstripPlus(Plugin):
     desc      = 'Enables SSLstrip+ for partial HSTS bypass'
     version   = "0.4"
     tree_info = ["SSLstrip+ by Leonardo Nve running"]
-    has_opts  = False
 
     def initialize(self, options):
         self.options = options
-        self.manualiptables = options.manualiptables
 
         from core.sslstrip.URLMonitor import URLMonitor
         from core.servers.dns.DNSchef import DNSChef
         from core.utils import iptables
 
-        if not options.manualiptables:
-            if iptables().dns is False:
-                iptables().DNS(self.config['MITMf']['DNS']['port'])
+        if iptables().dns is False:
+            iptables().DNS(self.config['MITMf']['DNS']['port'])
 
         URLMonitor.getInstance().setHstsBypass()
         DNSChef().setHstsBypass()
 
     def on_shutdown(self):
         from core.utils import iptables
-        if not self.manualiptables:
-            if iptables().dns is True:
-                iptables().Flush()
+        if iptables().dns is True:
+            iptables().flush()

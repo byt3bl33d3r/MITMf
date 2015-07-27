@@ -1,6 +1,6 @@
 ![Supported Python versions](https://img.shields.io/badge/python-2.7-blue.svg)
 ![Latest Version](https://img.shields.io/badge/mitmf-0.9.8%20--%20The%20Dark%20Side-red.svg)
-![Supported OS](https://img.shields.io/badge/Supported%20OS-Linux%2FOSX-yellow.svg)
+![Supported OS](https://img.shields.io/badge/Supported%20OS-Linux-yellow.svg)
 
 #MITMf
 
@@ -56,22 +56,18 @@ How to install on Kali
 
 Installation
 ============
-If you're rocking Kali and want the latest version:
-- Clone this repository
-- Run the ```kali_setup.sh``` script (**Note: you can ignore any errors when ```pip``` tries to install dependencies, MITMf should be able to run anyway**)
 
-If you're rocking any other Linux distro:
 - Clone this repository
-- Run the ```other_setup.sh``` script
-- Run the command ```pip install --upgrade mitmflib``` to install all Python dependencies
+- Run the ```setup.sh``` script
+- Run the command ```pip install --upgrade -r requirements.txt``` to install all Python dependencies
 
 FAQ
 ===
 - **Is Windows supported?**
-- No, it will never be supported (so don't ask).
+- Nope, don't think it will ever be
 
 - **Is OSX supported?**
-- Yes! Initial compatibility has been introduced in 0.9.8! Find anything broken submit a PR or open an issue ticket!
+- Initial compatibility has been introduced in 0.9.8, still needs some testing, find anything broken submit a PR or open an issue ticket!
 
 - **I can't install package X because of an error!**
 - Try installing the package via ```pip``` or your distro's package manager. This *isn't* a problem with MITMf.
