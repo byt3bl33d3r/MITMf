@@ -1,4 +1,16 @@
-#Changes before v0.9.8
+- Added active filtering/injection into the framework
+
+- Fixed a bug in the DHCP poisoner which prevented it from working on windows OS's
+
+- Made some preformance improvements to the ARP spoofing poisoner
+
+- Refactored Appcachepoison , BrowserSniper plugins
+
+- Refactored proxy plugin API
+
+-Inject plugin now uses BeautifulSoup4 to parse and inject HTML/JS 
+
+- Added HTA Drive by plugin
 
 - Added the SMBTrap plugin
 
