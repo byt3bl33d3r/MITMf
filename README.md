@@ -49,6 +49,7 @@ For example, here's a stupid little filter that just changes the destination IP 
 
 ```python
 if packet.haslayer(ICMP):
+	log.info('Got an ICMP packet!')
 	packet.dst = '192.168.1.0'
 ```
 
@@ -58,6 +59,8 @@ if packet.haslayer(ICMP):
 Now to use the filter all we need to do is: ```python mitmf.py -F ~/filter.py```
 
 You will probably want to combine that with the **Spoof** plugin to actually intercept packets from someone else ;)
+
+**Note**: you can modify filters on-the-fly without restarting MITMf! 
 
 Examples
 ========
