@@ -143,8 +143,5 @@ Installation
 
 - Clone this repository
 - Run the ```setup.sh``` script
+- On Kali, Debian (and possibly Ubuntu): ```apt-get install python-dev python-setuptools libpcap0.8-dev libnetfilter-queue-dev```
 - Run the command ```pip install --upgrade -r requirements.txt``` to install all Python dependencies
-
-**Note:** on Kali, Debian (and possibly Ubuntu): If pip complains about ```pcap.h``` missing, install the ```libpcap0.8-dev``` and ```python-pypcap``` packages and try again
-
-**Note 2:** If ```netfilterqueue``` fails to compile, install the ```libnetfilter-queue-dev``` package
