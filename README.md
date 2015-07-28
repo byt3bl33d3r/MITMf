@@ -47,11 +47,11 @@ You can now modify any packet/protocol that gets intercepted by MITMf using Scap
 
 For example, here's a stupid little filter that just changes the destination IP address of ICMP packets:
 
-```
+```python
 if packet.haslayer(ICMP):
 	packet.dst = '192.168.1.0'
-
 ```
+
 - Use the ```packet``` variable to access the packet in a Scapy compatible format
 - Use the ```data``` variable to access the raw packet data
 
