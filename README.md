@@ -29,7 +29,7 @@ re-written from scratch to provide a modular and easily extendible framework tha
 Features
 ========
 
-- The framework contains a built-in SMB, HTTP and DNS server that can be controlled and used by the various plugins it also contains a modified version of the SSLStrip proxy that allows for HTTP modification and a partial HSTS bypass.
+- The framework contains a built-in SMB, HTTP and DNS server that can be controlled and used by the various plugins, it also contains a modified version of the SSLStrip proxy that allows for HTTP modification and a partial HSTS bypass.
 
 - As of version 0.9.8, MITMf supports active packet filtering and manipulation (basically what etterfilters did, only better),
 allowing users to modify any type of traffic or protocol.
@@ -43,7 +43,7 @@ allowing users to modify any type of traffic or protocol.
 Examples
 ========
 
-The most basic usage, just starts the HTTP proxy SMB,DNS,HTTP servers and Net-Creds on interface enp3s0:
+The most basic usage, starts the HTTP proxy SMB,DNS,HTTP servers and Net-Creds on interface enp3s0:
 
 ```python mitmf.py -i enp3s0```
 
@@ -51,7 +51,7 @@ ARP poison 192.168.1.0/24 with the gateway at 192.168.1.1 using the **Spoof** pl
 
 ```python mitmf.py -i enp3s0 --spoof --arp --target 192.168.1.0/24 --gateway 192.168.1.1```
 
-Same as above + a WPAD rougue proxy server using the **Responder** plugin:
+Same as above + a WPAD rogue proxy server using the **Responder** plugin:
 
 ```python mitmf.py -i enp3s0 --spoof --arp --target 192.168.0.0/24 --gateway 192.168.1.1 --responder --wpad```
 
