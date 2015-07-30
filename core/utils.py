@@ -24,7 +24,7 @@ import sys
 from commands import getstatusoutput
 from core.logger import logger
 from core.sergioproxy.ProxyPlugins import ProxyPlugins
-from scapy.all import get_if_addr, get_if_hwaddr
+from scapy.all import get_if_addr, get_if_hwaddr, get_working_if
 
 formatter = logging.Formatter("%(asctime)s [Utils] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 log = logger().setup_logger("Utils", formatter)
@@ -44,6 +44,11 @@ def set_ip_forwarding(value):
         with open('/proc/sys/net/ipv4/ip_forward', 'w') as file:
             file.write(str(value))
             file.close()
+
+def get_iface():
+    iface = get_working_if()
+    log.debug("Interface {} seems to be up and running")
+    return iface
 
 def get_ip(interface):
     try:

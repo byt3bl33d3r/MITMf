@@ -49,7 +49,7 @@ class Spoof(Plugin):
             if options.targets:
                 shutdown("[Spoof] --targets argument invalid when DCHP spoofing")
 
-            dhcp = DHCPpoisoner(options, self.config['Spoof']['DHCP'])
+            dhcp = DHCPpoisoner(options)
             dhcp.debug = debug
             self.tree_info.append('DHCP spoofing enabled')
             self.protocol_instances.append(dhcp)
@@ -92,6 +92,7 @@ class Spoof(Plugin):
         group.add_argument('--icmp', dest='icmp', action='store_true', help='Redirect traffic using ICMP redirects')
         group.add_argument('--dhcp', dest='dhcp', action='store_true', help='Redirect traffic using DHCP offers')
         options.add_argument('--dns', dest='dns', action='store_true', help='Proxy/Modify DNS queries')
+        options.add_argument('--netmask', dest='netmask', type=str, default='255.255.255.0', help='The netmask of the network')
         options.add_argument('--shellshock', type=str, metavar='PAYLOAD', dest='shellshock', help='Trigger the Shellshock vuln when spoofing DHCP, and execute specified command')
         options.add_argument('--gateway', dest='gateway', help='Specify the gateway IP')
         options.add_argument('--targets', dest='targets', help='Specify host/s to poison [if ommited will default to subnet]')

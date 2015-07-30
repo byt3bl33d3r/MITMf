@@ -46,13 +46,13 @@ if os.geteuid() != 0:
 
 parser = argparse.ArgumentParser(description="MITMf v{} - '{}'".format(mitmf_version, mitmf_codename), 
                                  version="{} - '{}'".format(mitmf_version, mitmf_codename), 
-                                 usage='mitmf.py -i interface [mitmf options] [plugin name] [plugin options]', 
+                                 usage='mitmf.py [-i interface] [mitmf options] [plugin name] [plugin options]', 
                                  epilog="Use wisely, young Padawan.")
 
 #add MITMf options
 sgroup = parser.add_argument_group("MITMf", "Options for MITMf")
 sgroup.add_argument("--log-level", type=str,choices=['debug', 'info'], default="info", help="Specify a log level [default: info]")
-sgroup.add_argument("-i", dest='interface', required=True, type=str, help="Interface to listen on")
+sgroup.add_argument("-i", dest='interface', type=str, help="Interface to listen on")
 sgroup.add_argument("-c", dest='configfile', metavar="CONFIG_FILE", type=str, default="./config/mitmf.conf", help="Specify config file to use")
 sgroup.add_argument("-p", "--preserve-cache", action="store_true", help="Don't kill client/server caching")
 sgroup.add_argument("-l", dest='listen_port', type=int, metavar="PORT", default=10000, help="Port to listen on (default 10000)")
@@ -73,7 +73,9 @@ options = parser.parse_args()
 logger().log_level = logging.__dict__[options.log_level.upper()]
 
 #Check to see if we supplied a valid interface, pass the IP and MAC to the NameSpace object
-from core.utils import get_ip, get_mac, shutdown
+from core.utils import get_iface, get_ip, get_mac, shutdown
+if not options.interface:
+    options.interface = get_iface()
 options.ip  = get_ip(options.interface)
 options.mac = get_mac(options.interface)
 

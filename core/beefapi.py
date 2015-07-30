@@ -201,7 +201,7 @@ class ARE_Rules(object):
             with open(rule_path, 'r') as rule:
                 payload = rule.read()
                 r = requests.post('{}/add?token={}'.format(self.url, self.token), data=payload, headers=headers)
-            return r.text #currently the returned object can't be serialized to JSON
+            return r.json()
 
     def trigger(self, rule_id):
         r = requests.get('{}/trigger/{}?token={}'.format(self.url, rule_id, self.token))
