@@ -58,7 +58,7 @@ class MDNSAns(Packet):
 	])
 
 	def calculate(self):
-		self.fields["IP"] = inet_aton(OURIP)
+		self.fields["IP"] = socket.inet_aton(OURIP)
 		self.fields["IPLen"] = struct.pack(">h",len(self.fields["IP"]))
 
 def Parse_MDNS_Name(data):

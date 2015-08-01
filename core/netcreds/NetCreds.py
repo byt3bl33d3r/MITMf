@@ -17,7 +17,7 @@ from urllib import unquote
 from scapy.all import *
 conf.verb=0
 
-formatter = logging.Formatter("%(asctime)s %(clientip)s [NetCreds] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+formatter = logging.Formatter("%(asctime)s [NetCreds] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 log = logger().setup_logger("NetCreds", formatter)
 
 DN = open(devnull, 'w')
