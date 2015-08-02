@@ -28,7 +28,7 @@ import sys
 from mitmflib.user_agents import parse
 from twisted.web.http import HTTPClient
 from URLMonitor import URLMonitor
-from core.sergioproxy.ProxyPlugins import ProxyPlugins
+from core.proxyplugins import ProxyPlugins
 from core.logger import logger
 
 formatter = logging.Formatter("%(asctime)s %(clientip)s [type:%(browser)s-%(browserv)s os:%(clientos)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")

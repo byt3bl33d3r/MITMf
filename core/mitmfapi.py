@@ -28,7 +28,7 @@ import sys
 
 from flask import Flask
 from core.configwatcher import ConfigWatcher
-from core.sergioproxy.ProxyPlugins import ProxyPlugins
+from core.proxyplugins import ProxyPlugins
 
 app = Flask(__name__)
 

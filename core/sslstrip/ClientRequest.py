@@ -202,16 +202,17 @@ class ClientRequest(Request):
                 return reactor.resolve(host)
 
     def process(self):
-        log.debug("Resolving host: {}".format(self.getHeader('host')))
-        host = self.getHeader('host').split(":")[0]
+        if self.getHeader('host') is not None:
+            log.debug("Resolving host: {}".format(self.getHeader('host')))
+            host = self.getHeader('host').split(":")[0]
 
-        if self.hsts:
-            host = self.urlMonitor.URLgetRealHost(str(host))                
+            if self.hsts:
+                host = self.urlMonitor.URLgetRealHost(str(host))                
 
-        deferred = self.resolveHost(host)
-        deferred.addCallback(self.handleHostResolvedSuccess)
-        deferred.addErrback(self.handleHostResolvedError)
-        
+            deferred = self.resolveHost(host)
+            deferred.addCallback(self.handleHostResolvedSuccess)
+            deferred.addErrback(self.handleHostResolvedError)
+
     def proxyViaHTTP(self, host, method, path, postData, headers, port):
         connectionFactory          = ServerConnectionFactory(method, path, postData, headers, self)
         connectionFactory.protocol = ServerConnection

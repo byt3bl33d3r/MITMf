@@ -37,14 +37,14 @@ class Spoof(Plugin):
             if not options.gateway:
                 shutdown("[Spoof] --arp argument requires --gateway")
 
-            from core.poisoners.arp.ARPpoisoner import ARPpoisoner
+            from core.poisoners.ARP import ARPpoisoner
             arp = ARPpoisoner(options)
             arp.debug = debug
             self.tree_info.append('ARP spoofing enabled')
             self.protocol_instances.append(arp)
 
         elif options.dhcp:
-            from core.poisoners.dhcp.DHCPpoisoner import DHCPpoisoner
+            from core.poisoners.DHCP import DHCPpoisoner
 
             if options.targets:
                 shutdown("[Spoof] --targets argument invalid when DCHP spoofing")
@@ -55,7 +55,7 @@ class Spoof(Plugin):
             self.protocol_instances.append(dhcp)
 
         elif options.icmp:
-            from core.poisoners.icmp.ICMPpoisoner import ICMPpoisoner
+            from core.poisoners.ICMP import ICMPpoisoner
 
             if not options.gateway:
                 shutdown("[Spoof] --icmp argument requires --gateway")
@@ -69,8 +69,6 @@ class Spoof(Plugin):
             self.protocol_instances.append(icmp)
 
         if options.dns:
-            from core.servers.dns.DNSchef import DNSChef
-
             self.tree_info.append('DNS spoofing enabled')
             if iptables().dns is False:
                 iptables().DNS(self.config['MITMf']['DNS']['port'])
