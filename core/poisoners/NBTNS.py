@@ -15,12 +15,38 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import socket
-import settings
-import fingerprint
+import threading
+import core.responder.settings as settings
+import core.responder.fingerprint as fingerprint
 
-from packets import NBT_Ans
-from SocketServer import BaseRequestHandler
-from utils import *
+from traceback import print_exc
+from core.responder.packets import NBT_Ans
+from SocketServer import BaseRequestHandler, ThreadingMixIn, UDPServer
+from core.responder.utils import *
+
+class NBTNS:
+
+	def start(self):
+		try:
+			server = ThreadingUDPServer(('', 137), NBTNSServer)
+			t = threading.Thread(name='NBTNS', target=server.serve_forever)
+			t.setDaemon(True)
+			t.start()
+		except Exception as e:
+			print "Error starting NBTNS server on port 137"
+			print_exec()
+
+class ThreadingUDPServer(ThreadingMixIn, UDPServer):
+	
+	allow_reuse_address = 1
+
+	def server_bind(self):
+		if OsInterfaceIsSupported():
+			try:
+				self.socket.setsockopt(socket.SOL_SOCKET, 25, settings.Config.Bind_To+'\0')
+			except:
+				pass
+		UDPServer.server_bind(self)
 
 # Define what are we answering to.
 def Validate_NBT_NS(data):
@@ -42,7 +68,7 @@ def Validate_NBT_NS(data):
 		return False
 
 # NBT_NS Server class.
-class NBTNS(BaseRequestHandler):
+class NBTNSServer(BaseRequestHandler):
 
 	def handle(self):
 

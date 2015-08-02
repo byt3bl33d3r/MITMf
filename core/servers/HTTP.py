@@ -16,7 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 import struct
-import core.responder.settings
+import core.responder.settings as settings
+import threading
+from traceback import print_exc
 
 from SocketServer import BaseServer, BaseRequestHandler, StreamRequestHandler, ThreadingMixIn, TCPServer
 from base64 import b64decode, b64encode
@@ -26,6 +28,34 @@ from core.responder.packets import NTLM_Challenge
 from core.responder.packets import IIS_Auth_401_Ans, IIS_Auth_Granted, IIS_NTLM_Challenge_Ans, IIS_Basic_401_Ans
 from core.responder.packets import WPADScript, ServeExeFile, ServeHtmlFile
 
+class HTTP:
+
+	def start(self):
+		try:
+			if OsInterfaceIsSupported():
+				server = ThreadingTCPServer((settings.Config.Bind_To, 80), HTTP1)
+			else:
+				server = ThreadingTCPServer(('', 80), HTTP1)
+
+			t = threading.Thread(name='SMB', target=server.serve_forever)
+			t.setDaemon(True)
+			t.start()
+
+		except Exception as e:
+			print "Error starting HTTP server: {}".format(e)
+			print_exc()
+
+class ThreadingTCPServer(ThreadingMixIn, TCPServer):
+    
+    allow_reuse_address = 1
+
+    def server_bind(self):
+        if OsInterfaceIsSupported():
+            try:
+                self.socket.setsockopt(socket.SOL_SOCKET, 25, settings.Config.Bind_To+'\0')
+            except:
+                pass
+        TCPServer.server_bind(self)
 
 # Parse NTLMv1/v2 hash.
 def ParseHTTPHash(data, client):
@@ -222,13 +252,14 @@ def PacketSequence(data, client):
 		return str(Response)
 
 # HTTP Server class
-class HTTP(BaseRequestHandler):
+class HTTP1(BaseRequestHandler):
 
 	def handle(self):
 		try:
 			while True:
 				self.request.settimeout(1)
 				data = self.request.recv(8092)
+				GrabURL(data, self.client_address[0])
 				Buffer = WpadCustom(data, self.client_address[0])
 
 				if Buffer and settings.Config.Force_WPAD_Auth == False:

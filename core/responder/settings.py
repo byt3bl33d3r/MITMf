@@ -136,21 +136,17 @@ class Settings(ConfigWatcher):
 
         # CLI options
         self.Interface       = options.interface
+        self.Force_WPAD_Auth = options.forcewpadauth
+        self.LM_On_Off       = options.lm
+        self.WPAD_On_Off     = options.wpad
+        self.Wredirect       = options.wredir
+        self.NBTNSDomain     = options.nbtns
+        self.Basic           = options.basic
+        self.Finger_On_Off   = options.finger
+        self.AnalyzeMode     = options.analyze
+        #self.Upstream_Proxy  = options.Upstream_Proxy
 
-        try:
-            self.LM_On_Off       = options.LM_On_Off
-            self.WPAD_On_Off     = options.WPAD_On_Off
-            self.Wredirect       = options.Wredirect
-            self.NBTNSDomain     = options.NBTNSDomain
-            self.Basic           = options.Basic
-            self.Finger_On_Off   = options.Finger
-            self.Force_WPAD_Auth = options.Force_WPAD_Auth
-            self.Upstream_Proxy  = options.Upstream_Proxy
-            self.AnalyzeMode     = options.Analyze
-        except AttributeError:
-            pass
-
-        self.Verbose         = False
+        self.Verbose         = True
         self.CommandLine     = str(sys.argv)
 
         self.Bind_To = utils.FindLocalIP(self.Interface)

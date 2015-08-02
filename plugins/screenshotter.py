@@ -34,8 +34,8 @@ class ScreenShotter(Inject, Plugin):
 
     def initialize(self, options):
         Inject.initialize(self, options)
-        self.js_payload = self.get_payload()
         self.interval = options.interval
+        self.js_payload = self.get_payload()
 
     def request(self, request):
         if 'saveshot' in request.uri:

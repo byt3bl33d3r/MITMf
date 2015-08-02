@@ -91,7 +91,6 @@ strippingFactory          = http.HTTPFactory(timeout=10)
 strippingFactory.protocol = StrippingProxy
 
 reactor.listenTCP(options.listen_port, strippingFactory)
-reactor.listenTCP(3141, strippingFactory)
 
 ProxyPlugins().all_plugins = plugins
 
@@ -141,9 +140,9 @@ NetCreds().start(options.interface, options.ip)
 print "|_ Net-Creds v{} online".format(NetCreds.version)
 
 #Start the HTTP Server
-#from core.servers.HTTP import HTTP
-#HTTPserver().start()
-#print "|_ HTTP server online"
+from core.servers.HTTP import HTTP
+HTTP().start()
+print "|_ HTTP server online"
 
 #Start DNSChef
 from core.servers.DNS import DNSChef
