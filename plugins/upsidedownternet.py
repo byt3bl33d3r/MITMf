@@ -54,8 +54,8 @@ class Upsidedownternet(Plugin):
                 im.save(output, format=self.imageType)
                 data = output.getvalue()
                 output.close()
-                self.clientlog.info("Flipped image".format(response.getClientIP()))
+                self.clientlog.info("Flipped image", extra=request.clientInfo)
             except Exception as e:
-                self.clientlog.info("Error: {}".format(response.getClientIP(), e))
+                self.clientlog.info("Error: {}".format(e), extra=request.clientInfo)
         
         return {'response': response, 'request': request, 'data': data}
