@@ -78,6 +78,12 @@ options.mac = get_mac(options.interface)
 
 settings.Config.populate(options)
 
+from core.logger import logger
+formatter = logging.Formatter("%(asctime)s %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+log = logger().setup_logger("MITMf", formatter)
+
+log.debug("MITMf started:{}".format(sys.argv))
+
 from core.sslstrip.CookieCleaner import CookieCleaner
 from core.proxyplugins import ProxyPlugins
 from core.sslstrip.StrippingProxy import StrippingProxy
@@ -130,9 +136,9 @@ if options.filter:
     print "|  |_ Applying filter {} to incoming packets".format(options.filter)
 
 #Start mitmf-api
-#from core.mitmfapi import mitmfapi
-#print "|_ MITMf-API online"
-#mitmfapi().start()
+from core.mitmfapi import mitmfapi
+print "|_ MITMf-API online"
+mitmfapi().start()
 
 #Start Net-Creds
 from core.netcreds import NetCreds
