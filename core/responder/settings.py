@@ -19,6 +19,8 @@ import sys
 import socket
 import utils
 import logging
+
+from core.logger import logger
 from core.configwatcher import ConfigWatcher
 
 __version__ = 'Responder 2.2'
@@ -114,15 +116,16 @@ class Settings(ConfigWatcher):
         self.Serve_Always     = self.toBool(self.config['Responder']['HTTP Server']['Serve-Always'])
         self.Serve_Html       = self.toBool(self.config['Responder']['HTTP Server']['Serve-Html'])
         self.Html_Filename    = self.config['Responder']['HTTP Server']['HtmlFilename']
+        self.HtmlToInject     = self.config['Responder']['HTTP Server']['HTMLToInject']
         self.Exe_Filename     = self.config['Responder']['HTTP Server']['ExeFilename']
         self.Exe_DlName       = self.config['Responder']['HTTP Server']['ExeDownloadName']
         self.WPAD_Script      = self.config['Responder']['HTTP Server']['WPADScript']
 
         if not os.path.exists(self.Html_Filename):
-            print utils.color("/!\ Warning: %s: file not found" % self.Html_Filename, 3, 1)
+            print "Warning: %s: file not found" % self.Html_Filename
 
         if not os.path.exists(self.Exe_Filename):
-            print utils.color("/!\ Warning: %s: file not found" % self.Exe_Filename, 3, 1)
+            print "Warning: %s: file not found" % self.Exe_Filename
 
         # SSL Options
         self.SSLKey  = self.config['Responder']['HTTPS Server']['SSLKey']
@@ -146,8 +149,9 @@ class Settings(ConfigWatcher):
         self.AnalyzeMode     = options.analyze
         #self.Upstream_Proxy  = options.Upstream_Proxy
 
-        self.Verbose         = True
-        self.CommandLine     = str(sys.argv)
+        self.Verbose = False
+        if options.log_level == 'debug':
+            self.Verbose = True
 
         self.Bind_To = utils.FindLocalIP(self.Interface)
 
@@ -158,7 +162,7 @@ class Settings(ConfigWatcher):
         self.NumChal = self.config['Responder']['Challenge']
 
         if len(self.NumChal) is not 16:
-            print utils.color("[!] The challenge must be exactly 16 chars long.\nExample: 1122334455667788", 1)
+            print "The challenge must be exactly 16 chars long.\nExample: 1122334455667788"
             sys.exit(-1)
 
         self.Challenge = ""
@@ -166,23 +170,12 @@ class Settings(ConfigWatcher):
             self.Challenge += self.NumChal[i:i+2].decode("hex")
 
         # Set up logging
-        logging.basicConfig(filename=self.SessionLogFile, level=logging.INFO, format='%(asctime)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-        logging.warning('Responder Started: {}'.format(self.CommandLine))
+        formatter = logging.Formatter("%(asctime)s %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+        self.ResponderLogger = logger().setup_logger("Responder", formatter, self.SessionLogFile)
+        #logging.warning('Responder Started: {}'.format(self.CommandLine))
         #logging.warning('Responder Config: {}'.format(self))
 
-        Formatter = logging.Formatter('%(asctime)s - %(message)s')
-        PLog_Handler = logging.FileHandler(self.PoisonersLogFile, 'w')
-        ALog_Handler = logging.FileHandler(self.AnalyzeLogFile, 'a')
-        PLog_Handler.setLevel(logging.INFO)
-        ALog_Handler.setLevel(logging.INFO)
-        PLog_Handler.setFormatter(Formatter)
-        ALog_Handler.setFormatter(Formatter)
+        self.PoisonersLogger = logger().setup_logger("Poison log", formatter, self.PoisonersLogFile)
+        self.AnalyzeLogger = logger().setup_logger("Analyze Log", formatter, self.AnalyzeLogFile)
 
-        self.PoisonersLogger = logging.getLogger('Poisoners Log')
-        self.PoisonersLogger.addHandler(PLog_Handler)
-
-        self.AnalyzeLogger = logging.getLogger('Analyze Log')
-        self.AnalyzeLogger.addHandler(ALog_Handler)
-
-global Config
 Config = Settings()

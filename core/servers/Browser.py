@@ -87,15 +87,15 @@ def ParsePacket(Payload):
 def RAPThisDomain(Client,Domain):		
 	PDC = RapFinger(Client,Domain,"\x00\x00\x00\x80")
 	if PDC is not None:
-		print text("[LANMAN] Detected Domains: %s" % ', '.join(PDC))
+		settings.Config.ResponderLogger.info("[LANMAN] Detected Domains: %s" % ', '.join(PDC))
 	
 	SQL = RapFinger(Client,Domain,"\x04\x00\x00\x00")
 	if SQL is not None:
-		print text("[LANMAN] Detected SQL Servers on domain %s: %s" % (Domain, ', '.join(SQL)))
+		settings.Config.ResponderLogger.info("[LANMAN] Detected SQL Servers on domain %s: %s" % (Domain, ', '.join(SQL)))
 
 	WKST = RapFinger(Client,Domain,"\xff\xff\xff\xff")
 	if WKST is not None:
-		print text("[LANMAN] Detected Workstations/Servers on domain %s: %s" % (Domain, ', '.join(WKST)))
+		settings.Config.ResponderLogger.info("[LANMAN] Detected Workstations/Servers on domain %s: %s" % (Domain, ', '.join(WKST)))
 
 def RapFinger(Host, Domain, Type):
 	try:
@@ -169,7 +169,7 @@ def BecomeBackup(data,Client):
 			Role       = NBT_NS_Role(data[45:48])
 
 			if settings.Config.AnalyzeMode:
-				print text("[Analyze mode: Browser] Datagram Request from IP: %s hostname: %s via the: %s wants to become a Local Master Browser Backup on this domain: %s."%(Client, Name,Role,Domain))
+				settings.Config.AnalyzeLogger.warning("[Analyze mode: Browser] Datagram Request from IP: %s hostname: %s via the: %s wants to become a Local Master Browser Backup on this domain: %s."%(Client, Name,Role,Domain))
 				print RAPThisDomain(Client, Domain)
 
 	except:
@@ -184,7 +184,7 @@ def ParseDatagramNBTNames(data,Client):
 
 	
 		if Role2 == "Domain Controller" or Role2 == "Browser Election" or Role2 == "Local Master Browser" and settings.Config.AnalyzeMode:
-			print text('[Analyze mode: Browser] Datagram Request from IP: %s hostname: %s via the: %s to: %s. Service: %s' % (Client, Name, Role1, Domain, Role2))
+			settings.Config.AnalyzeLogger.warning('[Analyze mode: Browser] Datagram Request from IP: %s hostname: %s via the: %s to: %s. Service: %s' % (Client, Name, Role1, Domain, Role2))
 			print RAPThisDomain(Client, Domain)
 	except:
 		pass

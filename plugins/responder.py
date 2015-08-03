@@ -17,7 +17,6 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
 #
-import flask
 
 from plugins.plugin import Plugin
 from twisted.internet import reactor
@@ -36,12 +35,40 @@ class Responder(Plugin):
         self.ip        = options.ip
 
         # Load (M)DNS, NBNS and LLMNR Poisoners
-        from core.poisoners.LLMNR import LLMNR
-        from core.poisoners.MDNS import MDNS
-        from core.poisoners.NBTNS import NBTNS
-        LLMNR().start()
-        MDNS().start()
-        NBTNS().start()
+        import core.poisoners.LLMNR as LLMNR
+        import core.poisoners.MDNS as MDNS
+        import core.poisoners.NBTNS as NBTNS
+        LLMNR.start()
+        MDNS.start()
+        NBTNS.start()
+
+        if self.config["Responder"]["SQL"].lower() == "on":
+            from core.servers.MSSQL import MSSQL
+            MSSQL().start()
+
+        if self.config["Responder"]["Kerberos"].lower() == "on":
+            from core.servers.Kerberos import Kerberos
+            Kerberos().start()
+
+        if self.config["Responder"]["FTP"].lower() == "on":
+            from core.servers.FTP import FTP
+            FTP().start()
+
+        if self.config["Responder"]["POP"].lower() == "on":
+            from core.servers.POP3 import POP3
+            POP3().start()
+
+        if self.config["Responder"]["SMTP"].lower() == "on":
+            from core.servers.SMTP import SMTP
+            SMTP().start()
+
+        if self.config["Responder"]["IMAP"].lower() == "on":
+            from core.servers.IMAP import IMAP
+            IMAP().start()
+
+        if self.config["Responder"]["LDAP"].lower() == "on":
+            from core.servers.LDAP import LDAP
+            LDAP().start()
 
     def reactor(self, strippingFactory):
         reactor.listenTCP(3141, strippingFactory)

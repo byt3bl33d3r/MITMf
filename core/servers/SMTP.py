@@ -15,12 +15,44 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
-import settings
+import core.responder.settings as settings
+import threading
 
-from utils import *
+from core.responder.utils import *
 from base64 import b64decode, b64encode
-from SocketServer import BaseRequestHandler
-from packets import SMTPGreeting, SMTPAUTH, SMTPAUTH1, SMTPAUTH2
+from SocketServer import BaseRequestHandler, ThreadingMixIn, TCPServer
+from core.responder.packets import SMTPGreeting, SMTPAUTH, SMTPAUTH1, SMTPAUTH2
+
+class SMTP:
+
+	def start(self):
+		try:
+			if OsInterfaceIsSupported():
+				server1 = ThreadingTCPServer((settings.Config.Bind_To, 25), ESMTP)
+				server2 = ThreadingTCPServer((settings.Config.Bind_To, 587), ESMTP)
+			else:
+				server1 = ThreadingTCPServer(('', 25), SMB1)
+				server2 = ThreadingTCPServer(('', 587), SMB1)
+
+			for server in [server1, server2]:
+				t = threading.Thread(name='SMTP', target=server.serve_forever)
+				t.setDaemon(True)
+				t.start()
+		except Exception as e:
+			print "Error starting SMTP server: {}".format(e)
+			print_exc()
+
+class ThreadingTCPServer(ThreadingMixIn, TCPServer):
+    
+    allow_reuse_address = 1
+
+    def server_bind(self):
+        if OsInterfaceIsSupported():
+            try:
+                self.socket.setsockopt(socket.SOL_SOCKET, 25, settings.Config.Bind_To+'\0')
+            except:
+                pass
+        TCPServer.server_bind(self)
 
 # ESMTP Server class
 class ESMTP(BaseRequestHandler):

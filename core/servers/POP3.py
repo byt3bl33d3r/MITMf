@@ -15,14 +15,44 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
-import settings
+import core.responder.settings as settings
+import threading
+from traceback import print_exc
 
-from utils import *
-from SocketServer import BaseRequestHandler
-from packets import POPOKPacket
+from core.responder.utils import *
+from SocketServer import BaseRequestHandler, ThreadingMixIn, TCPServer
+from core.responder.packets import POPOKPacket
+
+class POP3:
+
+	def start(self):
+		try:
+			if OsInterfaceIsSupported():
+				server = ThreadingTCPServer((settings.Config.Bind_To, 110), POP3Server)
+			else:
+				server = ThreadingTCPServer(('', 110), POP3Server)
+
+			t = threading.Thread(name='POP3', target=server.serve_forever)
+			t.setDaemon(True)
+			t.start()
+		except Exception as e:
+			print "Error starting POP3 server: {}".format(e)
+			print_exc()
+
+class ThreadingTCPServer(ThreadingMixIn, TCPServer):
+    
+    allow_reuse_address = 1
+
+    def server_bind(self):
+        if OsInterfaceIsSupported():
+            try:
+                self.socket.setsockopt(socket.SOL_SOCKET, 25, settings.Config.Bind_To+'\0')
+            except:
+                pass
+        TCPServer.server_bind(self)
 
 # POP3 Server class
-class POP3(BaseRequestHandler):
+class POP3Server(BaseRequestHandler):
 
 	def SendPacketAndRead(self):
 		Packet = POPOKPacket()

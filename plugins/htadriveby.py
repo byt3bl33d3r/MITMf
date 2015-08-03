@@ -17,7 +17,6 @@
 #
 
 import re
-import flask
 
 from plugins.plugin import Plugin
 from plugins.inject import Inject
@@ -34,7 +33,7 @@ class HTADriveBy(Inject, Plugin):
         Inject.initialize(self, options)
         self.html_payload = self.get_payload()
 
-        from core.servers.http.HTTPserver import HTTPserver
+        from core.servers.HTTP import HTTP
         def hta_request(path):
             if path == options.hta_app.split('/')[-1]:
                 with open(options.hta_app) as hta_file:

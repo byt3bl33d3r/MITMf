@@ -24,17 +24,15 @@ from SocketServer import BaseRequestHandler, ThreadingMixIn, UDPServer
 from core.responder.packets import MDNS_Ans
 from core.responder.utils import *
 
-class MDNS:
-
-	def start(self):
-		try:
-			server = ThreadingUDPMDNSServer(('', 5353), MDNSServer)
-			t = threading.Thread(name='MDNS', target=server.serve_forever)
-			t.setDaemon(True)
-			t.start()
-		except Exception as e:
-			print "Error starting MDNS server on port 5353"
-			print_exc()
+def start():
+	try:
+		server = ThreadingUDPMDNSServer(('', 5353), MDNSServer)
+		t = threading.Thread(name='MDNS', target=server.serve_forever)
+		t.setDaemon(True)
+		t.start()
+	except Exception as e:
+		print "Error starting MDNS server on port 5353"
+		print_exc()
 
 class ThreadingUDPMDNSServer(ThreadingMixIn, UDPServer):
 	
@@ -56,12 +54,15 @@ class ThreadingUDPMDNSServer(ThreadingMixIn, UDPServer):
 		UDPServer.server_bind(self)
 
 def Parse_MDNS_Name(data):
-	data = data[12:]
-	NameLen = struct.unpack('>B',data[0])[0]
-	Name = data[1:1+NameLen]
-	NameLen_ = struct.unpack('>B',data[1+NameLen])[0]
-	Name_ = data[1+NameLen:1+NameLen+NameLen_+1]
-	return Name+'.'+Name_
+	try:
+		data = data[12:]
+		NameLen = struct.unpack('>B',data[0])[0]
+		Name = data[1:1+NameLen]
+		NameLen_ = struct.unpack('>B',data[1+NameLen])[0]
+		Name_ = data[1+NameLen:1+NameLen+NameLen_+1]
+		return Name+'.'+Name_
+	except IndexError:
+		return None
 
 def Poisoned_MDNS_Name(data):
 	data = data[12:]
@@ -79,14 +80,14 @@ class MDNSServer(BaseRequestHandler):
 		Request_Name = Parse_MDNS_Name(data)
 
 		# Break out if we don't want to respond to this host
-		if RespondToThisHost(self.client_address[0], Request_Name) is not True:
+		if (not Request_Name) or (RespondToThisHost(self.client_address[0], Request_Name) is not True):
 			return None
 
 		try:
 			# Analyze Mode
 			if settings.Config.AnalyzeMode:
 				if Parse_IPV6_Addr(data):
-					print text('[Analyze mode: MDNS] Request by %-15s for %s, ignoring' % (color(self.client_address[0], 3), color(Request_Name, 3)))
+					settings.Config.AnalyzeLogger.warning('[Analyze mode: MDNS] Request by %-15s for %s, ignoring' % (self.client_address[0], Request_Name))
 
 			# Poisoning Mode
 			else:
@@ -97,7 +98,7 @@ class MDNSServer(BaseRequestHandler):
 					Buffer.calculate()
 					soc.sendto(str(Buffer), (MADDR, MPORT))
 					
-					print color('[*] [MDNS] Poisoned answer sent to %-15s for name %s' % (self.client_address[0], Request_Name), 2, 1)
+					settings.Config.PoisonersLogger.warning('[MDNS] Poisoned answer sent to %-15s for name %s' % (self.client_address[0], Request_Name))
 
 		except Exception:
 			raise

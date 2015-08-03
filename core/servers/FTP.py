@@ -15,12 +15,41 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
+import threading
 
-from core.utils import *
-from SocketServer import BaseRequestHandler
-from core.packets import FTPPacket
+from core.responder.utils import *
+from SocketServer import BaseRequestHandler, ThreadingMixIn, TCPServer
+from core.responder.packets import FTPPacket
 
-class FTP(BaseRequestHandler):
+class FTP:
+
+	def start(self):
+		try:
+			if OsInterfaceIsSupported():
+				server = ThreadingTCPServer((settings.Config.Bind_To, 21), FTP1)
+			else:
+				server = ThreadingTCPServer(('', 21), FTP1)
+
+			t = threading.Thread(name='SMB', target=server.serve_forever)
+			t.setDaemon(True)
+			t.start()
+		except Exception as e:
+			print "Error starting SMB server: {}".format(e)
+			print_exc()
+
+class ThreadingTCPServer(ThreadingMixIn, TCPServer):
+    
+    allow_reuse_address = 1
+
+    def server_bind(self):
+        if OsInterfaceIsSupported():
+            try:
+                self.socket.setsockopt(socket.SOL_SOCKET, 25, settings.Config.Bind_To+'\0')
+            except:
+                pass
+        TCPServer.server_bind(self)
+
+class FTP1(BaseRequestHandler):
 	def handle(self):
 		try:
 			self.request.send(str(FTPPacket()))

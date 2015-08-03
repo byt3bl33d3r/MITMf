@@ -16,11 +16,40 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 import struct
-import settings
+import core.responder.settings as settings
+import threading
 
-from SocketServer import BaseRequestHandler
-from packets import MSSQLPreLoginAnswer, MSSQLNTLMChallengeAnswer
-from utils import *
+from SocketServer import BaseRequestHandler, ThreadingMixIn, TCPServer
+from core.responder.packets import MSSQLPreLoginAnswer, MSSQLNTLMChallengeAnswer
+from core.responder.utils import *
+
+class MSSQL:
+
+	def start(self):
+		try:
+			if OsInterfaceIsSupported():
+				server = ThreadingTCPServer((settings.Config.Bind_To, 1433), MSSQLServer)
+			else:
+				server = ThreadingTCPServer(('', 1433), MSSQLServer)
+
+			t = threading.Thread(name='MSSQL', target=server.serve_forever)
+			t.setDaemon(True)
+			t.start()
+		except Exception as e:
+			print "Error starting MSSQL server: {}".format(e)
+			print_exc()
+
+class ThreadingTCPServer(ThreadingMixIn, TCPServer):
+    
+    allow_reuse_address = 1
+
+    def server_bind(self):
+        if OsInterfaceIsSupported():
+            try:
+                self.socket.setsockopt(socket.SOL_SOCKET, 25, settings.Config.Bind_To+'\0')
+            except:
+                pass
+        TCPServer.server_bind(self)
 
 class TDS_Login_Packet():
 	def __init__(self, data):
@@ -119,11 +148,11 @@ def ParseClearTextSQLPass(data, client):
 	})
 
 # MSSQL Server class
-class MSSQL(BaseRequestHandler):
+class MSSQLServer(BaseRequestHandler):
 
 	def handle(self):
 		if settings.Config.Verbose:
-			print text("[MSSQL] Received connection from %s" % self.client_address[0])
+			settings.Config.ResponderLogger.info("[MSSQL] Received connection from %s" % self.client_address[0])
 	
 		try:
 			while True:

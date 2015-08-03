@@ -24,9 +24,13 @@ from SocketServer import BaseServer, BaseRequestHandler, StreamRequestHandler, T
 from base64 import b64decode, b64encode
 from core.responder.utils import *
 
+from core.logger import logger
 from core.responder.packets import NTLM_Challenge
 from core.responder.packets import IIS_Auth_401_Ans, IIS_Auth_Granted, IIS_NTLM_Challenge_Ans, IIS_Basic_401_Ans
 from core.responder.packets import WPADScript, ServeExeFile, ServeHtmlFile
+
+formatter = logging.Formatter("%(asctime)s %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+log = logger().setup_logger("HTTP", formatter)
 
 class HTTP:
 
@@ -113,7 +117,7 @@ def GrabCookie(data, host):
 	if Cookie:
 		Cookie = Cookie.group(0).replace('Cookie: ', '')
 		if len(Cookie) > 1 and settings.Config.Verbose:
-			print text("[HTTP] Cookie           : %s " % Cookie)
+			log.info("[HTTP] Cookie           : {}".format(Cookie))
 		return Cookie
 	else:
 		return False
@@ -124,7 +128,7 @@ def GrabHost(data, host):
 	if Host:
 		Host = Host.group(0).replace('Host: ', '')
 		if settings.Config.Verbose:
-			print text("[HTTP] Host             : %s " % color(Host, 3))
+			log.info("[HTTP] Host             : {}".format(Host, 3))
 		return Host
 	else:
 		return False
@@ -152,7 +156,7 @@ def RespondWithFile(client, filename, dlname=None):
 		Buffer = ServeHtmlFile(Payload = ServeFile(filename))
 
 	Buffer.calculate()
-	print text("[HTTP] Sending file %s to %s" % (filename, client))
+	log.info("[HTTP] Sending file {} to {}".format(filename, client))
 
 	return str(Buffer)
 
@@ -161,13 +165,13 @@ def GrabURL(data, host):
 	POST = re.findall('(?<=POST )[^HTTP]*', data)
 	POSTDATA = re.findall('(?<=\r\n\r\n)[^*]*', data)
 
-	if GET and settings.Config.Verbose:
-		print text("[HTTP] GET request from: %-15s  URL: %s" % (host, color(''.join(GET), 5)))
+	if GET:
+		log.info("[HTTP] GET request from: {} URL: {}".format(host, ''.join(GET)))
 
-	if POST and settings.Config.Verbose:
-		print text("[HTTP] POST request from: %-15s  URL: %s" % (host, color(''.join(POST), 5)))
+	if POST:
+		log.info("[HTTP] POST request from: {} URL: {}".format(host, ''.join(POST)))
 		if len(''.join(POSTDATA)) > 2:
-			print text("[HTTP] POST Data: %s" % ''.join(POSTDATA).strip())
+			log.info("[HTTP] POST Data: {}".format(''.join(POSTDATA).strip()))
 
 # Handle HTTP packet sequence.
 def PacketSequence(data, client):
@@ -205,7 +209,7 @@ def PacketSequence(data, client):
 			ParseHTTPHash(NTLM_Auth, client)
 
 			if settings.Config.Force_WPAD_Auth and WPAD_Custom:
-				print text("[HTTP] WPAD (auth) file sent to %s" % client)
+				log.info("[HTTP] WPAD (auth) file sent to %s" % client)
 				return WPAD_Custom
 
 			else:
@@ -230,7 +234,7 @@ def PacketSequence(data, client):
 
 		if settings.Config.Force_WPAD_Auth and WPAD_Custom:
 			if settings.Config.Verbose:
-				print text("[HTTP] WPAD (auth) file sent to %s" % client)
+				log.info("[HTTP] WPAD (auth) file sent to %s" % client)
 			return WPAD_Custom
 
 		else:
@@ -242,12 +246,12 @@ def PacketSequence(data, client):
 		if settings.Config.Basic == True:
 			Response = IIS_Basic_401_Ans()
 			if settings.Config.Verbose:
-				print text("[HTTP] Sending BASIC authentication request to %s" % client)
+				log.info("[HTTP] Sending BASIC authentication request to %s" % client)
 
 		else:
 			Response = IIS_Auth_401_Ans()
 			if settings.Config.Verbose:
-				print text("[HTTP] Sending NTLM authentication request to %s" % client)
+				log.info("[HTTP] Sending NTLM authentication request to %s" % client)
 
 		return str(Response)
 
@@ -265,7 +269,7 @@ class HTTP1(BaseRequestHandler):
 				if Buffer and settings.Config.Force_WPAD_Auth == False:
 					self.request.send(Buffer)
 					if settings.Config.Verbose:
-						print text("[HTTP] WPAD (no auth) file sent to %s" % self.client_address[0])
+						log.info("[HTTP] WPAD (no auth) file sent to %s" % self.client_address[0])
 
 				else:
 					Buffer = PacketSequence(data,self.client_address[0])
@@ -290,7 +294,7 @@ class HTTPS(StreamRequestHandler):
 				if Buffer and settings.Config.Force_WPAD_Auth == False:
 					self.exchange.send(Buffer)
 					if settings.Config.Verbose:
-						print text("[HTTPS] WPAD (no auth) file sent to %s" % self.client_address[0])
+						log.info("[HTTPS] WPAD (no auth) file sent to %s" % self.client_address[0])
 
 				else:
 					Buffer = PacketSequence(data,self.client_address[0])

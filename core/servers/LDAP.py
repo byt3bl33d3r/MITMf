@@ -16,11 +16,41 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 import struct
-import settings
+import core.responder.settings as settings
+import threading
+from traceback import print_exc
 
-from SocketServer import BaseRequestHandler
-from packets import LDAPSearchDefaultPacket, LDAPSearchSupportedCapabilitiesPacket, LDAPSearchSupportedMechanismsPacket, LDAPNTLMChallenge
-from utils import *
+from SocketServer import BaseRequestHandler, ThreadingMixIn, TCPServer
+from core.responder.packets import LDAPSearchDefaultPacket, LDAPSearchSupportedCapabilitiesPacket, LDAPSearchSupportedMechanismsPacket, LDAPNTLMChallenge
+from core.responder.utils import *
+
+class LDAP:
+
+	def start(self):
+		try:
+			if OsInterfaceIsSupported():
+				server = ThreadingTCPServer((settings.Config.Bind_To, 389), LDAPServer)
+			else:
+				server = ThreadingTCPServer(('', 389), LDAPServer)
+
+			t = threading.Thread(name='LDAP', target=server.serve_forever)
+			t.setDaemon(True)
+			t.start()
+		except Exception as e:
+			print "Error starting LDAP server: {}".format(e)
+			print_exc()
+
+class ThreadingTCPServer(ThreadingMixIn, TCPServer):
+    
+    allow_reuse_address = 1
+
+    def server_bind(self):
+        if OsInterfaceIsSupported():
+            try:
+                self.socket.setsockopt(socket.SOL_SOCKET, 25, settings.Config.Bind_To+'\0')
+            except:
+                pass
+        TCPServer.server_bind(self)
 
 def ParseSearch(data):
 	Search1 = re.search('(objectClass)', data)
@@ -66,7 +96,7 @@ def ParseLDAPHash(data, client):
 		})
 	
 	if LMhashLen < 2 and settings.Config.Verbose:
-		print text("[LDAP] Ignoring anonymous NTLM authentication")
+		settings.Config.ResponderLogger.info("[LDAP] Ignoring anonymous NTLM authentication")
 
 def ParseNTLM(data,client):
 	Search1 = re.search('(NTLMSSP\x00\x01\x00\x00\x00)', data)
@@ -119,10 +149,10 @@ def ParseLDAPPacket(data, client):
 		
 		else:
 			if settings.Config.Verbose:
-				print text('[LDAP] Operation not supported')
+				settings.Config.ResponderLogger.info('[LDAP] Operation not supported')
 
 # LDAP Server class
-class LDAP(BaseRequestHandler):
+class LDAPServer(BaseRequestHandler):
 	def handle(self):
 		try:
 			while True:

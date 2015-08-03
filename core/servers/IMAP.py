@@ -15,14 +15,43 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
-import settings
+import core.responder.settings as settings
+import threading
 
-from utils import *
-from SocketServer import BaseRequestHandler
-from packets import IMAPGreeting, IMAPCapability, IMAPCapabilityEnd
+from core.responder.utils import *
+from SocketServer import BaseRequestHandler, ThreadingMixIn, TCPServer
+from core.responder.packets import IMAPGreeting, IMAPCapability, IMAPCapabilityEnd
+
+class IMAP:
+
+	def start(self):
+		try:
+			if OsInterfaceIsSupported():
+				server = ThreadingTCPServer((settings.Config.Bind_To, 143), IMAP4)
+			else:
+				server = ThreadingTCPServer(('', 143), IMAP4)
+
+			t = threading.Thread(name='IMAP', target=server.serve_forever)
+			t.setDaemon(True)
+			t.start()
+		except Exception as e:
+			print "Error starting IMAP server: {}".format(e)
+			print_exc()
+
+class ThreadingTCPServer(ThreadingMixIn, TCPServer):
+    
+    allow_reuse_address = 1
+
+    def server_bind(self):
+        if OsInterfaceIsSupported():
+            try:
+                self.socket.setsockopt(socket.SOL_SOCKET, 25, settings.Config.Bind_To+'\0')
+            except:
+                pass
+        TCPServer.server_bind(self)
 
 # IMAP4 Server class
-class IMAP(BaseRequestHandler):
+class IMAP4(BaseRequestHandler):
 
 	def handle(self):
 		try:

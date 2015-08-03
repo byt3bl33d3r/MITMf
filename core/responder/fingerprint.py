@@ -64,5 +64,5 @@ def RunSmbFinger(host):
 		if data[8:10] == "\x73\x16":
 			return OsNameClientVersion(data)
 	except:
-		print color("[!] ", 1, 1) +" Fingerprint failed"
+		settings.Config.AnalyzeLogger.warning("Fingerprint failed for host: {}".format(host))
 		return None

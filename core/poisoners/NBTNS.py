@@ -24,17 +24,15 @@ from core.responder.packets import NBT_Ans
 from SocketServer import BaseRequestHandler, ThreadingMixIn, UDPServer
 from core.responder.utils import *
 
-class NBTNS:
-
-	def start(self):
-		try:
-			server = ThreadingUDPServer(('', 137), NBTNSServer)
-			t = threading.Thread(name='NBTNS', target=server.serve_forever)
-			t.setDaemon(True)
-			t.start()
-		except Exception as e:
-			print "Error starting NBTNS server on port 137"
-			print_exec()
+def start():
+	try:
+		server = ThreadingUDPServer(('', 137), NBTNSServer)
+		t = threading.Thread(name='NBTNS', target=server.serve_forever)
+		t.setDaemon(True)
+		t.start()
+	except Exception as e:
+		print "Error starting NBTNS server on port 137"
+		print_exec()
 
 class ThreadingUDPServer(ThreadingMixIn, UDPServer):
 	
@@ -88,18 +86,16 @@ class NBTNSServer(BaseRequestHandler):
 
 			# Analyze Mode
 			if settings.Config.AnalyzeMode:
-				LineHeader = "[Analyze mode: NBT-NS]"
-				print color("%s Request by %s for %s, ignoring" % (LineHeader, self.client_address[0], Name), 2, 1)
+				settings.Config.AnalyzeLogger.warning("[Analyze mode: NBT-NS] Request by %s for %s, ignoring" % (self.client_address[0], Name))
 
 			# Poisoning Mode
 			else:
 				Buffer = NBT_Ans()
 				Buffer.calculate(data)
 				socket.sendto(str(Buffer), self.client_address)
-				LineHeader = "[*] [NBT-NS]"
 
-				print color("%s Poisoned answer sent to %s for name %s (service: %s)" % (LineHeader, self.client_address[0], Name, NBT_NS_Role(data[43:46])), 2, 1)
+				settings.Config.PoisonersLogger.warning("[NBT-NS] Poisoned answer sent to %s for name %s (service: %s)" % (self.client_address[0], Name, NBT_NS_Role(data[43:46])))
 
 			if Finger is not None:
-				print text("[FINGER] OS Version     : %s" % color(Finger[0], 3))
-				print text("[FINGER] Client Version : %s" % color(Finger[1], 3))
+				settings.Config.ResponderLogger.info("[FINGER] OS Version     : %s" % Finger[0])
+				settings.Config.ResponderLogger.info("[FINGER] Client Version : %s" % Finger[1])
