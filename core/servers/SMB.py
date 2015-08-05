@@ -18,7 +18,6 @@ import struct
 import core.responder.settings as settings
 import threading
 import socket
-from traceback import print_exc
 
 from random import randrange
 from core.responder.packets import SMBHeader, SMBNegoAnsLM, SMBNegoAns, SMBNegoKerbAns, SMBSession1Data, SMBSession2Accept, SMBSessEmpty, SMBTreeData
@@ -42,7 +41,6 @@ class SMB:
                 t.start()
         except Exception as e:
             print "Error starting SMB server: {}".format(e)
-            print_exc()
 
 class ThreadingTCPServer(ThreadingMixIn, TCPServer):
     

@@ -33,8 +33,7 @@ def start():
         t.setDaemon(True)
         t.start()
     except Exception as e:
-        print "Error starting LLMNR server on port 5355"
-        print_exc()
+        print "Error starting LLMNR server on port 5355: {}".format(e)
 
 class ThreadingUDPLLMNRServer(ThreadingMixIn, UDPServer):
 

@@ -16,11 +16,30 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import socket
 import struct
+import threading
+import core.responder.settings as settings
 
-from core.configwatcher import ConfigWatcher
-from core.packets import SMBHeader, SMBNegoData, SMBSessionData, SMBTreeConnectData, RAPNetServerEnum3Data, SMBTransRAPData
-from SocketServer import BaseRequestHandler
-from core.utils import *
+from core.responder.packets import SMBHeader, SMBNegoData, SMBSessionData, SMBTreeConnectData, RAPNetServerEnum3Data, SMBTransRAPData
+from SocketServer import BaseRequestHandler, ThreadingMixIn, UDPServer
+from core.responder.utils import *
+
+def start():
+	try:
+		server = ThreadingUDPServer(('', 138), Browser1)
+		t = threading.Thread(name='Browser', target=server.serve_forever)
+		t.setDaemon(True)
+		t.start()
+	except Exception as e:
+		print "Error starting Browser server on port 138: {}".format(e)
+
+class ThreadingUDPServer(ThreadingMixIn, UDPServer):
+	def server_bind(self):
+		if OsInterfaceIsSupported():
+			try:
+				self.socket.setsockopt(socket.SOL_SOCKET, 25, settings.Config.Bind_To+'\0')
+			except:
+				pass
+		UDPServer.server_bind(self)
 
 def WorkstationFingerPrint(data):
 	Role = {
@@ -189,7 +208,7 @@ def ParseDatagramNBTNames(data,Client):
 	except:
 		pass
 
-class Browser(BaseRequestHandler):
+class Browser1(BaseRequestHandler):
 
 	def handle(self):
 		try:

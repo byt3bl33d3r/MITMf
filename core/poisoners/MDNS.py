@@ -19,7 +19,6 @@ import core.responder.settings as settings
 import socket
 import threading
 
-from traceback import print_exc
 from SocketServer import BaseRequestHandler, ThreadingMixIn, UDPServer
 from core.responder.packets import MDNS_Ans
 from core.responder.utils import *
@@ -31,8 +30,7 @@ def start():
 		t.setDaemon(True)
 		t.start()
 	except Exception as e:
-		print "Error starting MDNS server on port 5353"
-		print_exc()
+		print "Error starting MDNS server on port 5353: {}".format(e)
 
 class ThreadingUDPMDNSServer(ThreadingMixIn, UDPServer):
 	

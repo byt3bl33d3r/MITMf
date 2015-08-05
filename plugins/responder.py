@@ -42,6 +42,10 @@ class Responder(Plugin):
         MDNS.start()
         NBTNS.start()
 
+        # Load Browser Listener
+        import core.servers.Browser as Browser
+        Browser.start()
+
         if self.config["Responder"]["SQL"].lower() == "on":
             from core.servers.MSSQL import MSSQL
             self.tree_info.append("MSSQL server [ON]")

@@ -30,7 +30,7 @@ class SSLstripPlus(Plugin):
         self.options = options
 
         from core.sslstrip.URLMonitor import URLMonitor
-        from core.servers.dns.DNSchef import DNSChef
+        from core.servers.DNS import DNSChef
         from core.utils import iptables
 
         if iptables().dns is False:

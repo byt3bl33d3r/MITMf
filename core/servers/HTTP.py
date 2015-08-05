@@ -18,7 +18,6 @@ import os
 import struct
 import core.responder.settings as settings
 import threading
-from traceback import print_exc
 
 from SocketServer import BaseServer, BaseRequestHandler, StreamRequestHandler, ThreadingMixIn, TCPServer
 from base64 import b64decode, b64encode
@@ -61,7 +60,6 @@ class HTTP:
 
 		except Exception as e:
 			print "Error starting HTTP server: {}".format(e)
-			print_exc()
 
 class ThreadingTCPServer(ThreadingMixIn, TCPServer):
     
