@@ -38,8 +38,10 @@ class ARPpoisoner:
         except AddrFormatError as e:
             sys.exit("Specified an invalid IP address as gateway")
 
-        self.gatewaymac = getmacbyip(options.gateway)
-        if self.gatewaymac is None: sys.exit("Error: Could not resolve gateway's MAC address")
+        self.gatewaymac = options.gatewaymac
+        if options.gatewaymac is None:
+            self.gatewaymac = getmacbyip(options.gateway)
+            if not self.gatewaymac: sys.exit("Error: could not resolve Gateway's mac address")
 
         self.ignore     = self.get_range(options.ignore)
         if self.ignore is None: self.ignore = []

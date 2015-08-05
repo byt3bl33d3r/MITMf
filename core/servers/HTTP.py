@@ -34,6 +34,20 @@ log = logger().setup_logger("HTTP", formatter)
 
 class HTTP:
 
+	static_endpoints = {}
+	endpoints = {}
+
+	@staticmethod
+	def add_endpoint(url, content_type, payload):
+		Buffer = ServeHtmlFile(ContentType="Content-Type: {}\r\n".format(content_type), Payload=payload)
+		Buffer.calculate()
+		HTTP.endpoints['/' + url] = Buffer
+
+	@staticmethod
+	def add_static_endpoint(url, content_type, path):
+		Buffer = ServeHtmlFile(ContentType="Content-Type: {}\r\n".format(content_type))
+		HTTP.static_endpoints['/' + url] = {'buffer': Buffer, 'path': path}
+
 	def start(self):
 		try:
 			if OsInterfaceIsSupported():
@@ -41,7 +55,7 @@ class HTTP:
 			else:
 				server = ThreadingTCPServer(('', 80), HTTP1)
 
-			t = threading.Thread(name='SMB', target=server.serve_forever)
+			t = threading.Thread(name='HTTP', target=server.serve_forever)
 			t.setDaemon(True)
 			t.start()
 
@@ -156,7 +170,7 @@ def RespondWithFile(client, filename, dlname=None):
 		Buffer = ServeHtmlFile(Payload = ServeFile(filename))
 
 	Buffer.calculate()
-	log.info("[HTTP] Sending file {} to {}".format(filename, client))
+	log.info("{} [HTTP] Sending file {}".format(filename, client))
 
 	return str(Buffer)
 
@@ -166,12 +180,16 @@ def GrabURL(data, host):
 	POSTDATA = re.findall('(?<=\r\n\r\n)[^*]*', data)
 
 	if GET:
-		log.info("[HTTP] GET request from: {} URL: {}".format(host, ''.join(GET)))
+		req = ''.join(GET).strip()
+		log.info("[HTTP] {} - - GET '{}'".format(host, req))
+		return req
 
 	if POST:
-		log.info("[HTTP] POST request from: {} URL: {}".format(host, ''.join(POST)))
+		req = ''.join(POST).strip()
+		log.info("[HTTP] {} - - POST '{}'".format(host, req))
 		if len(''.join(POSTDATA)) > 2:
 			log.info("[HTTP] POST Data: {}".format(''.join(POSTDATA).strip()))
+		return req
 
 # Handle HTTP packet sequence.
 def PacketSequence(data, client):
@@ -209,7 +227,7 @@ def PacketSequence(data, client):
 			ParseHTTPHash(NTLM_Auth, client)
 
 			if settings.Config.Force_WPAD_Auth and WPAD_Custom:
-				log.info("[HTTP] WPAD (auth) file sent to %s" % client)
+				log.info("{} [HTTP] WPAD (auth) file sent".format(client))
 				return WPAD_Custom
 
 			else:
@@ -234,7 +252,7 @@ def PacketSequence(data, client):
 
 		if settings.Config.Force_WPAD_Auth and WPAD_Custom:
 			if settings.Config.Verbose:
-				log.info("[HTTP] WPAD (auth) file sent to %s" % client)
+				log.info("{} [HTTP] Sent WPAD (auth) file" .format(client))
 			return WPAD_Custom
 
 		else:
@@ -246,12 +264,12 @@ def PacketSequence(data, client):
 		if settings.Config.Basic == True:
 			Response = IIS_Basic_401_Ans()
 			if settings.Config.Verbose:
-				log.info("[HTTP] Sending BASIC authentication request to %s" % client)
+				log.info("{} [HTTP] Sending BASIC authentication request".format(client))
 
 		else:
 			Response = IIS_Auth_401_Ans()
 			if settings.Config.Verbose:
-				log.info("[HTTP] Sending NTLM authentication request to %s" % client)
+				log.info("{} [HTTP] Sending NTLM authentication request to".format(client))
 
 		return str(Response)
 
@@ -263,13 +281,26 @@ class HTTP1(BaseRequestHandler):
 			while True:
 				self.request.settimeout(1)
 				data = self.request.recv(8092)
-				GrabURL(data, self.client_address[0])
+				req_url = GrabURL(data, self.client_address[0])
 				Buffer = WpadCustom(data, self.client_address[0])
 
 				if Buffer and settings.Config.Force_WPAD_Auth == False:
 					self.request.send(Buffer)
 					if settings.Config.Verbose:
-						log.info("[HTTP] WPAD (no auth) file sent to %s" % self.client_address[0])
+						log.info("{} [HTTP] Sent WPAD (no auth) file".format(self.client_address[0]))
+
+				if (req_url is not None) and (req_url.strip() in HTTP.endpoints):
+					resp = HTTP.endpoints[req_url.strip()]
+					self.request.send(str(resp))
+
+				if (req_url is not None) and (req_url.strip() in HTTP.static_endpoints):
+					path = HTTP.static_endpoints[req_url.strip()]['path']
+					Buffer = HTTP.static_endpoints[req_url.strip()]['buffer']
+					with open(path, 'r') as file:
+						Buffer.fields['Payload'] = file.read()
+
+					Buffer.calculate()
+					self.request.send(str(Buffer))
 
 				else:
 					Buffer = PacketSequence(data,self.client_address[0])
@@ -294,7 +325,7 @@ class HTTPS(StreamRequestHandler):
 				if Buffer and settings.Config.Force_WPAD_Auth == False:
 					self.exchange.send(Buffer)
 					if settings.Config.Verbose:
-						log.info("[HTTPS] WPAD (no auth) file sent to %s" % self.client_address[0])
+						log.info("{} [HTTPS] Sent WPAD (no auth) file".format(self.client_address[0]))
 
 				else:
 					Buffer = PacketSequence(data,self.client_address[0])

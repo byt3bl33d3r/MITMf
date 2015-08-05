@@ -80,7 +80,6 @@ def IsICMPRedirectPlausible(IP):
         if x !="127.0.0.1" and IsOnTheSameSubnet(x,IP) == False:
             settings.Config.AnalyzeLogger.warning("[Analyze mode: ICMP] You can ICMP Redirect on this network.")
             settings.Config.AnalyzeLogger.warning("[Analyze mode: ICMP] This workstation (%s) is not on the same subnet than the DNS server (%s)." % (IP, x))
-            settings.Config.AnalyzeLogger.warning("[Analyze mode: ICMP] Use `python tools/Icmp-Redirect.py` for more details.")
         else:
             pass
 
@@ -107,14 +106,14 @@ class LLMNRServer(BaseRequestHandler):
 
             # Analyze Mode
             if settings.Config.AnalyzeMode:
-                settings.Config.AnalyzeLogger.warning("[Analyze mode: LLMNR]{} Request by {} for {}, ignoring".format(self.client_address[0], Name))
+                settings.Config.AnalyzeLogger.warning("{} [Analyze mode: LLMNR] Request for {}, ignoring".format(self.client_address[0], Name))
 
             # Poisoning Mode
             else:
                 Buffer = LLMNR_Ans(Tid=data[0:2], QuestionName=Name, AnswerName=Name)
                 Buffer.calculate()
                 soc.sendto(str(Buffer), self.client_address)
-                settings.Config.PoisonersLogger.warning("[LLMNR] Poisoned answer sent to {} for name {}".format(self.client_address[0], Name))
+                settings.Config.PoisonersLogger.warning("{} [LLMNR] Poisoned request for name {}".format(self.client_address[0], Name))
 
             if Finger is not None:
                 settings.Config.ResponderLogger.info("[FINGER] OS Version: {}".format(Finger[0]))

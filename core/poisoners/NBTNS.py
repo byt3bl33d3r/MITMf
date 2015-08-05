@@ -86,7 +86,7 @@ class NBTNSServer(BaseRequestHandler):
 
 			# Analyze Mode
 			if settings.Config.AnalyzeMode:
-				settings.Config.AnalyzeLogger.warning("[Analyze mode: NBT-NS] Request by %s for %s, ignoring" % (self.client_address[0], Name))
+				settings.Config.AnalyzeLogger.warning("{} [Analyze mode: NBT-NS] Request for {}, ignoring".format(self.client_address[0], Name))
 
 			# Poisoning Mode
 			else:
@@ -94,8 +94,8 @@ class NBTNSServer(BaseRequestHandler):
 				Buffer.calculate(data)
 				socket.sendto(str(Buffer), self.client_address)
 
-				settings.Config.PoisonersLogger.warning("[NBT-NS] Poisoned answer sent to %s for name %s (service: %s)" % (self.client_address[0], Name, NBT_NS_Role(data[43:46])))
+				settings.Config.PoisonersLogger.warning("{} [NBT-NS] Poisoned answer for name {} (service: {})" .format(self.client_address[0], Name, NBT_NS_Role(data[43:46])))
 
 			if Finger is not None:
-				settings.Config.ResponderLogger.info("[FINGER] OS Version     : %s" % Finger[0])
-				settings.Config.ResponderLogger.info("[FINGER] Client Version : %s" % Finger[1])
+				settings.Config.ResponderLogger.info("[FINGER] OS Version     : {}".format(Finger[0]))
+				settings.Config.ResponderLogger.info("[FINGER] Client Version : {}".format(Finger[1]))

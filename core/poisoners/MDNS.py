@@ -87,7 +87,7 @@ class MDNSServer(BaseRequestHandler):
 			# Analyze Mode
 			if settings.Config.AnalyzeMode:
 				if Parse_IPV6_Addr(data):
-					settings.Config.AnalyzeLogger.warning('[Analyze mode: MDNS] Request by %-15s for %s, ignoring' % (self.client_address[0], Request_Name))
+					settings.Config.AnalyzeLogger.warning('{} [Analyze mode: MDNS] Request for {}, ignoring'.format(self.client_address[0], Request_Name))
 
 			# Poisoning Mode
 			else:
@@ -98,7 +98,7 @@ class MDNSServer(BaseRequestHandler):
 					Buffer.calculate()
 					soc.sendto(str(Buffer), (MADDR, MPORT))
 					
-					settings.Config.PoisonersLogger.warning('[MDNS] Poisoned answer sent to %-15s for name %s' % (self.client_address[0], Request_Name))
+					settings.Config.PoisonersLogger.warning('{} [MDNS] Poisoned answer for name {}'.format(self.client_address[0], Request_Name))
 
 		except Exception:
 			raise

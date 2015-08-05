@@ -82,7 +82,7 @@ from core.logger import logger
 formatter = logging.Formatter("%(asctime)s %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 log = logger().setup_logger("MITMf", formatter)
 
-log.debug("MITMf started:{}".format(sys.argv))
+log.debug("MITMf started: {}".format(sys.argv))
 
 from core.sslstrip.CookieCleaner import CookieCleaner
 from core.proxyplugins import ProxyPlugins
