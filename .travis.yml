@@ -4,7 +4,7 @@ python:
 sudo: required
 before_install:
  - "sudo apt-get update -qq"
- - "sudo apt-get install libpcap0.8-dev libnetfilter-queue-dev"
+ - "sudo apt-get install libpcap0.8-dev libnetfilter-queue-dev libcapstone2 libcapstone-dev"
 
 install: "pip install -r requirements.txt"
 script: python tests/basic_tests.py
