@@ -7,4 +7,4 @@ before_install:
  - "sudo apt-get install libpcap0.8-dev libnetfilter-queue-dev"
 
 install: "pip install -r requirements.txt"
-script: tests/basic_tests.py
+script: python tests/basic_tests.py
