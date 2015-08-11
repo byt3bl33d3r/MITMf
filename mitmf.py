@@ -21,7 +21,7 @@
 import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR) #Gets rid of IPV6 Error when importing scapy
 logging.getLogger("requests").setLevel(logging.WARNING) #Disables "Starting new HTTP Connection (1)" log message
-logging.getLogger("mitmflib.watchdog").setLevel(logging.ERROR) #Disables watchdog's debug messages
+logging.getLogger("watchdog").setLevel(logging.ERROR) #Disables watchdog's debug messages
 
 import argparse
 import sys
@@ -54,6 +54,7 @@ sgroup.add_argument("--log-level", type=str,choices=['debug', 'info'], default="
 sgroup.add_argument("-i", dest='interface', type=str, help="Interface to listen on")
 sgroup.add_argument("-c", dest='configfile', metavar="CONFIG_FILE", type=str, default="./config/mitmf.conf", help="Specify config file to use")
 sgroup.add_argument("-p", "--preserve-cache", action="store_true", help="Don't kill client/server caching")
+sgroup.add_argument("-r", '--read-pcap', type=str, help='Parse specified pcap for credentials and exit')
 sgroup.add_argument("-l", dest='listen_port', type=int, metavar="PORT", default=10000, help="Port to listen on (default 10000)")
 sgroup.add_argument("-f", "--favicon", action="store_true", help="Substitute a lock favicon on secure requests.")
 sgroup.add_argument("-k", "--killsessions", action="store_true", help="Kill sessions in progress.")
@@ -83,6 +84,10 @@ formatter = logging.Formatter("%(asctime)s %(message)s", datefmt="%Y-%m-%d %H:%M
 log = logger().setup_logger("MITMf", formatter)
 
 log.debug("MITMf started: {}".format(sys.argv))
+
+#Start Net-Creds
+from core.netcreds import NetCreds
+NetCreds().start(options.interface, options.ip, options.read_pcap)
 
 from core.sslstrip.CookieCleaner import CookieCleaner
 from core.proxyplugins import ProxyPlugins
@@ -135,15 +140,12 @@ if options.filter:
     print "|_ PacketFilter online"
     print "|  |_ Applying filter {} to incoming packets".format(options.filter)
 
+print "|_ Net-Creds v{} online".format(NetCreds.version)
+
 #Start mitmf-api
 from core.mitmfapi import mitmfapi
 print "|_ MITMf-API online"
 mitmfapi().start()
-
-#Start Net-Creds
-from core.netcreds import NetCreds
-NetCreds().start(options.interface, options.ip)
-print "|_ Net-Creds v{} online".format(NetCreds.version)
 
 #Start the HTTP Server
 from core.servers.HTTP import HTTP

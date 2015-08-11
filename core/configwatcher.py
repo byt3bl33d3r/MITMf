@@ -18,8 +18,8 @@
 # USA
 #
 
-from mitmflib.watchdog.observers import Observer
-from mitmflib.watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
 from configobj import ConfigObj
 
 class ConfigWatcher(FileSystemEventHandler):

@@ -22,8 +22,8 @@ import os
 from plugins.plugin import Plugin
 from plugins.inject import Inject
 from core.beefapi import BeefAPI
-from mitmflib.watchdog.observers import Observer
-from mitmflib.watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
 
 class BeefAutorun(Inject, Plugin):
     name     = "BeEFAutoloader"

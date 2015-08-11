@@ -25,7 +25,7 @@ import gzip
 import StringIO
 import sys
 
-from mitmflib.user_agents import parse
+from user_agents import parse
 from twisted.web.http import HTTPClient
 from URLMonitor import URLMonitor
 from core.proxyplugins import ProxyPlugins

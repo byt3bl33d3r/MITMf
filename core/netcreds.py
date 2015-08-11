@@ -48,10 +48,15 @@ class NetCreds:
     def sniffer(self, interface, ip):
         sniff(iface=interface, prn=pkt_parser, filter="not host {}".format(ip), store=0)
 
-    def start(self, interface, ip):
-        t = threading.Thread(name='NetCreds', target=self.sniffer, args=(interface, ip,))
-        t.setDaemon(True)
-        t.start()
+    def start(self, interface, ip, pcap):
+        if pcap:
+            for pkt in PcapReader(pcap):
+                pkt_parser(pkt)
+            sys.exit()
+        else:
+            t = threading.Thread(name='NetCreds', target=self.sniffer, args=(interface, ip,))
+            t.setDaemon(True)
+            t.start()
 
 def pkt_parser(pkt):
     '''

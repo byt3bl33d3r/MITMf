@@ -149,7 +149,7 @@ class Settings(ConfigWatcher):
         self.AnalyzeMode     = options.analyze
         #self.Upstream_Proxy  = options.Upstream_Proxy
 
-        self.Verbose = False
+        self.Verbose = True
         if options.log_level == 'debug':
             self.Verbose = True
 
