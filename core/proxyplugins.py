@@ -111,8 +111,6 @@ class ProxyPlugins:
             for f in self.plugin_mthds[fname]:
                 a = f(**args)
                 if a != None: args = a
-        except KeyError as e:
-            pass
         except Exception as e:
             #This is needed because errors in hooked functions won't raise an Exception + Traceback (which can be infuriating)
             log.error("Exception occurred in hooked function")

@@ -1,4 +1,5 @@
 git+git://github.com/kti/python-netfilterqueue
+git+git://github.com/gorakhargosh/watchdog
 pycrypto>=2.6
 pyasn1>=0.1.7
 cryptography
@@ -17,7 +18,7 @@ Flask
 dnspython
 beautifulsoup4
 capstone
+python-magic
 msgpack-python
-watchdog
 requests
 pypcap
