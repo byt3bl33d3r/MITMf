@@ -46,7 +46,10 @@ class NetCreds:
     version = "1.0"
 
     def sniffer(self, interface, ip):
-        sniff(iface=interface, prn=pkt_parser, filter="not host {}".format(ip), store=0)
+        try:
+            sniff(iface=interface, prn=pkt_parser, filter="not host {}".format(ip), store=0)
+        except Exception as e:
+            if "Interrupted system call" in e: pass
 
     def start(self, interface, ip, pcap):
         if pcap:
