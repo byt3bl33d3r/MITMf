@@ -21,7 +21,6 @@ import logging
 import re
 import sys
 
-from commands import getstatusoutput
 from core.logger import logger
 from core.proxyplugins import ProxyPlugins
 from scapy.all import get_if_addr, get_if_hwaddr, get_working_if
@@ -35,15 +34,10 @@ def shutdown(message=None):
     sys.exit(message)
 
 def set_ip_forwarding(value):
-    status, result = getstatusoutput('sysctl --help')
-    if status == 0:
-        log.debug("Setting ip forwarding to {} using sysctl".format(value))
-        os.system('sysctl -w net.ipv4.ip_forward={} &> /dev/null'.format(value)) #for OSX
-    else:
-        log.debug("Setting ip forwarding to {}".format(value))
-        with open('/proc/sys/net/ipv4/ip_forward', 'w') as file:
-            file.write(str(value))
-            file.close()
+    log.debug("Setting ip forwarding to {}".format(value))
+    with open('/proc/sys/net/ipv4/ip_forward', 'w') as file:
+        file.write(str(value))
+        file.close()
 
 def get_iface():
     iface = get_working_if()
