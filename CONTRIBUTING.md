@@ -2,34 +2,51 @@ Contributing
 ============
 Hi! Thanks for taking the time and contributing to MITMf! Pull requests are always welcome!
 
-Submitting Issues
-=================
-If you have *questions* regarding the framework please email me at byt3bl33d3r@gmail.com
+Submitting Issues/Bug Reporting
+=============
 
-**Only submit issues if you find a bug in the latest version of the framework.**
+Bug reporting is an essential part of any project since it let's people know whats broken!
 
-When inevitably you do come across said *bug*, please open an issue and include at least the following in the description:
+Before reading on, here's a list of cases where you **shouldn't** be reporting the bug:
+- If you haven't installed MITMf using method described in the [installation](https://github.com/byt3bl33d3r/MITMf/wiki/Installation) intructions. (your fault!)
+- If you're using and old version of the framework (and by old I mean anything else that **isn't** the current version on Github)
+- If you found a bug in a packaged version of MITMf (e.g. Kali Repos), please file a bug report with the distros maintaner
 
-- Full command string you used
-- OS you're using
-- Full error traceback, if any
-- A packet capture if relevant
+Lately, there has been a sharp **increase** in the volume of bug reports so in order for me to make any sense out of them and to quickly identify, reproduce and push a fix I do pretend a minimal amount of cooperation from the reporter!
 
-Also, remember that Github markdown is your friend!
+Writing the report
+==================
+**Before submitting a bug familiarize yourself with [Github markdown](https://help.github.com/articles/github-flavored-markdown/) and use it in your report!**
 
-FAQ
-===
-- **Is Windows supported?**
-- Nope, don't think it will ever be
+After that, open an issue ticket and please describe the bug in **detail!** MITMf has a lot of moving parts so the more detail the better!
 
-- **Is OSX supported?**
-- Initial compatibility has been introduced in 0.9.8, still needs some testing, find anything broken submit a PR or open an issue ticket!
+Include in the report:
+- The full command string you used
+- The full output of: ```pip freeze```
+- The full output of MITMf in debug mode (append ```--log debug``` to the command you used)
+- The OS you're using (distribution and architecture)
+- The full error traceback (If any)
+- If the bug resides in the way MITMf sends/receives packets, include a link to a pcap containing a full packet capture
 
-- **I can't install package X because of an error!**
-- Try installing the package via ```pip``` or your distro's package manager. This *isn't* a problem with MITMf.
+Some good & bad examples
+=========================
 
-- **How do I install package X?** or **I get an ImportError when launching MITMf!**
-- Please read the installation guide in the [readme](README.md).
+- How to write a bug report
 
-- **Dude, no documentation?**
-- The docs are a work in progress at the moment, once the framework hits 1.0 I will push them to the wiki
+https://github.com/byt3bl33d3r/MITMf/issues/71
+
+https://github.com/byt3bl33d3r/MITMf/issues/70
+
+https://github.com/byt3bl33d3r/MITMf/issues/64
+
+- How not to write a bug report
+
+https://github.com/byt3bl33d3r/MITMf/issues/35 <-- My personal favorite
+
+https://github.com/byt3bl33d3r/MITMf/issues/139
+
+https://github.com/byt3bl33d3r/MITMf/issues/138
+
+https://github.com/byt3bl33d3r/MITMf/issues/128
+
+https://github.com/byt3bl33d3r/MITMf/issues/52

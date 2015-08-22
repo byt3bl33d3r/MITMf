@@ -17,7 +17,7 @@ Contact me at:
 - IRC on Freenode: #MITMf
 - Email: byt3bl33d3r@gmail.com
 
-**Before submitting issues, please read the [CONTRIBUTING.md](CONTRIBUTING.md).**
+**Before submitting issues, please read the relevant [section](https://github.com/byt3bl33d3r/MITMf/wiki/Reporting-a-bug) in the wiki .**
 
 Description
 ============
@@ -132,17 +132,7 @@ For a complete list of available options, just run ```python mitmf.py --help```
 - **SMBAuth**          : Evoke SMB challenge-response authentication attempts
 - **Upsidedownternet** : Flips images 180 degrees
 
-How to install on Kali
-======================
-
-```apt-get install mitmf```
-
-**Currently Kali has a very old version of MITMf in its repos, read the [Installation](#installation) section to get the latest version**
-
 Installation
 ============
 
-- Clone this repository
-- Run the ```setup.sh``` script
-- On Kali, Debian (and possibly Ubuntu): ```apt-get install python-dev python-setuptools libpcap0.8-dev libnetfilter-queue-dev```
-- Run the command ```pip install --upgrade -r requirements.txt``` to install all Python dependencies
+Please refer to the wiki for [installation instructions](https://github.com/byt3bl33d3r/MITMf/wiki/Installation)
