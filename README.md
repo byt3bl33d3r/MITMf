@@ -27,6 +27,11 @@ existing attacks and techniques.
 Originally built to address the significant shortcomings of other tools (e.g Ettercap, Mallory), it's been almost completely 
 re-written from scratch to provide a modular and easily extendible framework that anyone can use to implement their own MITM attack.
 
+Installation
+============
+
+Please refer to the wiki for [installation instructions](https://github.com/byt3bl33d3r/MITMf/wiki/Installation)
+
 Features
 ========
 
@@ -131,8 +136,3 @@ For a complete list of available options, just run ```python mitmf.py --help```
 - **Replace**          : Replace arbitary content in HTML content
 - **SMBAuth**          : Evoke SMB challenge-response authentication attempts
 - **Upsidedownternet** : Flips images 180 degrees
-
-Installation
-============
-
-Please refer to the wiki for [installation instructions](https://github.com/byt3bl33d3r/MITMf/wiki/Installation)
