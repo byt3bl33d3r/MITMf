@@ -18,12 +18,11 @@
 # USA
 #
 import os
+import pyinotify
 
 from plugins.plugin import Plugin
 from plugins.inject import Inject
 from core.beefapi import BeefAPI
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
 
 class BeefAutorun(Inject, Plugin):
     name     = "BeEFAutoloader"
@@ -52,14 +51,14 @@ class BeefAutorun(Inject, Plugin):
     def options(self, options):
         pass
 
-class RuleWatcher(FileSystemEventHandler):
+class RuleWatcher(pyinotify.ProcessEvent):
 
     def __init__(self, beef, logger):
-        FileSystemEventHandler.__init__(self)
+        pyinotify.ProcessEvent.__init__(self)
         self.beef = beef
         self.log  = logger
 
-    def on_modified(self, event):
+    def process_IN_MODIFY(self, event):
         self.log.debug('Detected ARE rule change!')
         for rule in self.beef.are_rules.list():
             self.log.debug('Deleting rule id: {} name: {}'.format(rule.id, rule.name))
@@ -74,6 +73,10 @@ class RuleWatcher(FileSystemEventHandler):
                     self.beef.are_rules.add(rule_path)
 
     def start(self):
-        observer = Observer()
-        observer.schedule(self, path='./config/beef_arerules/enabled', recursive=False)
-        observer.start()
+        wm = pyinotify.WatchManager()
+        wm.add_watch('./config/beef_arerules/enabled', pyinotify.IN_MODIFY)
+        notifier = pyinotify.Notifier(wm, self)
+
+        t = threading.Thread(name='RuleWatcher', target=notifier.loop)
+        t.setDaemon(True)
+        t.start()

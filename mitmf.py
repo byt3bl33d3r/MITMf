@@ -21,7 +21,6 @@
 import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR) #Gets rid of IPV6 Error when importing scapy
 logging.getLogger("requests").setLevel(logging.WARNING) #Disables "Starting new HTTP Connection (1)" log message
-logging.getLogger("watchdog").setLevel(logging.ERROR) #Disables watchdog's debug messages
 
 import argparse
 import sys
@@ -29,6 +28,7 @@ import os
 import threading
 import core.responder.settings as settings
 
+from argparse import RawTextHelpFormatter
 from twisted.web import http
 from twisted.internet import reactor
 from core.logger import logger
@@ -46,7 +46,8 @@ if os.geteuid() != 0:
 parser = argparse.ArgumentParser(description="MITMf v{} - '{}'".format(mitmf_version, mitmf_codename), 
                                  version="{} - '{}'".format(mitmf_version, mitmf_codename), 
                                  usage='mitmf.py -i interface [mitmf options] [plugin name] [plugin options]', 
-                                 epilog="Use wisely, young Padawan.")
+                                 epilog="Use wisely, young Padawan.",
+                                 formatter_class=RawTextHelpFormatter)
 
 #add MITMf options
 sgroup = parser.add_argument_group("MITMf", "Options for MITMf")
