@@ -3,6 +3,7 @@ python:
  - "2.7"
 sudo: required
 before_install:
+ - "ifconfig"
  - "sudo apt-get update -qq"
  - "sudo apt-get install tcpdump libpcap0.8-dev libnetfilter-queue-dev libssl-dev"
 
