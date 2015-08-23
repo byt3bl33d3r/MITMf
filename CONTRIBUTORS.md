@@ -11,6 +11,7 @@
 - @mmetince
 - @niallmerrigan
 - @auraltension
+- @HAMIDx9
 
 #Unintentional contributors and/or projects that I stole code from
 

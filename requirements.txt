@@ -1,7 +1,7 @@
 git+git://github.com/kti/python-netfilterqueue
 pyinotify
-pycrypto>=2.6
-pyasn1>=0.1.7
+pycrypto
+pyasn1
 cryptography
 Pillow
 netaddr

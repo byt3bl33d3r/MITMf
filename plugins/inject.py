@@ -57,27 +57,37 @@ class Inject(Plugin):
     
     def response(self, response, request, data):
 
+        encoding = None
         ip = response.getClientIP()
         hn = response.getRequestHostname()
-        mime = response.headers['Content-Type']
+
+        try:
+            mime = response.headers['Content-Type']
+        except KeyError:
+            return
+
+        if "charset" in mime:
+            match = re.search('charset=(.*)', mime)
+            if match:
+                encoding = match.group(1).strip().replace('"', "")
+            else:
+                try:
+                    encoding = chardet.detect(data)["encoding"]
+                except:
+                    pass
+        else:
+            try:
+                encoding = chardet.detect(data)["encoding"]
+            except:
+                pass
 
         if self._should_inject(ip, hn) and self._ip_filter(ip) and self._host_filter(hn) and (hn not in self.ip) and ("text/html" in mime):
 
-	    if "charset" in mime:
-		match = re.search('charset=(.*)', mime)
-		if match:
-			encoding = match.group(1).strip().replace('"', "")
-	    else:
-	    	try:
-			encoding = chardet.detect(data)["encoding"]
-		except:
-			encoding = None
+    	    if encoding is not None:
+                html = BeautifulSoup(data.decode(encoding, "ignore"), "lxml")
+    	    else:
+                html = BeautifulSoup(data, "lxml")
 
-	    if encoding:		
-	            html = BeautifulSoup(data.decode(encoding, "ignore"), "lxml")
-	    else:
-	            html = BeautifulSoup(data, "lxml") # let bs find the encoding
-		
             if html.body:
 
                 if self.html_url:
