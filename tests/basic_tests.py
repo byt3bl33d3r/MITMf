@@ -28,15 +28,14 @@ class BasicTests(unittest.TestCase):
             set_ip_forwarding(1)
         except IOError:
             pass
-        ip  = get_ip('eth0')
-        mac = get_mac('eth0')
+        ip  = get_ip('venet0:0')
+        mac = get_mac('venet0:0')
 
     def test_NetCreds(self):
         from core.logger import logger
         logger.log_level = logging.DEBUG
         from core.netcreds import NetCreds
-        NetCreds().start('eth0', '192.168.1.0', None)
-        #NetCreds().start('eth0', '192.168.1.0', None)
+        NetCreds().start('venet0:0', '172.30.96.18', None)
 
     def test_SSLStrip_Proxy(self):
         favicon = True
