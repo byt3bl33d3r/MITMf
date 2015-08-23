@@ -22,3 +22,4 @@ python-magic
 msgpack-python
 requests
 pypcap
+chardet
