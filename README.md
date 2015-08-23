@@ -19,6 +19,11 @@ Contact me at:
 
 **Before submitting issues, please read the relevant [section](https://github.com/byt3bl33d3r/MITMf/wiki/Reporting-a-bug) in the wiki .**
 
+Installation
+============
+
+Please refer to the wiki for [installation instructions](https://github.com/byt3bl33d3r/MITMf/wiki/Installation)
+
 Description
 ============
 MITMf aims to provide a one-stop-shop for Man-In-The-Middle and network attacks while updating and improving
@@ -26,11 +31,6 @@ existing attacks and techniques.
 
 Originally built to address the significant shortcomings of other tools (e.g Ettercap, Mallory), it's been almost completely 
 re-written from scratch to provide a modular and easily extendible framework that anyone can use to implement their own MITM attack.
-
-Installation
-============
-
-Please refer to the wiki for [installation instructions](https://github.com/byt3bl33d3r/MITMf/wiki/Installation)
 
 Features
 ========

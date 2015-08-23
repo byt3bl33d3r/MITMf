@@ -8,6 +8,7 @@ netaddr
 scapy
 dnslib
 Twisted
+lxml
 pefile
 ipy
 user_agents
