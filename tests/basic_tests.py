@@ -24,10 +24,12 @@ class BasicTests(unittest.TestCase):
         from core.logger import logger
         logger.log_level = logging.DEBUG
         from core.utils import set_ip_forwarding, get_ip, get_mac
-        set_ip_forwarding(1)
+        try:
+            set_ip_forwarding(1)
+        except IOError:
+            pass
         ip  = get_ip('enp3s0')
         mac = get_mac('enp3s0')
-        set_ip_forwarding(0)
 
     def test_NetCreds(self):
         from core.logger import logger
