@@ -24,7 +24,7 @@ class BasicTests(unittest.TestCase):
         from core.logger import logger
         logger.log_level = logging.DEBUG
         from core.netcreds import NetCreds
-        NetCreds().start('venet0:0', '172.30.96.18', None)
+        NetCreds().start('venet0:0', '172.30.96.18')
 
     def test_SSLStrip_Proxy(self):
         favicon = True
