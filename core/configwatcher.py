@@ -21,7 +21,7 @@ import pyinotify
 import threading
 from configobj import ConfigObj
 
-class ConfigWatcher(pyinotify.ProcessEvent):
+class ConfigWatcher(pyinotify.ProcessEvent, object):
 
     @property
     def config(self):

@@ -31,6 +31,7 @@ class Plugin(ConfigWatcher):
 
     def __init__(self, parser):
         '''Passed the options namespace'''
+
         if self.desc:
             sgroup = parser.add_argument_group(self.name, self.desc)
         else:

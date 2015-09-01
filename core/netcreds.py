@@ -41,6 +41,8 @@ NTLMSSP3_re = 'NTLMSSP\x00\x03\x00\x00\x00.+'
 # Prone to false+ but prefer that to false-
 http_search_re = '((search|query|&q|\?q|search\?p|searchterm|keywords|keyword|command|terms|keys|question|kwd|searchPhrase)=([^&][^&]*))'
 
+parsing_pcap = False
+
 class NetCreds:
 
     version = "1.0"
@@ -51,15 +53,64 @@ class NetCreds:
         except Exception as e:
             if "Interrupted system call" in e: pass
 
-    def start(self, interface, ip, pcap):
-        if pcap:
-            for pkt in PcapReader(pcap):
-                pkt_parser(pkt)
-            sys.exit()
-        else:
-            t = threading.Thread(name='NetCreds', target=self.sniffer, args=(interface, ip,))
-            t.setDaemon(True)
-            t.start()
+    def start(self, interface, ip):
+        t = threading.Thread(name='NetCreds', target=self.sniffer, args=(interface, ip,))
+        t.setDaemon(True)
+        t.start()
+
+    def parse_pcap(self, pcap):
+        parsing_pcap=True
+
+        for pkt in PcapReader(pcap):
+            pkt_parser(pkt)
+
+        sys.exit()
+
+def frag_remover(ack, load):
+    '''
+    Keep the FILO OrderedDict of frag loads from getting too large
+    3 points of limit:
+        Number of ip_ports < 50
+        Number of acks per ip:port < 25
+        Number of chars in load < 5000
+    '''
+    global pkt_frag_loads
+
+    # Keep the number of IP:port mappings below 50
+    # last=False pops the oldest item rather than the latest
+    while len(pkt_frag_loads) > 50:
+        pkt_frag_loads.popitem(last=False)
+
+    # Loop through a deep copy dict but modify the original dict
+    copy_pkt_frag_loads = copy.deepcopy(pkt_frag_loads)
+    for ip_port in copy_pkt_frag_loads:
+        if len(copy_pkt_frag_loads[ip_port]) > 0:
+            # Keep 25 ack:load's per ip:port
+            while len(copy_pkt_frag_loads[ip_port]) > 25:
+                pkt_frag_loads[ip_port].popitem(last=False)
+
+    # Recopy the new dict to prevent KeyErrors for modifying dict in loop
+    copy_pkt_frag_loads = copy.deepcopy(pkt_frag_loads)
+    for ip_port in copy_pkt_frag_loads:
+        # Keep the load less than 75,000 chars
+        for ack in copy_pkt_frag_loads[ip_port]:
+            # If load > 5000 chars, just keep the last 200 chars
+            if len(copy_pkt_frag_loads[ip_port][ack]) > 5000:
+                pkt_frag_loads[ip_port][ack] = pkt_frag_loads[ip_port][ack][-200:]
+
+def frag_joiner(ack, src_ip_port, load):
+    '''
+    Keep a store of previous fragments in an OrderedDict named pkt_frag_loads
+    '''
+    for ip_port in pkt_frag_loads:
+        if src_ip_port == ip_port:
+            if ack in pkt_frag_loads[src_ip_port]:
+                # Make pkt_frag_loads[src_ip_port][ack] = full load
+                old_load = pkt_frag_loads[src_ip_port][ack]
+                concat_load = old_load + load
+                return OrderedDict([(ack, concat_load)])
+
+    return OrderedDict([(ack, load)])
 
 def pkt_parser(pkt):
     '''
@@ -127,53 +178,7 @@ def pkt_parser(pkt):
             telnet_logins(src_ip_port, dst_ip_port, load, ack, seq)
 
         # HTTP and other protocols that run on TCP + a raw load
-        other_parser(src_ip_port, dst_ip_port, full_load, ack, seq, pkt)
-
-def frag_remover(ack, load):
-    '''
-    Keep the FILO OrderedDict of frag loads from getting too large
-    3 points of limit:
-        Number of ip_ports < 50
-        Number of acks per ip:port < 25
-        Number of chars in load < 5000
-    '''
-    global pkt_frag_loads
-
-    # Keep the number of IP:port mappings below 50
-    # last=False pops the oldest item rather than the latest
-    while len(pkt_frag_loads) > 50:
-        pkt_frag_loads.popitem(last=False)
-
-    # Loop through a deep copy dict but modify the original dict
-    copy_pkt_frag_loads = copy.deepcopy(pkt_frag_loads)
-    for ip_port in copy_pkt_frag_loads:
-        if len(copy_pkt_frag_loads[ip_port]) > 0:
-            # Keep 25 ack:load's per ip:port
-            while len(copy_pkt_frag_loads[ip_port]) > 25:
-                pkt_frag_loads[ip_port].popitem(last=False)
-
-    # Recopy the new dict to prevent KeyErrors for modifying dict in loop
-    copy_pkt_frag_loads = copy.deepcopy(pkt_frag_loads)
-    for ip_port in copy_pkt_frag_loads:
-        # Keep the load less than 75,000 chars
-        for ack in copy_pkt_frag_loads[ip_port]:
-            # If load > 5000 chars, just keep the last 200 chars
-            if len(copy_pkt_frag_loads[ip_port][ack]) > 5000:
-                pkt_frag_loads[ip_port][ack] = pkt_frag_loads[ip_port][ack][-200:]
-
-def frag_joiner(ack, src_ip_port, load):
-    '''
-    Keep a store of previous fragments in an OrderedDict named pkt_frag_loads
-    '''
-    for ip_port in pkt_frag_loads:
-        if src_ip_port == ip_port:
-            if ack in pkt_frag_loads[src_ip_port]:
-                # Make pkt_frag_loads[src_ip_port][ack] = full load
-                old_load = pkt_frag_loads[src_ip_port][ack]
-                concat_load = old_load + load
-                return OrderedDict([(ack, concat_load)])
-
-    return OrderedDict([(ack, load)])
+        other_parser(src_ip_port, dst_ip_port, full_load, ack, seq, pkt, True)
 
 def telnet_logins(src_ip_port, dst_ip_port, load, ack, seq):
     '''
@@ -530,14 +535,14 @@ def irc_logins(full_load, pkt):
         msg = 'IRC pass: %s' % pass_search2.group(1)
         return msg
 
-def other_parser(src_ip_port, dst_ip_port, full_load, ack, seq, pkt):
+def other_parser(src_ip_port, dst_ip_port, full_load, ack, seq, pkt, verbose):
     '''
     Pull out pertinent info from the parsed HTTP packet data
     '''
     user_passwd = None
     http_url_req = None
     method = None
-    http_methods = ['GET ', 'POST', 'CONNECT ', 'TRACE ', 'TRACK ', 'PUT ', 'DELETE ', 'HEAD ']
+    http_methods = ['GET ', 'POST ', 'CONNECT ', 'TRACE ', 'TRACK ', 'PUT ', 'DELETE ', 'HEAD ']
     http_line, header_lines, body = parse_http_load(full_load, http_methods)
     headers = headers_to_dict(header_lines)
     if 'host' in headers:
@@ -545,44 +550,51 @@ def other_parser(src_ip_port, dst_ip_port, full_load, ack, seq, pkt):
     else:
         host = ''
 
-    #if http_line != None:
-    #    method, path = parse_http_line(http_line, http_methods)
-    #    http_url_req = get_http_url(method, host, path, headers)
-        #if http_url_req != None:
-            #printer(src_ip_port, None, http_url_req)
+    if parsing_pcap is True:
 
-    # Print search terms
-    searched = get_http_searches(http_url_req, body, host)
-    if searched:
-        printer(src_ip_port, dst_ip_port, searched)
+        if http_line != None:
+            method, path = parse_http_line(http_line, http_methods)
+            http_url_req = get_http_url(method, host, path, headers)
+            if http_url_req != None:
+                if verbose == False:
+                    if len(http_url_req) > 98:
+                        http_url_req = http_url_req[:99] + '...'
+                printer(src_ip_port, None, http_url_req)
 
-    #We dont need this cause its being taking care of by the proxy
-    
-    #Print user/pwds
-    #if body != '':
-    #    user_passwd = get_login_pass(body)
-    #    if user_passwd != None:
-    #        try:
-    #            http_user = user_passwd[0].decode('utf8')
-    #            http_pass = user_passwd[1].decode('utf8')
-    #            # Set a limit on how long they can be prevent false+
-    #            if len(http_user) > 75 or len(http_pass) > 75:
-    #                return
-    #            user_msg = 'HTTP username: %s' % http_user
-    #            printer(src_ip_port, dst_ip_port, user_msg)
-    #            pass_msg = 'HTTP password: %s' % http_pass
-    #            printer(src_ip_port, dst_ip_port, pass_msg)
-    #        except UnicodeDecodeError:
-    #           pass
+        # Print search terms
+        searched = get_http_searches(http_url_req, body, host)
+        if searched:
+            printer(src_ip_port, dst_ip_port, searched)
 
-    # Print POST loads
-    # ocsp is a common SSL post load that's never interesting
-    #if method == 'POST' and 'ocsp.' not in host:
-    #    try:
-    #        msg = 'POST load: %s' % body.encode('utf8')
-    #        printer(src_ip_port, None, msg)
-    #    except UnicodeDecodeError:
-    #        pass
+        # Print user/pwds
+        if body != '':
+            user_passwd = get_login_pass(body)
+            if user_passwd != None:
+                try:
+                    http_user = user_passwd[0].decode('utf8')
+                    http_pass = user_passwd[1].decode('utf8')
+                    # Set a limit on how long they can be prevent false+
+                    if len(http_user) > 75 or len(http_pass) > 75:
+                        return
+                    user_msg = 'HTTP username: %s' % http_user
+                    printer(src_ip_port, dst_ip_port, user_msg)
+                    pass_msg = 'HTTP password: %s' % http_pass
+                    printer(src_ip_port, dst_ip_port, pass_msg)
+                except UnicodeDecodeError:
+                    pass
+
+        # Print POST loads
+        # ocsp is a common SSL post load that's never interesting
+        if method == 'POST' and 'ocsp.' not in host:
+            try:
+                if verbose == False and len(body) > 99:
+                    # If it can't decode to utf8 we're probably not interested in it
+                    msg = 'POST load: %s...' % body[:99].encode('utf8')
+                else:
+                    msg = 'POST load: %s' % body.encode('utf8')
+                printer(src_ip_port, None, msg)
+            except UnicodeDecodeError:
+                pass
 
     # Kerberos over TCP
     decoded = Decode_Ip_Packet(str(pkt)[14:])
@@ -904,7 +916,7 @@ def get_login_pass(body):
 
 def printer(src_ip_port, dst_ip_port, msg):
     if dst_ip_port != None:
-        print_str = '[{} > {}] {}'.format(src_ip_port, dst_ip_port, msg)
+        print_str = '[{} > {}] {}'.format((src_ip_port, dst_ip_port, msg))
         # All credentials will have dst_ip_port, URLs will not
 
         log.info("{}".format(print_str))

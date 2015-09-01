@@ -1,5 +1,3 @@
-import threading
-
 from core.utils import set_ip_forwarding, iptables
 from core.logger import logger
 from scapy.all import *
@@ -21,9 +19,7 @@ class PacketFilter:
         self.nfqueue = NetfilterQueue()
         self.nfqueue.bind(1, self.modify)
 
-        t = threading.Thread(name='packetparser', target=self.nfqueue.run)
-        t.setDaemon(True)
-        t.start()
+        self.nfqueue.run()
 
     def modify(self, pkt):
         #log.debug("Got packet")

@@ -108,9 +108,10 @@ class ProxyPlugins:
         log.debug("hooking {}()".format(fname))
         #calls any plugin that has this hook
         try:
-            for f in self.plugin_mthds[fname]:
-                a = f(**args)
-                if a != None: args = a
+            if self.plugin_mthds:
+                for f in self.plugin_mthds[fname]:
+                    a = f(**args)
+                    if a != None: args = a
         except Exception as e:
             #This is needed because errors in hooked functions won't raise an Exception + Traceback (which can be infuriating)
             log.error("Exception occurred in hooked function")

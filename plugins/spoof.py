@@ -70,7 +70,7 @@ class Spoof(Plugin):
 
         if options.dns:
             self.tree_info.append('DNS spoofing enabled')
-            if iptables().dns is False:
+            if iptables().dns is False and options.filter is False:
                 iptables().DNS(self.config['MITMf']['DNS']['port'])
 
         if not options.arp and not options.icmp and not options.dhcp and not options.dns:
@@ -78,7 +78,7 @@ class Spoof(Plugin):
 
         set_ip_forwarding(1)
 
-        if iptables().http is False:
+        if iptables().http is False and options.filter is False:
             iptables().HTTP(options.listen_port)
 
         for protocol in self.protocol_instances:

@@ -91,5 +91,5 @@ class Responder(Plugin):
         options.add_argument('--fingerprint',   dest="finger", action="store_true", help="Fingerprint hosts that issued an NBT-NS or LLMNR query")
         options.add_argument('--lm',            dest="lm",     action="store_true", help="Force LM hashing downgrade for Windows XP/2003 and earlier")
         options.add_argument('--wpad',          dest="wpad",   action="store_true", help="Start the WPAD rogue proxy server")
-        options.add_argument('--forcewpadauth', dest="forcewpadauth", action="store_true", help="Set this if you want to force NTLM/Basic authentication on wpad.dat file retrieval. This might cause a login prompt in some specific cases. Therefore, default value is False")
-        options.add_argument('--basic',         dest="basic",         action="store_true", help="Set this if you want to return a Basic HTTP authentication. If not set, an NTLM authentication will be returned")
+        options.add_argument('--forcewpadauth', dest="forcewpadauth", action="store_true", help="Force NTLM/Basic authentication on wpad.dat file retrieval (might cause a login prompt)")
+        options.add_argument('--basic',         dest="basic",         action="store_true", help="Return a Basic HTTP authentication. If not set, an NTLM authentication will be returned")

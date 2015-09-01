@@ -33,7 +33,7 @@ class SSLstripPlus(Plugin):
         from core.servers.DNS import DNSChef
         from core.utils import iptables
 
-        if iptables().dns is False:
+        if iptables().dns is False and options.filter is False:
             iptables().DNS(self.config['MITMf']['DNS']['port'])
 
         URLMonitor.getInstance().setHstsBypass()

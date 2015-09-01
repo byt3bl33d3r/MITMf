@@ -52,7 +52,7 @@ parser = argparse.ArgumentParser(description="MITMf v{} - '{}'".format(mitmf_ver
 #add MITMf options
 sgroup = parser.add_argument_group("MITMf", "Options for MITMf")
 sgroup.add_argument("--log-level", type=str,choices=['debug', 'info'], default="info", help="Specify a log level [default: info]")
-sgroup.add_argument("-i", dest='interface', type=str, help="Interface to listen on")
+sgroup.add_argument("-i", dest='interface', required=True, type=str, help="Interface to listen on")
 sgroup.add_argument("-c", dest='configfile', metavar="CONFIG_FILE", type=str, default="./config/mitmf.conf", help="Specify config file to use")
 sgroup.add_argument("-p", "--preserve-cache", action="store_true", help="Don't kill client/server caching")
 sgroup.add_argument("-r", '--read-pcap', type=str, help='Parse specified pcap for credentials and exit')
@@ -73,6 +73,15 @@ options = parser.parse_args()
 #Set the log level
 logger().log_level = logging.__dict__[options.log_level.upper()]
 
+from core.logger import logger
+formatter = logging.Formatter("%(asctime)s %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+log = logger().setup_logger("MITMf", formatter)
+
+from core.netcreds import NetCreds
+
+if options.read_pcap:
+    NetCreds().parse_pcap(options.read_pcap)
+
 #Check to see if we supplied a valid interface, pass the IP and MAC to the NameSpace object
 from core.utils import get_ip, get_mac, shutdown
 options.ip  = get_ip(options.interface)
@@ -80,33 +89,18 @@ options.mac = get_mac(options.interface)
 
 settings.Config.populate(options)
 
-from core.logger import logger
-formatter = logging.Formatter("%(asctime)s %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
-log = logger().setup_logger("MITMf", formatter)
-
 log.debug("MITMf started: {}".format(sys.argv))
 
 #Start Net-Creds
-from core.netcreds import NetCreds
-NetCreds().start(options.interface, options.ip, options.read_pcap)
+print "[*] MITMf v{} - '{}'".format(mitmf_version, mitmf_codename)
 
-from core.sslstrip.CookieCleaner import CookieCleaner
+NetCreds().start(options.interface, options.ip)
+print "|"
+print "|_ Net-Creds v{} online".format(NetCreds.version)
+
 from core.proxyplugins import ProxyPlugins
-from core.sslstrip.StrippingProxy import StrippingProxy
-from core.sslstrip.URLMonitor import URLMonitor
-
-URLMonitor.getInstance().setFaviconSpoofing(options.favicon)
-URLMonitor.getInstance().setCaching(options.preserve_cache)
-CookieCleaner.getInstance().setEnabled(options.killsessions)
-
-strippingFactory          = http.HTTPFactory(timeout=10)
-strippingFactory.protocol = StrippingProxy
-
-reactor.listenTCP(options.listen_port, strippingFactory)
 
 ProxyPlugins().all_plugins = plugins
-
-print "[*] MITMf v{} - '{}'".format(mitmf_version, mitmf_codename)
 for plugin in plugins:
 
     #load only the plugins that have been called at the command line
@@ -126,48 +120,63 @@ for plugin in plugins:
             for line in xrange(0, len(plugin.tree_info)):
                 print "|  |_ {}".format(plugin.tree_info.pop())
 
-        plugin.reactor(strippingFactory)
         plugin.start_config_watch()
-
-print "|"
-print "|_ Sergio-Proxy v0.2.1 online"
-print "|_ SSLstrip v0.9 by Moxie Marlinspike online"
-print "|"
 
 if options.filter:
     from core.packetfilter import PacketFilter
     pfilter = PacketFilter(options.filter)
-    pfilter.start()
     print "|_ PacketFilter online"
-    print "|  |_ Applying filter {} to incoming packets".format(options.filter)
+    print "   |_ Applying filter {} to incoming packets".format(options.filter)
+    try:
+        pfilter.start()
+    except KeyboardInterrupt:
+        pfilter.stop()
+        shutdown()
 
-print "|_ Net-Creds v{} online".format(NetCreds.version)
+else:
+    from core.sslstrip.CookieCleaner import CookieCleaner
+    from core.sslstrip.StrippingProxy import StrippingProxy
+    from core.sslstrip.URLMonitor import URLMonitor
 
-#Start mitmf-api
-from core.mitmfapi import mitmfapi
-print "|_ MITMf-API online"
-mitmfapi().start()
+    URLMonitor.getInstance().setFaviconSpoofing(options.favicon)
+    URLMonitor.getInstance().setCaching(options.preserve_cache)
+    CookieCleaner.getInstance().setEnabled(options.killsessions)
 
-#Start the HTTP Server
-from core.servers.HTTP import HTTP
-HTTP().start()
-print "|_ HTTP server online"
+    strippingFactory          = http.HTTPFactory(timeout=10)
+    strippingFactory.protocol = StrippingProxy
 
-#Start DNSChef
-from core.servers.DNS import DNSChef
-DNSChef().start()
-print "|_ DNSChef v{} online".format(DNSChef.version)
+    reactor.listenTCP(options.listen_port, strippingFactory)
 
-#Start the SMB server
-from core.servers.SMB import SMB
-SMB().start()
-print "|_ SMB server online\n"
+    for plugin in plugins:
+        if vars(options)[plugin.optname] is True:
+            plugin.reactor(strippingFactory)
 
-#start the reactor
-reactor.run()
-print "\n"
+    print "|_ Sergio-Proxy v0.2.1 online"
+    print "|_ SSLstrip v0.9 by Moxie Marlinspike online"
 
-if options.filter:
-    pfilter.stop()
+    #Start mitmf-api
+    from core.mitmfapi import mitmfapi
+    print "|"
+    print "|_ MITMf-API online"
+    mitmfapi().start()
 
-shutdown()
+    #Start the HTTP Server
+    from core.servers.HTTP import HTTP
+    HTTP().start()
+    print "|_ HTTP server online"
+
+    #Start DNSChef
+    from core.servers.DNS import DNSChef
+    DNSChef().start()
+    print "|_ DNSChef v{} online".format(DNSChef.version)
+
+    #Start the SMB server
+    from core.servers.SMB import SMB
+    SMB().start()
+    print "|_ SMB server online\n"
+
+    #start the reactor
+    reactor.run()
+    print "\n"
+
+    shutdown()
