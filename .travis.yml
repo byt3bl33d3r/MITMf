@@ -24,4 +24,4 @@ before_script:
 script: 
  - "nosetests --with-cov"
 after_success:
-  - coveralls
+ - coveralls
