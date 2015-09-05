@@ -19,4 +19,9 @@ notifications:
     use_notice: true
 
 install: "pip install -r requirements.txt"
-script: nosetests
+before_script:
+ - "pip install python-coveralls"
+script: 
+ - "nosetests --with-cov"
+after_success:
+  - coveralls
