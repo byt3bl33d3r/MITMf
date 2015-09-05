@@ -10,9 +10,11 @@ addons:
     - libssl-dev
 
 notifications:
-  irc: "irc.freenode.org#MITMf"
-  template:
-    - "%{repository}#%{build_number} (%{branch} - %{commit} - %{commit_subject} : %{author}): %{message}"
+  irc: 
+    channels:
+      - "irc.freenode.org#MITMf"
+    template:
+      - "%{repository}#%{build_number} (%{branch} - %{commit} - %{commit_subject} : %{author}): %{message}"
 
 install: "pip install -r requirements.txt"
 script: nosetests
