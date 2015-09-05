@@ -16,6 +16,7 @@ notifications:
     template:
       - "%{repository}#%{build_number} (%{branch} - %{commit} - %{commit_subject} : %{author}): %{message}"
     skip_join: true
+    use_notice: true
 
 install: "pip install -r requirements.txt"
 script: nosetests
