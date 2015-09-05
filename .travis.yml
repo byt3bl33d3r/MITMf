@@ -15,6 +15,7 @@ notifications:
       - "irc.freenode.org#MITMf"
     template:
       - "%{repository}#%{build_number} (%{branch} - %{commit} - %{commit_subject} : %{author}): %{message}"
+    skip_join: true
 
 install: "pip install -r requirements.txt"
 script: nosetests
