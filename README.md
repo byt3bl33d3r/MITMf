@@ -3,6 +3,7 @@
 ![Supported OS](https://img.shields.io/badge/Supported%20OS-Linux-yellow.svg)
 [![Code Climate](https://codeclimate.com/github/byt3bl33d3r/MITMf/badges/gpa.svg)](https://codeclimate.com/github/byt3bl33d3r/MITMf)
 [![Build Status](https://travis-ci.org/byt3bl33d3r/MITMf.svg)](https://travis-ci.org/byt3bl33d3r/MITMf)
+[![Coverage Status](https://coveralls.io/repos/byt3bl33d3r/MITMf/badge.svg?branch=master&service=github)](https://coveralls.io/github/byt3bl33d3r/MITMf?branch=master)
 
 #MITMf
 
