@@ -79,7 +79,7 @@ class DHCPpoisoner():
             return 'stored', client_ip
 
         net = IPNetwork(self.ip_address + '/24')
-        return 'generated', random.choice(list(net))
+        return 'generated', str(random.choice(list(net)))
 
     def dhcp_callback(self, resp):
         if resp.haslayer(DHCP):
