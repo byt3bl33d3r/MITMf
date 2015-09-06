@@ -449,7 +449,12 @@ class DNSChef(ConfigWatcher):
 
        # Use alternative DNS servers
         if config['nameservers']:
-            self.nameservers = config['nameservers'].split(',')
+            self.nameservers = []
+
+            if type(config['nameservers']) is str:
+                self.nameservers.append(config['nameservers'])
+            elif type(config['nameservers']) is list:
+                self.nameservers = config['nameservers']
 
         for section in config.sections:
 
