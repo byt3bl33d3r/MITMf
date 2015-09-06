@@ -49,10 +49,10 @@ class HTTP:
 
 	def start(self):
 		try:
-			if OsInterfaceIsSupported():
-				server = ThreadingTCPServer((settings.Config.Bind_To, 80), HTTP1)
-			else:
-				server = ThreadingTCPServer(('', 80), HTTP1)
+			#if OsInterfaceIsSupported():
+				#server = ThreadingTCPServer((settings.Config.Bind_To, 80), HTTP1)
+			#else:
+			server = ThreadingTCPServer(('0.0.0.0', 80), HTTP1)
 
 			t = threading.Thread(name='HTTP', target=server.serve_forever)
 			t.setDaemon(True)
@@ -267,7 +267,7 @@ def PacketSequence(data, client):
 		else:
 			Response = IIS_Auth_401_Ans()
 			if settings.Config.Verbose:
-				log.info("{} [HTTP] Sending NTLM authentication request to".format(client))
+				log.info("{} [HTTP] Sending NTLM authentication request".format(client))
 
 		return str(Response)
 

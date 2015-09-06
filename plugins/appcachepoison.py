@@ -36,6 +36,7 @@ class AppCachePlugin(Plugin):
 
         from core.sslstrip.URLMonitor import URLMonitor
         self.urlMonitor = URLMonitor.getInstance()
+        self.urlMonitor.caching = True
         self.urlMonitor.setAppCachePoisoning()
 
     def response(self, response, request, data):

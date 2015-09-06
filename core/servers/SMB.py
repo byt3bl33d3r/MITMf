@@ -28,12 +28,12 @@ class SMB:
 
     def start(self):
         try:
-            if OsInterfaceIsSupported():
-                server1 = ThreadingTCPServer((settings.Config.Bind_To, 445), SMB1)
-                server2 = ThreadingTCPServer((settings.Config.Bind_To, 139), SMB1)
-            else:
-                server1 = ThreadingTCPServer(('', 445), SMB1)
-                server2 = ThreadingTCPServer(('', 139), SMB1)
+            #if OsInterfaceIsSupported():
+            #    server1 = ThreadingTCPServer((settings.Config.Bind_To, 445), SMB1)
+            #    server2 = ThreadingTCPServer((settings.Config.Bind_To, 139), SMB1)
+            #else:
+            server1 = ThreadingTCPServer(('0.0.0.0', 445), SMB1)
+            server2 = ThreadingTCPServer(('0.0.0.0', 139), SMB1)
 
             for server in [server1, server2]:
                 t = threading.Thread(name='SMB', target=server.serve_forever)

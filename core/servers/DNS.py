@@ -48,6 +48,12 @@ from IPy import IP
 formatter = logging.Formatter("%(asctime)s %(clientip)s [DNS] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 log = logger().setup_logger("DNSChef", formatter)
 
+dnslog = logging.getLogger('dnslog')
+handler = logging.FileHandler('./logs/dns/dns.log',)
+handler.setFormatter(formatter)
+dnslog.addHandler(handler)
+dnslog.setLevel(logging.INFO)
+
 # DNSHandler Mixin. The class contains generic functions to parse DNS requests and
 # calculate an appropriate response based on user parameters.
 class DNSHandler():
@@ -69,6 +75,7 @@ class DNSHandler():
 
         except Exception as e:
             log.info("Error: invalid DNS request", extra=clientip)
+            dnslog.info("Error: invalid DNS request", extra=clientip)
 
         else:        
             # Only Process DNS Queries
@@ -113,6 +120,7 @@ class DNSHandler():
                     response = DNSRecord(DNSHeader(id=d.header.id, bitmap=d.header.bitmap, qr=1, aa=1, ra=1), q=d.q)
 
                     log.info("Cooking the response of type '{}' for {} to {}".format(qtype, qname, fake_record), extra=clientip)
+                    dnslog.info("Cooking the response of type '{}' for {} to {}".format(qtype, qname, fake_record), extra=clientip)
 
                     # IPv6 needs additional work before inclusion:
                     if qtype == "AAAA":
@@ -182,6 +190,7 @@ class DNSHandler():
 
                 elif qtype == "*" and not None in fake_records.values():
                     log.info("Cooking the response of type '{}' for {} with {}".format("ANY", qname, "all known fake records."), extra=clientip)
+                    dnslog.info("Cooking the response of type '{}' for {} with {}".format("ANY", qname, "all known fake records."), extra=clientip)
 
                     response = DNSRecord(DNSHeader(id=d.header.id, bitmap=d.header.bitmap,qr=1, aa=1, ra=1), q=d.q)
 
@@ -257,6 +266,7 @@ class DNSHandler():
                 # Proxy the request
                 else:
                     log.debug("Proxying the response of type '{}' for {}".format(qtype, qname), extra=clientip)
+                    dnslog.info("Proxying the response of type '{}' for {}".format(qtype, qname), extra=clientip)
 
                     nameserver_tuple = random.choice(nameservers).split('#')               
                     response = self.proxyrequest(data, *nameserver_tuple)
@@ -339,6 +349,7 @@ class DNSHandler():
 
         except Exception as e:
             log.warning("Could not proxy request: {}".format(e), extra=clientip)
+            dnslog.info("Could not proxy request: {}".format(e), extra=clientip)
         else:
             return reply
 
@@ -346,6 +357,7 @@ class DNSHandler():
         clientip = {'clientip': self.client_address[0]}
 
         log.info("Resolving '{}' to '{}' for HSTS bypass".format(fake_domain, real_domain), extra=clientip)
+        dnslog.info("Resolving '{}' to '{}' for HSTS bypass".format(fake_domain, real_domain), extra=clientip)
 
         response = DNSRecord(DNSHeader(id=d.header.id, bitmap=d.header.bitmap, qr=1, aa=1, ra=1), q=d.q)
 
