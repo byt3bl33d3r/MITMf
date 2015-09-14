@@ -342,6 +342,12 @@ class Session(object):
             logs.append(Log(log))
         return logs
 
+    def update(self, options={}):
+        headers = {"Content-Type": "application/json", "charset": "UTF-8"}
+        payload = json.dumps(options)
+        r = requests.post("{}/hooks/update/{}?token={}".format(self.url, self.session, self.token), headers=headers, data=payload)
+        return r.json()
+
     def run(self, module_id, options={}):
         headers = {"Content-Type": "application/json", "charset": "UTF-8"}
         payload = json.dumps(options)

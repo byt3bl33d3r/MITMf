@@ -98,5 +98,5 @@ class iptables:
 
     def NFQUEUE(self):
         log.debug("Setting iptables NFQUEUE rule")
-        os.system('iptables -t nat -A PREROUTING -j NFQUEUE --queue-num 1')
+        os.system('iptables -I FORWARD -j NFQUEUE --queue-num 0')
         self.nfqueue = True

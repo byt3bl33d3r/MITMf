@@ -17,7 +17,7 @@ class PacketFilter:
         iptables().NFQUEUE()
 
         self.nfqueue = NetfilterQueue()
-        self.nfqueue.bind(1, self.modify)
+        self.nfqueue.bind(0, self.modify)
 
         self.nfqueue.run()
 
