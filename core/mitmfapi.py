@@ -75,13 +75,13 @@ class mitmfapi(ConfigWatcher):
         if status == "1":
             for p in ProxyPlugins().all_plugins:
                 if (p.name == plugin) and (p not in ProxyPlugins().plugin_list):
-                    ProxyPlugins().addPlugin(p)
+                    ProxyPlugins().add_plugin(p)
                     return json.dumps({"plugin": plugin, "response": "success"})
 
         elif status == "0":
             for p in ProxyPlugins().plugin_list:
                 if p.name == plugin:
-                    ProxyPlugins().removePlugin(p)
+                    ProxyPlugins().remove_plugin(p)
                     return json.dumps({"plugin": plugin, "response": "success"})
 
         return json.dumps({"plugin": plugin, "response": "failed"})
