@@ -82,7 +82,10 @@ class ProxyPlugins:
         self.plugin_list.remove(p)
         log.debug("Removing {} plugin".format(p.name))
         for mthd,pmthd in self.mthdDict.iteritems():
-            self.plugin_mthds[mthd].remove(p)
+            try:
+                self.plugin_mthds[mthd].remove(getattr(p,pmthd))
+            except KeyError:
+                pass #nothing to remove
 
     def hook(self):
         '''Magic to hook various function calls in sslstrip'''
