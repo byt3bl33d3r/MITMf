@@ -134,6 +134,6 @@ For a complete list of available options, just run ```python mitmf.py --help```
 - **Inject**           : Inject arbitrary content into HTML content
 - **BrowserSniper**    : Performs drive-by attacks on clients with out-of-date browser plugins
 - **JSkeylogger**      : Injects a Javascript keylogger into a client's webpages
-- **Replace**          : Replace arbitary content in HTML content
+- **Replace**          : Replace arbitrary content in HTML content
 - **SMBAuth**          : Evoke SMB challenge-response authentication attempts
 - **Upsidedownternet** : Flips images 180 degrees
