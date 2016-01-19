@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2016 Marcello Salvati
+# Copyright (c) 2014-2016 Oliver Nettinger, Marcello Salvati
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -15,6 +15,9 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
 #
+
+# note: portal.html has been adapted from 
+# config/responder/AccessDenied.html for now
 
 from plugins.plugin import Plugin
 from urlparse import urlparse
@@ -58,8 +61,12 @@ class Captive(Plugin):
         return {'response': response, 'request':request, 'data': data}
 
     def options(self, options):
-        options.add_argument('--portalurl', dest='portalurl', metavar="URL", help='Specify the URL where the portal is located, e.g. http://example.com.')
-        options.add_argument('--portaldir', dest='portaldir', metavar="LOCALDIR", help='Specify a local path containg the portal files served with a SimpleHTTPServer on a different port (see config).')
+        ''' captive can be either run redirecting to a specified url (--portalurl), serve the payload locally (no argument) or 
+        start an instance of SimpleHTTPServer to serve the LOCALDIR (--portaldir) '''
+        group = options.add_mutually_exclusive_group(required=False)
+        group.add_argument('--portalurl', dest='portalurl', metavar="URL", help='Specify the URL where the portal is located, e.g. http://example.com.')
+        group.add_argument('--portaldir', dest='portaldir', metavar="LOCALDIR", help='Specify a local path containg the portal files served with a SimpleHTTPServer on a different port (see config).')
+        
         options.add_argument('--use-dns', dest='usedns', action='store_true', help='Whether we use dns spoofing to serve from a fancier portal URL captive.portal when used without options or portaldir. Requires DNS for "captive.portal" to resolve, e.g. via configured dns spoofing --dns.')
 
     def on_shutdown(self):

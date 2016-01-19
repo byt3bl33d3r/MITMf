@@ -157,3 +157,4 @@ For a complete list of available options, just run ```python mitmf.py --help```
 - **Replace**          : Replace arbitrary content in HTML content
 - **SMBAuth**          : Evoke SMB challenge-response authentication attempts
 - **Upsidedownternet** : Flips images 180 degrees
+- **Captive**          : Creates a captive portal, redirecting HTTP requests using 302
