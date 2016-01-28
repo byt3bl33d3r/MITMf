@@ -916,7 +916,7 @@ def get_login_pass(body):
 
 def printer(src_ip_port, dst_ip_port, msg):
     if dst_ip_port != None:
-        print_str = '[{} > {}] {}'.format((src_ip_port, dst_ip_port, msg))
+        print_str = '[{} > {}] {}'.format(src_ip_port, dst_ip_port, msg)
         # All credentials will have dst_ip_port, URLs will not
 
         log.info("{}".format(print_str))
