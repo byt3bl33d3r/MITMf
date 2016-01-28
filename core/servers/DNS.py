@@ -366,7 +366,8 @@ class DNSHandler():
         #First proxy the request with the real domain
         q = DNSRecord.question(real_domain).pack()
         r = self.proxyrequest(q, *nameserver_tuple)
-        
+        if r is None: return None
+
         #Parse the answer
         dns_rr = DNSRecord.parse(r).rr
 
