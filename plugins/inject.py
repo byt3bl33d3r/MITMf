@@ -64,7 +64,10 @@ class Inject(Plugin):
         try:
             mime = response.headers['Content-Type']
         except KeyError:
-            return
+            return {'response': response, 'request':request, 'data': data}
+
+        if "text/html" not in mime:
+            return {'response': response, 'request':request, 'data': data}
 
         if "charset" in mime:
             match = re.search('charset=(.*)', mime)
