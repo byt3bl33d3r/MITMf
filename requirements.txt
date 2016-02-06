@@ -1,0 +1,5 @@
+git+git://github.com/mitmproxy/mitmproxy
+git+git://github.com/kti/python-netfilterqueue
+user-agents
+beautifulsoup4
+scapy
