@@ -611,14 +611,14 @@ class FilePwn(Plugin):
 
     def response(self, response, request, data):
 
-        content_header = response.headers['content-type']
+        content_header = response.responseHeaders.getRawHeaders('Content-Type')[0]
         client_ip      = request.client.getClientIP()
         host           = request.headers['host']
 
-        try:
-            content_length = int(response.headers['content-length'])
-        except KeyError:
-            content_length = None
+        if not response.responseHeaders.hasHeader('content-length'):
+             content_length = None
+        else:
+            content_length = int(response.responseHeaders.getRawHeaders('content-length')[0])
 
         for target in self.user_config['targets'].keys():
             if target == 'ALL':

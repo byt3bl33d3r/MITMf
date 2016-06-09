@@ -61,10 +61,10 @@ class Inject(Plugin):
         ip = response.getClientIP()
         hn = response.getRequestHostname()
 
-        try:
-            mime = response.headers['Content-Type']
-        except KeyError:
+        if not response.responseHeaders.hasHeader('Content-Type'):
             return {'response': response, 'request':request, 'data': data}
+
+        mime = response.responseHeaders.getRawHeaders('Content-Type')[0]
 
         if "text/html" not in mime:
             return {'response': response, 'request':request, 'data': data}

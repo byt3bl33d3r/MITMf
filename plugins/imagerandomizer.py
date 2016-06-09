@@ -35,7 +35,7 @@ class ImageRandomizer(Plugin):
         if request.isImageRequest:
             request.isImageRequest = False
             request.isImage = True
-            self.imageType = response.headers['content-type'].split('/')[1].upper()
+            self.imageType = response.responseHeaders.getRawHeaders('content-type')[0].split('/')[1].upper()
 
     def response(self, response, request, data):
         try:

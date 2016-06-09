@@ -35,7 +35,7 @@ class Replace(Plugin):
         self.options = options
 
     def response(self, response, request, data):
-        mime = response.headers['Content-Type']
+        mime = response.responseHeaders.getRawHeaders('Content-Type')[0]
         hn = response.getRequestHostname()
 
         if "text/html" in mime:
