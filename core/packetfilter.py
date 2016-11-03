@@ -26,11 +26,12 @@ class PacketFilter:
         data = pkt.get_payload()
         packet = IP(data)
 
-        try:
-            execfile(self.filter)
-        except Exception:
-            log.debug("Error occurred in filter")
-            print_exc()
+        for filter in self.filter:
+            try:
+                execfile(i)
+            except Exception:
+                log.debug("Error occurred in filter", filter)
+                print_exc()
 
         pkt.set_payload(str(packet)) #set the packet content to our modified version
         pkt.accept() #accept the packet
