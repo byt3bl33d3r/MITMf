@@ -59,7 +59,7 @@ sgroup.add_argument("-r", '--read-pcap', type=str, help='Parse specified pcap fo
 sgroup.add_argument("-l", dest='listen_port', type=int, metavar="PORT", default=10000, help="Port to listen on (default 10000)")
 sgroup.add_argument("-f", "--favicon", action="store_true", help="Substitute a lock favicon on secure requests.")
 sgroup.add_argument("-k", "--killsessions", action="store_true", help="Kill sessions in progress.")
-sgroup.add_argument("-F", "--filter", type=str, help='Filter to apply to incoming traffic')
+sgroup.add_argument("-F", "--filter", type=str, help='Filter to apply to incoming traffic', nargs='+')
 
 #Initialize plugins and pass them the parser NameSpace object
 plugins = [plugin(parser) for plugin in plugin.Plugin.__subclasses__()]
@@ -126,7 +126,8 @@ if options.filter:
     from core.packetfilter import PacketFilter
     pfilter = PacketFilter(options.filter)
     print "|_ PacketFilter online"
-    print "   |_ Applying filter {} to incoming packets".format(options.filter)
+    for filter in options.filter:
+        print "   |_ Applying filter {} to incoming packets".format(filter)
     try:
         pfilter.start()
     except KeyboardInterrupt:
