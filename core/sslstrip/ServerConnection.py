@@ -155,7 +155,7 @@ class ServerConnection(HTTPClient):
                 self.isCompressed = True
 
         elif (key.lower()== 'strict-transport-security'):
-            clientlog.info("Zapped a strict-trasport-security header", extra=self.clientInfo)
+            clientlog.info("Zapped a strict-transport-security header", extra=self.clientInfo)
 
         elif (key.lower() == 'content-length'):
             self.contentLength = value
