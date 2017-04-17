@@ -1,4 +1,4 @@
-#Intentional contributors (in no particular order)
+# Intentional contributors (in no particular order)
 
 - @rthijssen
 - @ivangr0zni (Twitter)
@@ -13,7 +13,7 @@
 - @auraltension
 - @HAMIDx9
 
-#Unintentional contributors and/or projects that I stole code from
+# Unintentional contributors and/or projects that I stole code from
 
 - Metasploit Framework's os.js and Javascript Keylogger module
 - Responder by Laurent Gaffie
