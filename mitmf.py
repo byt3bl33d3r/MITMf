@@ -41,7 +41,7 @@ mitmf_version = '0.9.8'
 mitmf_codename = 'The Dark Side'
 
 if os.geteuid() != 0:
-    sys.exit("[-] The derp is strong with this one")
+    sys.exit("[-] The derp is strong with this one\nTIP: you may run MITMf as root.")
 
 parser = argparse.ArgumentParser(description="MITMf v{} - '{}'".format(mitmf_version, mitmf_codename), 
                                  version="{} - '{}'".format(mitmf_version, mitmf_codename), 
