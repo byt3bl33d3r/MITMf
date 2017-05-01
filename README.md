@@ -16,7 +16,7 @@ This tool is based on [sergio-proxy](https://github.com/supernothing/sergio-prox
 Contact me at:
 - Twitter: @byt3bl33d3r
 - IRC on Freenode: #MITMf
-- Email: byt3bl33d3r@gmail.com
+- Email: byt3bl33d3r@protonmail.com
 
 **Before submitting issues, please read the relevant [section](https://github.com/byt3bl33d3r/MITMf/wiki/Reporting-a-bug) in the wiki .**
 
