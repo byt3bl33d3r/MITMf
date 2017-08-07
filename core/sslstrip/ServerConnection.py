@@ -179,7 +179,7 @@ class ServerConnection(HTTPClient):
         self.plugins.hook()
 
         if logging.getLevelName(log.getEffectiveLevel()) == "DEBUG":
-            for header, value in self.client.headers.iteritems():
+            for header, value in self.headers.iteritems():
                 log.debug("Receiving header: ({}: {})".format(header, value)) 
 
     def handleResponsePart(self, data):
