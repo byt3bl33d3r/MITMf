@@ -138,7 +138,7 @@ Of course you can mix and match almost any plugin together (e.g. ARP spoof + inj
 
 For a complete list of available options, just run ```python mitmf.py --help```
 
-#Currently available plugins
+# Currently available plugins
 
 - **HTA Drive-By**     : Injects a fake update notification and prompts clients to download an HTA application
 - **SMBTrap**          : Exploits the 'SMB Trap' vulnerability on connected clients
