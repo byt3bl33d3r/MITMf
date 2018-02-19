@@ -674,7 +674,10 @@ def parse_basic_auth(src_ip_port, dst_ip_port, headers, authorization_header):
         b64_auth_re = re.match('basic (.+)', header_val, re.IGNORECASE)
         if b64_auth_re != None:
             basic_auth_b64 = b64_auth_re.group(1)
-            basic_auth_creds = base64.decodestring(basic_auth_b64)
+            try:
+                basic_auth_creds = base64.decodestring(basic_auth_b64)
+            except Exception:
+                return
             msg = 'Basic Authentication: %s' % basic_auth_creds
             printer(src_ip_port, dst_ip_port, msg)
 
@@ -725,15 +728,13 @@ def headers_to_dict(header_lines):
     Convert the list of header lines into a dictionary
     '''
     headers = {}
-    # Incomprehensible list comprehension flattens list of headers
-    # that are each split at ': '
-    # http://stackoverflow.com/a/406296
-    headers_list = [x for line in header_lines for x in line.split(': ', 1)]
-    headers_dict = dict(zip(headers_list[0::2], headers_list[1::2]))
-    # Make the header key (like "Content-Length") lowercase
-    for header in headers_dict:
-        headers[header.lower()] = headers_dict[header]
-
+    for line in header_lines:
+        lineList=line.split(': ', 1)
+        key=lineList[0].lower()
+        if len(lineList)>1:
+                headers[key]=lineList[1]
+        else:
+                headers[key]=""
     return headers
 
 def parse_http_line(http_line, http_methods):
@@ -806,9 +807,12 @@ def parse_netntlm_chal(headers, chal_header, ack):
     header_val2 = header_val2.split(' ', 1)
     # The header value can either start with NTLM or Negotiate
     if header_val2[0] == 'NTLM' or header_val2[0] == 'Negotiate':
-        msg2 = header_val2[1]
+        try:
+            msg2 = header_val2[1]
+        except IndexError:
+            return
         msg2 = base64.decodestring(msg2)
-        parse_ntlm_chal(ack, msg2)
+        parse_ntlm_chal(msg2, ack)
 
 def parse_ntlm_chal(msg2, ack):
     '''
@@ -897,10 +901,10 @@ def get_login_pass(body):
                   'alias', 'pseudo', 'email', 'username', '_username', 'userid', 'form_loginname', 'loginname',
                   'login_id', 'loginid', 'session_key', 'sessionkey', 'pop_login', 'uid', 'id', 'user_id', 'screename',
                   'uname', 'ulogin', 'acctname', 'account', 'member', 'mailaddress', 'membername', 'login_username',
-                  'login_email', 'loginusername', 'loginemail', 'uin', 'sign-in']
+                  'login_email', 'loginusername', 'loginemail', 'uin', 'sign-in', 'usuario']
     passfields = ['ahd_password', 'pass', 'password', '_password', 'passwd', 'session_password', 'sessionpassword', 
                   'login_password', 'loginpassword', 'form_pw', 'pw', 'userpassword', 'pwd', 'upassword', 'login_password'
-                  'passwort', 'passwrd', 'wppassword', 'upasswd']
+                  'passwort', 'passwrd', 'wppassword', 'upasswd','senha','contrasena']
 
     for login in userfields:
         login_re = re.search('(%s=[^&]+)' % login, body, re.IGNORECASE)
