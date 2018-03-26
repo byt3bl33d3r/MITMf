@@ -1,4 +1,4 @@
-git+git://github.com/kti/python-netfilterqueue
+git+https://github.com/kti/python-netfilterqueue
 pyinotify
 pycrypto
 pyasn1
