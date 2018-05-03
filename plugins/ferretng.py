@@ -45,7 +45,6 @@ class FerretNG(Plugin):
                 with open(options.cookie_file, 'r') as cookie_file:
                     self.cookie_file = json.dumps(cookie_file.read())
                     URLMonitor.getInstance().cookies = self.cookie_file
-                    cookie_file.close()
             except Exception as e:
                 shutdown("[-] Error loading cookie log file: {}".format(e))
 
@@ -94,4 +93,3 @@ class FerretNG(Plugin):
         self.log.info("Writing cookies to log file")
         with open('./logs/ferret-ng/cookies-{}.log'.format(datetime.now().strftime("%Y-%m-%d_%H:%M:%S:%s")), 'w') as cookie_file:
             cookie_file.write(str(URLMonitor.getInstance().cookies))
-            cookie_file.close()
