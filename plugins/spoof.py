@@ -96,7 +96,7 @@ class Spoof(Plugin):
         options.add_argument('--gatewaymac', dest='gatewaymac', help='Specify the gateway MAC [will auto resolve if ommited]')
         options.add_argument('--targets', dest='targets', help='Specify host/s to poison [if ommited will default to subnet]')
         options.add_argument('--ignore', dest='ignore', help='Specify host/s not to poison')
-        options.add_argument('--arpmode',type=str, dest='arpmode', default='rep', choices=["rep", "req"], help=' ARP Spoofing mode: replies (rep) or requests (req) [default: rep]')
+        options.add_argument('--arpmode', type=str, dest='arpmode', default='rep', choices=["rep", "req"], help='ARP Spoofing mode: replies (rep) or requests (req) [default: rep]')
 
     def on_shutdown(self):
         from core.utils import iptables, set_ip_forwarding
