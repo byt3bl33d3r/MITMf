@@ -79,5 +79,4 @@ banner5 = """
 """
 
 def get_banner():
-    banners = [banner1, banner2, banner3, banner4, banner5]
-    return random.choice(banners)
+    return random.choice([banner1, banner2, banner3, banner4, banner5])
