@@ -73,29 +73,25 @@ class AppCachePlugin(Plugin):
                         p = self.getTemplatePrefix(section)
                         self.clientlog.info("Poisoning raw URL", extra=request.clientInfo)
                         if os.path.exists(p + '.replace'): # replace whole content
-                            f = open(p + '.replace', 'r')
-                            data = f.read()
-                            f.close()
+                            with open(p + '.replace', 'r') as f:
+                                data = f.read()
 
                         elif os.path.exists(p + '.append'): # append file to body
-                            f = open(p + '.append', 'r')
-                            data += f.read()
-                            f.close()
+                            with open(p + '.append', 'r') as f:
+                                data += f.read()
 
                     elif (section.get('tamper_url',False) == url) or (section.has_key('tamper_url_match') and re.search(section['tamper_url_match'], url)):
                         self.clientlog.info("Found URL in section '{}'!".format(name), extra=request.clientInfo)
                         p = self.getTemplatePrefix(section)
                         self.clientlog.info("Poisoning URL with tamper template: {}".format(p), extra=request.clientInfo)
                         if os.path.exists(p + '.replace'): # replace whole content
-                            f = open(p + '.replace', 'r')
-                            data = f.read()
-                            f.close()
+                            with open(p + '.replace', 'r') as f:
+                                data = f.read()
 
                         elif os.path.exists(p + '.append'): # append file to body
-                            f = open(p + '.append', 'r')
-                            appendix = f.read()
-                            data = re.sub(re.compile("</body>",re.IGNORECASE), appendix + "</body>", data) #append to body
-                            f.close()
+                            with open(p + '.append', 'r') as f:
+                                appendix = f.read()
+                                data = re.sub(re.compile("</body>", re.IGNORECASE), appendix + "</body>", data) #append to body
 
                         # add manifest reference
                         data = re.sub(re.compile("<html",re.IGNORECASE),"<html manifest=\"" + self.getManifestUrl(section)+"\"", data)
@@ -155,9 +151,8 @@ class AppCachePlugin(Plugin):
         if not os.path.exists(p+'.manifest'):
           p = self.getDefaultTemplatePrefix()
 
-        f = open(p + '.manifest', 'r')
-        manifest = f.read()
-        f.close()
+        with open(p + '.manifest', 'r') as f:
+            manifest = f.read()
         return self.decorate(manifest, section)
 
     def decorate(self, content, section):

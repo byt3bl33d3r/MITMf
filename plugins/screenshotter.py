@@ -46,7 +46,6 @@ class ScreenShotter(Inject, Plugin):
             try:
                 with open('./logs/' + img_file, 'wb') as img:
                     img.write(base64.b64decode(urllib.unquote(request.postData).decode('utf8').split(',')[1]))
-                    img.close()
 
                 self.clientlog.info('Saved screenshot to {}'.format(img_file), extra=request.clientInfo)
             except Exception as e:
