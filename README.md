@@ -9,7 +9,7 @@
 
 Framework for Man-In-The-Middle attacks
 
-**This project is no longer being updated. MITMf was written to address the need, at the time, of modern tool for performing Man-In-The-Middle attacks. Since then many other tools have been created to fill this space, you should probably be using [Bettercap](https://github.com/bettercap/bettercap) as it is far more feature complete and better maintained.**
+**This project is no longer being updated. MITMf was written to address the need, at the time, of a modern tool for performing Man-In-The-Middle attacks. Since then many other tools have been created to fill this space, you should probably be using [Bettercap](https://github.com/bettercap/bettercap) as it is far more feature complete and better maintained.**
 
 Quick tutorials, examples and developer updates at: https://byt3bl33d3r.github.io
 
